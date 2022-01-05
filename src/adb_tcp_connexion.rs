@@ -1,11 +1,12 @@
 use std::{
     io::{Read, Write},
     net::{Ipv4Addr, SocketAddrV4, TcpStream},
+    str,
     str::FromStr,
 };
 
 use crate::{
-    models::{AdbCommand, AdbRequestStatus},
+    models::{AdbCommand, AdbRequestStatus, AdbVersion},
     AdbCommandProvider, Device, DeviceState, Result, RustADBError,
 };
 
@@ -49,13 +50,22 @@ impl AdbTcpConnexion {
         let mut request_status = [0; 4];
         tcp_stream.read_exact(&mut request_status)?;
 
-        match AdbRequestStatus::from_str(String::from_utf8(request_status.to_vec())?.as_str())? {
+        match AdbRequestStatus::from_str(str::from_utf8(&request_status.to_vec())?)? {
             AdbRequestStatus::Okay => {
-                // Read 4 bytes length
-                // Read exact length
+                let mut length = [0; 4];
+                tcp_stream.read_exact(&mut length)?;
 
-                let mut body: Vec<u8> = Vec::new();
-                tcp_stream.read_to_end(&mut body)?;
+                let u32_length = u32::from_str_radix(str::from_utf8(&length)?, 16)?;
+
+                let mut body = vec![
+                    0;
+                    u32_length
+                        .try_into()
+                        .map_err(|_| RustADBError::ConvertionError)?
+                ];
+                if u32_length > 0 {
+                    tcp_stream.read_exact(&mut body)?;
+                }
 
                 Ok(body)
             }
@@ -78,12 +88,13 @@ impl Default for AdbTcpConnexion {
 }
 
 impl AdbCommandProvider for AdbTcpConnexion {
-    fn version(&self) -> Result<()> {
+    fn version(&self) -> Result<AdbVersion> {
         let version = self.proxy_connexion(AdbCommand::Version)?;
 
-        println!("Version: {:?}", version.to_ascii_uppercase());
-
-        Ok(())
+        Ok(AdbVersion::new(
+            u32::from_str_radix(str::from_utf8(&version[0..2])?, 16)?,
+            u32::from_str_radix(str::from_utf8(&version[2..4])?, 16)?,
+        ))
     }
 
     fn devices(&self) -> Result<Vec<Device>> {
@@ -96,14 +107,12 @@ impl AdbCommandProvider for AdbTcpConnexion {
             }
 
             let mut iter = device.split(|x| x.eq(&b'\t'));
-            let identifier = iter.next().unwrap();
-            let state = iter.next().unwrap();
+            let identifier = iter.next().ok_or(RustADBError::IteratorError)?;
+            let state = iter.next().ok_or(RustADBError::IteratorError)?;
 
             vec_devices.push(Device {
-                identifier: String::from_utf8(identifier.to_ascii_lowercase()).unwrap(),
-                state: DeviceState::from_str(
-                    &String::from_utf8(state.to_ascii_lowercase()).unwrap(),
-                )?,
+                identifier: String::from_utf8(identifier.to_vec())?,
+                state: DeviceState::from_str(str::from_utf8(state)?)?,
             });
         }
 
@@ -118,11 +127,66 @@ impl AdbCommandProvider for AdbTcpConnexion {
         // Identifier = [0]
         // Device state = [1]
 
-        println!(
-            "Devices long: {:?}",
-            std::str::from_utf8(&devices_long.to_ascii_lowercase())
-        );
+        println!("Devices long: {:?}", std::str::from_utf8(&devices_long));
 
         Ok(vec![])
+    }
+
+    fn kill(&self) -> Result<()> {
+        self.proxy_connexion(AdbCommand::Kill).map(|_| ())
+    }
+
+    // TODO: Change with Generator when feature stabilizes
+    fn track_devices(&self, callback: fn(Device) -> Result<()>) -> Result<()> {
+        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
+
+        let adb_command_string = AdbCommand::TrackDevices.to_string();
+
+        let adb_request = format!(
+            "{}{}",
+            format!("{:04x}", adb_command_string.len()),
+            adb_command_string
+        );
+
+        tcp_stream.write_all(adb_request.as_bytes())?;
+
+        let mut request_status = [0; 4];
+        tcp_stream.read_exact(&mut request_status)?;
+
+        match AdbRequestStatus::from_str(str::from_utf8(&request_status.to_vec())?)? {
+            AdbRequestStatus::Okay => {
+                loop {
+                    // Reads first 4 bytes indicating payload length
+                    let mut length = [0; 4];
+                    tcp_stream.read_exact(&mut length)?;
+
+                    let u32_length = u32::from_str_radix(str::from_utf8(&length)?, 16)?;
+
+                    if u32_length > 0 {
+                        let mut body = vec![
+                            0;
+                            u32_length
+                                .try_into()
+                                .map_err(|_| RustADBError::ConvertionError)?
+                        ];
+                        tcp_stream.read_exact(&mut body)?;
+
+                        let mut iter = body.split(|x| x.eq(&b'\t'));
+                        let identifier = iter.next().ok_or(RustADBError::IteratorError)?;
+                        let state = iter.next().ok_or(RustADBError::IteratorError)?;
+
+                        let device = Device {
+                            identifier: String::from_utf8(identifier.to_vec())?,
+                            state: DeviceState::from_str(
+                                str::from_utf8(state)?.trim_matches('\n'),
+                            )?,
+                        };
+
+                        callback(device)?;
+                    }
+                }
+            }
+            AdbRequestStatus::Fail => Err(RustADBError::ADBRequestFailed),
+        }
     }
 }

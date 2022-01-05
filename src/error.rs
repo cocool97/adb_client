@@ -13,7 +13,15 @@ pub enum RustADBError {
     #[error("Unknown device state {0}")]
     UnknownDeviceState(String),
     #[error(transparent)]
-    Utf8Error(#[from] std::string::FromUtf8Error),
+    Utf8StrError(#[from] std::str::Utf8Error),
+    #[error(transparent)]
+    Utf8StringError(#[from] std::string::FromUtf8Error),
     #[error(transparent)]
     AddrParseError(#[from] std::net::AddrParseError),
+    #[error(transparent)]
+    ParseIntError(#[from] std::num::ParseIntError),
+    #[error("Nothing to iterate over")]
+    IteratorError,
+    #[error("Convertion error")]
+    ConvertionError,
 }
