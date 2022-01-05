@@ -1,0 +1,27 @@
+[package]
+name = "adb_client"
+version = "0.1.0"
+description = "Rust ADB (Android Debug Bridge) client library"
+keywords = ["adb"]
+readme = "README.md"
+license = "MIT"
+edition = "2021"
+
+[lib]
+name = "adb_client"
+crate-type = ["lib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "adb_client"
+path = "bin/adb_client.rs"
+required-features = ["adbclient"]
+
+[dependencies]
+thiserror = { version = "1.0.30", default_features = false }
+
+# Features needed by adb_client binary
+clap = { version = "3.0.1", default_features = false, features = ["std", "derive"], optional = true }
+
+[features]
+adbclient = ["clap"]
