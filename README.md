@@ -1,6 +1,8 @@
-# adb_client - Rust ADB (Android Debug Bridge) client library
+# Rust ADB (Android Debug Bridge) client library
 
 This crate is not affiliated with Android development core team.
+
+It is still under active development, please report found bugs as issues !
 
 ## Rust crate
 

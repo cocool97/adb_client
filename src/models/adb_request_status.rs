@@ -15,7 +15,7 @@ impl FromStr for AdbRequestStatus {
         match lowercased.as_str() {
             "okay" => Ok(Self::Okay),
             "fail" => Ok(Self::Fail),
-            _ => Err(RustADBError::UnknownResultType(lowercased)),
+            _ => Err(RustADBError::UnknownResponseType(lowercased)),
         }
     }
 }

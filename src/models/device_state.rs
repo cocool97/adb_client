@@ -2,9 +2,13 @@ use std::{fmt::Display, str::FromStr};
 
 use crate::RustADBError;
 
+/// Represents the connection state of the device.
 pub enum DeviceState {
+    /// The device is not connected to adb or is not responding.
     Offline,
+    /// The device is now connected to the adb server. Note that this state does not imply that the Android system is fully booted and operational because the device connects to adb while the system is still booting. However, after boot-up, this is the normal operational state of an device.
     Device,
+    /// There is no device connected.
     NoDevice,
 }
 

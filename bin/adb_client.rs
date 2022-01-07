@@ -1,13 +1,14 @@
 use adb_client::{AdbCommandProvider, AdbTcpConnexion, Device};
 use anyhow::Result;
 use clap::Parser;
+use std::net::Ipv4Addr;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 struct Args {
     /// Sets the listening address of ADB server
     #[clap(short = 'a', long = "address", default_value = "127.0.0.1")]
-    pub address: String,
+    pub address: Ipv4Addr,
     /// Sets the listening port of ADB server
     #[clap(short = 'p', long = "port", default_value = "5037")]
     pub port: u16,
@@ -33,12 +34,11 @@ enum Command {
 fn main() -> Result<()> {
     let opt = Args::parse();
 
-    let connexion = AdbTcpConnexion::new().address(opt.address)?.port(opt.port);
+    let connexion = AdbTcpConnexion::new().address(opt.address).port(opt.port);
 
     match opt.command {
         Command::Version => {
             let version = connexion.version()?;
-
             println!("Android Debug Bridge version {}", version);
             println!("Package version {}-rust", std::env!("CARGO_PKG_VERSION"));
         }
@@ -48,11 +48,13 @@ fn main() -> Result<()> {
         Command::Devices { long } => {
             if long {
                 println!("List of devices attached (long)");
-                connexion.devices_long()?;
+                for device in connexion.devices_long()? {
+                    println!("{}", device);
+                }
             } else {
                 println!("List of devices attached");
                 for device in connexion.devices()? {
-                    println!("{}\t{}", device.identifier, device.state);
+                    println!("{}", device);
                 }
             }
         }
