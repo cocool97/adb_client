@@ -5,14 +5,22 @@ use regex::bytes::Regex;
 
 use crate::{DeviceState, RustADBError};
 
+/// Represents a new device with more informations helded.
 pub struct DeviceLong {
-    identifier: String,
-    state: DeviceState,
-    usb: String,
-    product: String,
-    model: String,
-    device: String,
-    transport_id: u32,
+    /// Unique device identifier.
+    pub identifier: String,
+    /// Connection state of the device.
+    pub state: DeviceState,
+    /// Usb port used by the device.
+    pub usb: String,
+    /// Product code.
+    pub product: String,
+    /// Device model.
+    pub model: String,
+    /// Device code.
+    pub device: String,
+    /// Transport identifier.
+    pub transport_id: u32,
 }
 
 impl Display for DeviceLong {

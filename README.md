@@ -20,6 +20,6 @@ cargo install adb_client --features adbclient
 ```
 
 
-https://developer.android.com/studio/command-line/adb
+<https://developer.android.com/studio/command-line/adb>
 
-https://github.com/cstyan/adbDocumentation
+<https://github.com/cstyan/adbDocumentation>

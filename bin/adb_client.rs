@@ -47,7 +47,7 @@ fn main() -> Result<()> {
         }
         Command::Devices { long } => {
             if long {
-                println!("List of devices attached (long)");
+                println!("List of devices attached (extended)");
                 for device in connexion.devices_long()? {
                     println!("{}", device);
                 }

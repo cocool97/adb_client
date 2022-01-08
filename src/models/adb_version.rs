@@ -3,13 +3,18 @@ use std::str;
 
 use crate::RustADBError;
 
+/// Represents the ADB server version.
 pub struct AdbVersion {
-    major: u32,
-    minor: u32,
-    revision: u32,
+    /// Major version number.
+    pub major: u32,
+    /// Minor version number.
+    pub minor: u32,
+    /// Revision number.
+    pub revision: u32,
 }
 
 impl AdbVersion {
+    /// Instantiates a new [AdbVersion].
     pub fn new(minor: u32, revision: u32) -> Self {
         Self {
             major: 1,
