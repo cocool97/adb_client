@@ -12,6 +12,19 @@ Simply add this to your `Cargo.toml`:
 adb_client = "*"
 ```
 
+To launch a command on host device :
+```rust
+let connexion = AdbTcpConnexion::new();
+connexion.shell_command("df -h");
+```
+
+To get available ADB devices :
+```rust
+let connexion = AdbTcpConnexion::new();
+connexion.devices();
+```
+
+
 ## Rust binary
 
 You can install the lightweight adb binary by running the following command :

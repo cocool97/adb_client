@@ -23,7 +23,8 @@ impl TryFrom<Vec<u8>> for Device {
 
     // TODO: Prevent regex compilation every call to try_from()
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        let parse_regex = Regex::new("^(\\w+)\t(\\w+)$")?;
+        // Optional final '\n' is used to match TrackDevices inputs
+        let parse_regex = Regex::new("^(\\w+)\t(\\w+)\n?$")?;
 
         let groups = parse_regex.captures(&value).unwrap();
         Ok(Device {

@@ -29,6 +29,8 @@ enum Command {
     },
     /// Tracks new devices showing up
     TrackDevices,
+    /// Run 'command' in a shell on the device, and return its output and error streams.
+    Shell { command: Vec<String> },
 }
 
 fn main() -> Result<()> {
@@ -65,6 +67,13 @@ fn main() -> Result<()> {
             };
             println!("Live list of devices attached");
             connexion.track_devices(callback)?;
+        }
+        Command::Shell { command } => {
+            if command.is_empty() {
+                connexion.shell()?;
+            } else {
+                connexion.shell_command(command)?;
+            }
         }
     }
 
