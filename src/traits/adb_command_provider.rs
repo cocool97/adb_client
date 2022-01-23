@@ -19,6 +19,6 @@ pub trait AdbCommandProvider {
     fn transport_any(&self) -> Result<()>;
     /// Runs 'command' in a shell on the device, and return its output and error streams.
     fn shell_command(&self, command: Vec<String>) -> Result<()>;
-    /// TODO
+    /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
     fn shell(&self) -> Result<()>;
 }

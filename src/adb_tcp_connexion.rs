@@ -1,5 +1,5 @@
 use std::{
-    io::{Read, Write},
+    io::{Error, ErrorKind, Read, Write},
     net::{Ipv4Addr, SocketAddrV4, TcpStream},
     str,
     str::FromStr,
@@ -7,6 +7,7 @@ use std::{
 };
 
 use crate::{
+    adb_termios::ADBTermios,
     models::{AdbCommand, AdbRequestStatus, AdbVersion, DeviceLong},
     AdbCommandProvider, Device, Result, RustADBError,
 };
@@ -65,12 +66,7 @@ impl AdbTcpConnexion {
     /// If an error occured, a [RustADBError] is returned with the response error string.
     fn send_adb_request(tcp_stream: &mut TcpStream, command: AdbCommand) -> Result<()> {
         let adb_command_string = command.to_string();
-
-        let adb_request = format!(
-            "{}{}",
-            format!("{:04x}", adb_command_string.len()),
-            adb_command_string
-        );
+        let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
 
         tcp_stream.write_all(adb_request.as_bytes())?;
 
@@ -216,42 +212,68 @@ impl AdbCommandProvider for AdbTcpConnexion {
     }
 
     fn shell(&self) -> Result<()> {
+        let mut adb_termios = ADBTermios::new(std::io::stdin())?;
+        adb_termios.set_adb_termios()?;
+
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
+        tcp_stream.set_nodelay(true)?;
 
         Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?;
-
         Self::send_adb_request(&mut tcp_stream, AdbCommand::Shell)?;
 
-        // Spawns 2 threads
-        // - Listener
-        // - stdin Reader
+        let read_stream = Arc::new(tcp_stream);
 
-        let reader = std::thread::spawn(move || -> Result<()> {
-            let mut buf = [0; 1];
+        // TODO: Send terminal informations
+
+        // Writing thread
+        let write_stream = read_stream.clone();
+        let writer_t = std::thread::spawn(move || -> Result<()> {
+            let mut buf = [0; 1024];
             loop {
-                std::io::stdin().read(&mut buf)?;
-                // tcp_stream.write(&buf)?;
+                let size = std::io::stdin().read(&mut buf)?;
+
+                (&*write_stream).write_all(&buf[0..size])?;
             }
         });
 
-        // TODO: join thread and return if result is err
-
-        let buffer_size = 512;
-        loop {
-            let mut buffer = vec![0; buffer_size];
-            match tcp_stream.read(&mut buffer) {
-                Ok(size) => {
-                    if size == 0 {
-                        return Ok(());
-                    } else {
+        // Reading thread
+        let reader_t = std::thread::spawn(move || -> Result<()> {
+            let buffer_size = 512;
+            loop {
+                let mut buffer = vec![0; buffer_size];
+                match (&*read_stream).read(&mut buffer) {
+                    Ok(size) if size == 0 => {
+                        return Err(RustADBError::IOError(Error::from(ErrorKind::BrokenPipe)));
+                    }
+                    Ok(_) => {
                         print!("{}", String::from_utf8(buffer.to_vec())?);
                         std::io::stdout().flush()?;
                     }
+                    Err(e) => {
+                        return Err(RustADBError::IOError(e));
+                    }
                 }
-                Err(e) => {
-                    return Err(RustADBError::IOError(e));
+            }
+        });
+
+        if let Err(e) = reader_t.join().unwrap() {
+            match e {
+                RustADBError::IOError(e) if e.kind() == ErrorKind::BrokenPipe => {}
+                _ => {
+                    return Err(e);
                 }
             }
         }
+
+        if let Err(e) = writer_t.join().unwrap() {
+            match e {
+                RustADBError::IOError(e) if e.kind() == ErrorKind::BrokenPipe => {}
+                _ => {
+                    return Err(e);
+                }
+            }
+        }
+
+        Ok(())
     }
 }
