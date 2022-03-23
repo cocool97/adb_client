@@ -45,6 +45,7 @@ impl TryFrom<Vec<u8>> for DeviceLong {
     // TODO: Prevent regex compilation every call to try_from()
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         let parse_regex = Regex::new("^(\\w+)       (\\w+) usb:(.*) product:(\\w+) model:(\\w+) device:(\\w+) transport_id:(\\d+)$")?;
+        let parse_regex = Regex::new("^(\\w+)\\s+(\\w+) usb:(.*) product:(\\w+) model:(\\w+) device:(\\w+) transport_id:(\\d+)$")?;
 
         let groups = parse_regex.captures(&value).unwrap();
         Ok(DeviceLong {
