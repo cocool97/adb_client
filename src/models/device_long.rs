@@ -44,57 +44,53 @@ impl TryFrom<Vec<u8>> for DeviceLong {
 
     // TODO: Prevent regex compilation every call to try_from()
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        let parse_regex = Regex::new("^(\\w+)       (\\w+) usb:(.*) product:(\\w+) model:(\\w+) device:(\\w+) transport_id:(\\d+)$")?;
-        let parse_regex = Regex::new("^(\\w+)\\s+(\\w+) usb:(.*) product:(\\w+) model:(\\w+) device:(\\w+) transport_id:(\\d+)$")?;
+        let parse_regex = Regex::new(
+            "^(?P<identifier>\\w+)\\s+(?P<state>\\w+) usb:(?P<usb>.*) (product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+))?transport_id:(?P<transport_id>\\d+)$",
+    ).expect("failed to create regex");
 
-        let groups = parse_regex.captures(&value).unwrap();
+        let groups = parse_regex.captures(&value).expect(&format!(
+            "failed to parse regex, value is: {}",
+            std::str::from_utf8(&value).unwrap()
+        ));
+
         Ok(DeviceLong {
             identifier: String::from_utf8(
                 groups
-                    .get(1)
+                    .name("identifier")
                     .ok_or(RustADBError::RegexParsingError)?
                     .as_bytes()
                     .to_vec(),
             )?,
             state: DeviceState::from_str(&String::from_utf8(
                 groups
-                    .get(2)
+                    .name("state")
                     .ok_or(RustADBError::RegexParsingError)?
                     .as_bytes()
                     .to_vec(),
             )?)?,
             usb: String::from_utf8(
                 groups
-                    .get(3)
+                    .name("usb")
                     .ok_or(RustADBError::RegexParsingError)?
                     .as_bytes()
                     .to_vec(),
             )?,
-            product: String::from_utf8(
-                groups
-                    .get(4)
-                    .ok_or(RustADBError::RegexParsingError)?
-                    .as_bytes()
-                    .to_vec(),
-            )?,
-            model: String::from_utf8(
-                groups
-                    .get(5)
-                    .ok_or(RustADBError::RegexParsingError)?
-                    .as_bytes()
-                    .to_vec(),
-            )?,
-            device: String::from_utf8(
-                groups
-                    .get(6)
-                    .ok_or(RustADBError::RegexParsingError)?
-                    .as_bytes()
-                    .to_vec(),
-            )?,
+            product: match groups.name("product") {
+                None => "Unk".to_string(),
+                Some(product) => String::from_utf8(product.as_bytes().to_vec())?,
+            },
+            model: match groups.name("model") {
+                None => "Unk".to_string(),
+                Some(model) => String::from_utf8(model.as_bytes().to_vec())?,
+            },
+            device: match groups.name("device") {
+                None => "Unk".to_string(),
+                Some(device) => String::from_utf8(device.as_bytes().to_vec())?,
+            },
             transport_id: u32::from_str_radix(
                 str::from_utf8(
                     groups
-                        .get(7)
+                        .name("transport_id")
                         .ok_or(RustADBError::RegexParsingError)?
                         .as_bytes(),
                 )?,
