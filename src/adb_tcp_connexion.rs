@@ -185,11 +185,14 @@ impl AdbCommandProvider for AdbTcpConnexion {
             .map(|_| ())
     }
 
-    fn shell_command(&self, command: Vec<String>) -> Result<()> {
+    fn shell_command(&self, serial: Option<String>, command: Vec<String>) -> Result<()> {
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
-
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?;
-
+        match serial {
+            None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
+            Some(serial) => {
+                Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportSerial(serial))?
+            }
+        }
         Self::send_adb_request(&mut tcp_stream, AdbCommand::ShellCommand(command.join(" ")))?;
 
         let buffer_size = 512;
@@ -211,14 +214,19 @@ impl AdbCommandProvider for AdbTcpConnexion {
         }
     }
 
-    fn shell(&self) -> Result<()> {
+    fn shell(&self, serial: Option<String>) -> Result<()> {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
         tcp_stream.set_nodelay(true)?;
 
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?;
+        match serial {
+            None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
+            Some(serial) => {
+                Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportSerial(serial))?
+            }
+        }
         Self::send_adb_request(&mut tcp_stream, AdbCommand::Shell)?;
 
         let read_stream = Arc::new(tcp_stream);

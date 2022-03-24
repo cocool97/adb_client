@@ -12,6 +12,9 @@ struct Args {
     /// Sets the listening port of ADB server
     #[clap(short = 'p', long = "port", default_value = "5037")]
     pub port: u16,
+    /// Serial id of specific device, for shell commands
+    #[clap(short = 's', long = "serial")]
+    pub serial: Option<String>,
     #[clap(subcommand)]
     pub command: Command,
 }
@@ -70,9 +73,9 @@ fn main() -> Result<()> {
         }
         Command::Shell { command } => {
             if command.is_empty() {
-                connexion.shell()?;
+                connexion.shell(opt.serial)?;
             } else {
-                connexion.shell_command(command)?;
+                connexion.shell_command(opt.serial, command)?;
             }
         }
     }

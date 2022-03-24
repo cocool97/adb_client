@@ -18,7 +18,7 @@ pub trait AdbCommandProvider {
     /// Asks ADB server to switch the connection to either the device or emulator connect to/running on the host. Will fail if there is more than one such device/emulator available.
     fn transport_any(&self) -> Result<()>;
     /// Runs 'command' in a shell on the device, and return its output and error streams.
-    fn shell_command(&self, command: Vec<String>) -> Result<()>;
+    fn shell_command(&self, serial: Option<String>, command: Vec<String>) -> Result<()>;
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    fn shell(&self) -> Result<()>;
+    fn shell(&self, serial: Option<String>) -> Result<()>;
 }
