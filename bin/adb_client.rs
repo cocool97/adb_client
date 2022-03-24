@@ -12,6 +12,9 @@ struct Args {
     /// Sets the listening port of ADB server
     #[clap(short = 'p', long = "port", default_value = "5037")]
     pub port: u16,
+    /// Serial id of specific device, for shell commands
+    #[clap(short = 's', long = "serial")]
+    pub serial: Option<String>,
     #[clap(subcommand)]
     pub command: Command,
 }
@@ -30,7 +33,7 @@ enum Command {
     /// Tracks new devices showing up
     TrackDevices,
     /// Run 'command' in a shell on the device, and return its output and error streams.
-    Shell { command: Option<String> },
+    Shell { command: Vec<String> },
 }
 
 fn main() -> Result<()> {
@@ -69,10 +72,10 @@ fn main() -> Result<()> {
             connexion.track_devices(callback)?;
         }
         Command::Shell { command } => {
-            if let Some(command) = command {
-                connexion.shell_command(command)?;
+            if command.is_empty() {
+                connexion.shell(opt.serial)?;
             } else {
-                connexion.shell()?;
+                connexion.shell_command(opt.serial, command)?;
             }
         }
     }
