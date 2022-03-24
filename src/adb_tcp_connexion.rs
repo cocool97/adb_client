@@ -185,7 +185,7 @@ impl AdbCommandProvider for AdbTcpConnexion {
             .map(|_| ())
     }
 
-    fn shell_command(&self, serial: Option<String>, command: Vec<String>) -> Result<()> {
+    fn shell_command(&self, serial: Option<String>, command: Vec<String>) -> Result<String> {
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
         match serial {
             None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
@@ -201,10 +201,12 @@ impl AdbCommandProvider for AdbTcpConnexion {
             match tcp_stream.read(&mut buffer) {
                 Ok(size) => {
                     if size == 0 {
-                        return Ok(());
+                        return Ok("".to_string());
                     } else {
-                        print!("{}", String::from_utf8(buffer.to_vec())?);
+                        let output = String::from_utf8(buffer.to_vec())?;
+                        print!("{}", &output);
                         std::io::stdout().flush()?;
+                        return Ok(output);
                     }
                 }
                 Err(e) => {
