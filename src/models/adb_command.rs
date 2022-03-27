@@ -10,6 +10,7 @@ pub enum AdbCommand {
     // TransportUSB,
     // TransportLocal,
     TransportAny,
+    TransportSerial(String),
     // Serial((String, String)),
     // USB(String),
     // Local(String),
@@ -49,6 +50,7 @@ impl ToString for AdbCommand {
             AdbCommand::DevicesLong => "host:devices-l".into(),
             AdbCommand::TrackDevices => "host:track-devices".into(),
             AdbCommand::TransportAny => "host:transport-any".into(),
+            AdbCommand::TransportSerial(serial) => format!("host:transport:{}", serial),
             AdbCommand::ShellCommand(command) => format!("shell:{}", command),
             AdbCommand::Shell => "shell:".into(),
         }
