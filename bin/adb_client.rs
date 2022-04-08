@@ -30,7 +30,7 @@ enum Command {
     /// Tracks new devices showing up
     TrackDevices,
     /// Run 'command' in a shell on the device, and return its output and error streams.
-    Shell { command: Vec<String> },
+    Shell { command: Option<String> },
 }
 
 fn main() -> Result<()> {
@@ -69,10 +69,10 @@ fn main() -> Result<()> {
             connexion.track_devices(callback)?;
         }
         Command::Shell { command } => {
-            if command.is_empty() {
-                connexion.shell()?;
-            } else {
+            if let Some(command) = command {
                 connexion.shell_command(command)?;
+            } else {
+                connexion.shell()?;
             }
         }
     }
