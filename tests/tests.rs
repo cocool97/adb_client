@@ -3,7 +3,6 @@ mod tests {
     use std::net::Ipv4Addr;
     use std::str::FromStr;
 
-    use adb_client::AdbCommandProvider;
     use adb_client::AdbTcpConnexion;
 
     #[test]

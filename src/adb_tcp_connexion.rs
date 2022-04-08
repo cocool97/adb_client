@@ -9,7 +9,7 @@ use std::{
 use crate::{
     adb_termios::ADBTermios,
     models::{AdbCommand, AdbRequestStatus, AdbVersion, DeviceLong},
-    AdbCommandProvider, Device, Result, RustADBError,
+    Device, Result, RustADBError,
 };
 
 /// Represents an ADB-over-TCP connexion.
@@ -116,14 +116,16 @@ impl Default for AdbTcpConnexion {
     }
 }
 
-impl AdbCommandProvider for AdbTcpConnexion {
-    fn version(&self) -> Result<AdbVersion> {
+impl AdbTcpConnexion {
+    /// Gets server's internal version number.
+    pub fn version(&self) -> Result<AdbVersion> {
         let version = self.proxy_connexion(AdbCommand::Version, true)?;
 
         AdbVersion::try_from(version)
     }
 
-    fn devices(&self) -> Result<Vec<Device>> {
+    /// Gets a list of connected devices.
+    pub fn devices(&self) -> Result<Vec<Device>> {
         let devices = self.proxy_connexion(AdbCommand::Devices, true)?;
 
         let mut vec_devices: Vec<Device> = vec![];
@@ -138,7 +140,8 @@ impl AdbCommandProvider for AdbTcpConnexion {
         Ok(vec_devices)
     }
 
-    fn devices_long(&self) -> Result<Vec<DeviceLong>> {
+    /// Gets an extended list of connected devices including the device paths in the state.
+    pub fn devices_long(&self) -> Result<Vec<DeviceLong>> {
         let devices_long = self.proxy_connexion(AdbCommand::DevicesLong, true)?;
 
         let mut vec_devices: Vec<DeviceLong> = vec![];
@@ -153,12 +156,14 @@ impl AdbCommandProvider for AdbTcpConnexion {
         Ok(vec_devices)
     }
 
-    fn kill(&self) -> Result<()> {
+    /// Asks the ADB server to quit immediately.
+    pub fn kill(&self) -> Result<()> {
         self.proxy_connexion(AdbCommand::Kill, false).map(|_| ())
     }
 
+    /// Tracks new devices showing up.
     // TODO: Change with Generator when feature stabilizes
-    fn track_devices(&self, callback: fn(Device) -> Result<()>) -> Result<()> {
+    pub fn track_devices(&self, callback: fn(Device) -> Result<()>) -> Result<()> {
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
 
         Self::send_adb_request(&mut tcp_stream, AdbCommand::TrackDevices)?;
@@ -180,12 +185,14 @@ impl AdbCommandProvider for AdbTcpConnexion {
         }
     }
 
-    fn transport_any(&self) -> Result<()> {
+    /// Asks ADB server to switch the connection to either the device or emulator connect to/running on the host. Will fail if there is more than one such device/emulator available.
+    pub fn transport_any(&self) -> Result<()> {
         self.proxy_connexion(AdbCommand::TransportAny, false)
             .map(|_| ())
     }
 
-    fn shell_command<S: ToString>(&self, command: S) -> Result<()> {
+    /// Runs 'command' in a shell on the device, and return its output and error streams.
+    pub fn shell_command<S: ToString>(&self, command: S) -> Result<()> {
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
 
         Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?;
@@ -214,7 +221,8 @@ impl AdbCommandProvider for AdbTcpConnexion {
         }
     }
 
-    fn shell(&self) -> Result<()> {
+    /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
+    pub fn shell(&self) -> Result<()> {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
