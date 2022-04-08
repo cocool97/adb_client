@@ -74,7 +74,7 @@ impl AdbTcpConnexion {
         let mut request_status = [0; 4];
         tcp_stream.read_exact(&mut request_status)?;
 
-        match AdbRequestStatus::from_str(str::from_utf8(&request_status.to_vec())?)? {
+        match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
                 let length = Self::get_body_length(tcp_stream)?;
@@ -185,12 +185,15 @@ impl AdbCommandProvider for AdbTcpConnexion {
             .map(|_| ())
     }
 
-    fn shell_command(&self, command: Vec<String>) -> Result<()> {
+    fn shell_command<S: ToString>(&self, command: S) -> Result<()> {
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
 
         Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?;
 
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::ShellCommand(command.join(" ")))?;
+        Self::send_adb_request(
+            &mut tcp_stream,
+            AdbCommand::ShellCommand(command.to_string()),
+        )?;
 
         let buffer_size = 512;
         loop {

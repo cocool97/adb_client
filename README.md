@@ -14,12 +14,18 @@ adb_client = "*"
 
 To launch a command on host device :
 ```rust
+use adb_client::AdbTcpConnexion;
+use adb_client::AdbCommandProvider;
+
 let connexion = AdbTcpConnexion::new();
 connexion.shell_command("df -h");
 ```
 
 To get available ADB devices :
 ```rust
+use adb_client::AdbTcpConnexion;
+use adb_client::AdbCommandProvider;
+
 let connexion = AdbTcpConnexion::new();
 connexion.devices();
 ```
@@ -28,7 +34,7 @@ connexion.devices();
 ## Rust binary
 
 You can install the lightweight adb binary by running the following command :
-```
+```shell
 cargo install adb_client --features adbclient 
 ```
 

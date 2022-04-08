@@ -44,14 +44,11 @@ impl TryFrom<Vec<u8>> for DeviceLong {
 
     // TODO: Prevent regex compilation every call to try_from()
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        let parse_regex = Regex::new(
-            "^(?P<identifier>\\w+)\\s+(?P<state>\\w+) usb:(?P<usb>.*) (product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+))?transport_id:(?P<transport_id>\\d+)$",
-    ).expect("failed to create regex");
+        let parse_regex = Regex::new("^(?P<identifier>\\w+)\\s+(?P<state>\\w+) usb:(?P<usb>.*) (product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+) )?transport_id:(?P<transport_id>\\d+)$")?;
 
-        let groups = parse_regex.captures(&value).expect(&format!(
-            "failed to parse regex, value is: {}",
-            std::str::from_utf8(&value).unwrap()
-        ));
+        let groups = parse_regex
+            .captures(&value)
+            .ok_or(RustADBError::RegexParsingError)?;
 
         Ok(DeviceLong {
             identifier: String::from_utf8(
