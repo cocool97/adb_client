@@ -12,7 +12,7 @@ struct Args {
     /// Sets the listening port of ADB server
     #[clap(short = 'p', long = "port", default_value = "5037")]
     pub port: u16,
-    /// Serial id of specific device, for shell commands
+    /// Serial id of a specific device. Every request will be sent to this device.
     #[clap(short = 's', long = "serial")]
     pub serial: Option<String>,
     #[clap(subcommand)]
