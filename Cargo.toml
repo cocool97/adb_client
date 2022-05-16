@@ -1,6 +1,6 @@
 [package]
 name = "adb_client"
-version = "0.2.1"
+version = "0.3.0"
 description = "Rust ADB (Android Debug Bridge) client library"
 keywords = ["adb", "android"]
 readme = "README.md"
@@ -19,7 +19,7 @@ path = "bin/adb_client.rs"
 required-features = ["adbclient"]
 
 [dependencies]
-thiserror = { version = "1.0.30", default_features = false }
+thiserror = { version = "1.0.31", default_features = false }
 regex = { version = "1.5.5", default_features = false, features = ["std", "perf", "unicode"] }
 termios = { version = "0.3.3", default_features = false }
 

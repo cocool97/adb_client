@@ -17,7 +17,7 @@ To launch a command on host device :
 use adb_client::AdbTcpConnexion;
 
 let connexion = AdbTcpConnexion::new();
-connexion.shell_command("df -h");
+connexion.shell_command(None, vec!["df", "-h"]);
 ```
 
 To get available ADB devices :

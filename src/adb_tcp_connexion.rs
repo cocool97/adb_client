@@ -192,15 +192,25 @@ impl AdbTcpConnexion {
     }
 
     /// Runs 'command' in a shell on the device, and return its output and error streams.
-    pub fn shell_command(&self, serial: Option<String>, command: Vec<String>) -> Result<()> {
+    pub fn shell_command<S: ToString>(&self, serial: Option<S>, command: Vec<S>) -> Result<()> {
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
         match serial {
             None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => {
-                Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportSerial(serial))?
-            }
+            Some(serial) => Self::send_adb_request(
+                &mut tcp_stream,
+                AdbCommand::TransportSerial(serial.to_string()),
+            )?,
         }
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::ShellCommand(command.join(" ")))?;
+        Self::send_adb_request(
+            &mut tcp_stream,
+            AdbCommand::ShellCommand(
+                command
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" "),
+            ),
+        )?;
 
         let buffer_size = 512;
         loop {
@@ -222,7 +232,7 @@ impl AdbTcpConnexion {
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    pub fn shell(&self, serial: Option<String>) -> Result<()> {
+    pub fn shell<S: ToString>(&self, serial: Option<S>) -> Result<()> {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
@@ -232,7 +242,7 @@ impl AdbTcpConnexion {
         match serial {
             None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
             Some(serial) => {
-                Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportSerial(serial))?
+                Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportSerial(serial.to_string()))?
             }
         }
         Self::send_adb_request(&mut tcp_stream, AdbCommand::Shell)?;
