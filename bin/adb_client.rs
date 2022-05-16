@@ -1,4 +1,4 @@
-use adb_client::{AdbCommandProvider, AdbTcpConnexion, Device};
+use adb_client::{AdbTcpConnexion, Device};
 use anyhow::Result;
 use clap::Parser;
 use std::net::Ipv4Addr;
