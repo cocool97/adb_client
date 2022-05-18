@@ -5,6 +5,7 @@
 
 mod adb_tcp_connexion;
 mod adb_termios;
+mod commands;
 mod error;
 mod models;
 pub use adb_tcp_connexion::AdbTcpConnexion;

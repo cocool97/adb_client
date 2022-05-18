@@ -1,22 +1,20 @@
 use std::{
-    io::{Error, ErrorKind, Read, Write},
+    io::{Read, Write},
     net::{Ipv4Addr, SocketAddrV4, TcpStream},
     str,
     str::FromStr,
-    sync::Arc,
 };
 
 use crate::{
-    adb_termios::ADBTermios,
-    models::{AdbCommand, AdbRequestStatus, AdbVersion, DeviceLong},
-    Device, Result, RustADBError,
+    models::{AdbCommand, AdbRequestStatus},
+    Result, RustADBError,
 };
 
 /// Represents an ADB-over-TCP connexion.
 pub struct AdbTcpConnexion {
-    socket_addr: SocketAddrV4,
-    port: u16,
-    address: Ipv4Addr,
+    pub(crate) socket_addr: SocketAddrV4,
+    pub(crate) port: u16,
+    pub(crate) address: Ipv4Addr,
 }
 
 impl AdbTcpConnexion {
@@ -39,7 +37,11 @@ impl AdbTcpConnexion {
         self
     }
 
-    fn proxy_connexion(&self, adb_command: AdbCommand, with_response: bool) -> Result<Vec<u8>> {
+    pub(crate) fn proxy_connexion(
+        &self,
+        adb_command: AdbCommand,
+        with_response: bool,
+    ) -> Result<Vec<u8>> {
         let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
 
         Self::send_adb_request(&mut tcp_stream, adb_command)?;
@@ -64,7 +66,7 @@ impl AdbTcpConnexion {
 
     /// Sends the given [AdbCommand] to ADB server, and checks that the request has been taken in consideration.
     /// If an error occured, a [RustADBError] is returned with the response error string.
-    fn send_adb_request(tcp_stream: &mut TcpStream, command: AdbCommand) -> Result<()> {
+    pub(crate) fn send_adb_request(tcp_stream: &mut TcpStream, command: AdbCommand) -> Result<()> {
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
 
@@ -95,7 +97,7 @@ impl AdbTcpConnexion {
         }
     }
 
-    fn get_body_length(tcp_stream: &mut TcpStream) -> Result<u32> {
+    pub(crate) fn get_body_length(tcp_stream: &mut TcpStream) -> Result<u32> {
         let mut length = [0; 4];
         tcp_stream.read_exact(&mut length)?;
 
@@ -113,193 +115,5 @@ impl Default for AdbTcpConnexion {
             address: default_address,
             port: default_port,
         }
-    }
-}
-
-impl AdbTcpConnexion {
-    /// Gets server's internal version number.
-    pub fn version(&self) -> Result<AdbVersion> {
-        let version = self.proxy_connexion(AdbCommand::Version, true)?;
-
-        AdbVersion::try_from(version)
-    }
-
-    /// Gets a list of connected devices.
-    pub fn devices(&self) -> Result<Vec<Device>> {
-        let devices = self.proxy_connexion(AdbCommand::Devices, true)?;
-
-        let mut vec_devices: Vec<Device> = vec![];
-        for device in devices.split(|x| x.eq(&b'\n')) {
-            if device.is_empty() {
-                break;
-            }
-
-            vec_devices.push(Device::try_from(device.to_vec())?);
-        }
-
-        Ok(vec_devices)
-    }
-
-    /// Gets an extended list of connected devices including the device paths in the state.
-    pub fn devices_long(&self) -> Result<Vec<DeviceLong>> {
-        let devices_long = self.proxy_connexion(AdbCommand::DevicesLong, true)?;
-
-        let mut vec_devices: Vec<DeviceLong> = vec![];
-        for device in devices_long.split(|x| x.eq(&b'\n')) {
-            if device.is_empty() {
-                break;
-            }
-
-            vec_devices.push(DeviceLong::try_from(device.to_vec())?);
-        }
-
-        Ok(vec_devices)
-    }
-
-    /// Asks the ADB server to quit immediately.
-    pub fn kill(&self) -> Result<()> {
-        self.proxy_connexion(AdbCommand::Kill, false).map(|_| ())
-    }
-
-    /// Tracks new devices showing up.
-    // TODO: Change with Generator when feature stabilizes
-    pub fn track_devices(&self, callback: fn(Device) -> Result<()>) -> Result<()> {
-        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
-
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::TrackDevices)?;
-
-        loop {
-            let length = Self::get_body_length(&mut tcp_stream)?;
-
-            if length > 0 {
-                let mut body = vec![
-                    0;
-                    length
-                        .try_into()
-                        .map_err(|_| RustADBError::ConvertionError)?
-                ];
-                tcp_stream.read_exact(&mut body)?;
-
-                callback(Device::try_from(body)?)?;
-            }
-        }
-    }
-
-    /// Asks ADB server to switch the connection to either the device or emulator connect to/running on the host. Will fail if there is more than one such device/emulator available.
-    pub fn transport_any(&self) -> Result<()> {
-        self.proxy_connexion(AdbCommand::TransportAny, false)
-            .map(|_| ())
-    }
-
-    /// Runs 'command' in a shell on the device, and return its output and error streams.
-    pub fn shell_command<S: ToString>(&self, serial: Option<S>, command: Vec<S>) -> Result<()> {
-        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
-        match serial {
-            None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => Self::send_adb_request(
-                &mut tcp_stream,
-                AdbCommand::TransportSerial(serial.to_string()),
-            )?,
-        }
-        Self::send_adb_request(
-            &mut tcp_stream,
-            AdbCommand::ShellCommand(
-                command
-                    .iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<String>>()
-                    .join(" "),
-            ),
-        )?;
-
-        let buffer_size = 512;
-        loop {
-            let mut buffer = vec![0; buffer_size];
-            match tcp_stream.read(&mut buffer) {
-                Ok(size) => {
-                    if size == 0 {
-                        return Ok(());
-                    } else {
-                        print!("{}", String::from_utf8(buffer.to_vec())?);
-                        std::io::stdout().flush()?;
-                    }
-                }
-                Err(e) => {
-                    return Err(RustADBError::IOError(e));
-                }
-            }
-        }
-    }
-
-    /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    pub fn shell<S: ToString>(&self, serial: Option<S>) -> Result<()> {
-        let mut adb_termios = ADBTermios::new(std::io::stdin())?;
-        adb_termios.set_adb_termios()?;
-
-        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
-        tcp_stream.set_nodelay(true)?;
-
-        match serial {
-            None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => {
-                Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportSerial(serial.to_string()))?
-            }
-        }
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::Shell)?;
-
-        let read_stream = Arc::new(tcp_stream);
-
-        // TODO: Send terminal informations
-
-        // Writing thread
-        let write_stream = read_stream.clone();
-        let writer_t = std::thread::spawn(move || -> Result<()> {
-            let mut buf = [0; 1024];
-            loop {
-                let size = std::io::stdin().read(&mut buf)?;
-
-                (&*write_stream).write_all(&buf[0..size])?;
-            }
-        });
-
-        // Reading thread
-        let reader_t = std::thread::spawn(move || -> Result<()> {
-            let buffer_size = 512;
-            loop {
-                let mut buffer = vec![0; buffer_size];
-                match (&*read_stream).read(&mut buffer) {
-                    Ok(size) if size == 0 => {
-                        return Err(RustADBError::IOError(Error::from(ErrorKind::BrokenPipe)));
-                    }
-                    Ok(_) => {
-                        print!("{}", String::from_utf8(buffer.to_vec())?);
-                        std::io::stdout().flush()?;
-                    }
-                    Err(e) => {
-                        return Err(RustADBError::IOError(e));
-                    }
-                }
-            }
-        });
-
-        if let Err(e) = reader_t.join().unwrap() {
-            match e {
-                RustADBError::IOError(e) if e.kind() == ErrorKind::BrokenPipe => {}
-                _ => {
-                    return Err(e);
-                }
-            }
-        }
-
-        if let Err(e) = writer_t.join().unwrap() {
-            match e {
-                RustADBError::IOError(e) if e.kind() == ErrorKind::BrokenPipe => {}
-                _ => {
-                    return Err(e);
-                }
-            }
-        }
-
-        Ok(())
     }
 }
