@@ -1,18 +1,25 @@
-# Rust ADB (Android Debug Bridge) client library
+# adb_client
 
-This crate is not affiliated with Android development core team.
+**A**ndroid **D**ebug **B**ridge (ADB) client implementation in pure Rust !
 
-It is still under active development, please report found bugs as issues !
+Main features :
 
-## Rust crate
+- Full Rust, no need to use shell commands
+- Currently only support server TCP/IP protocol
+- Highly configurable
+- Easy to use !
 
-Simply add this to your `Cargo.toml`:
+## Examples
+
+First declare `adb_client` as a dependency by simply adding this to your `Cargo.toml`:
+
 ```toml
 [dependencies]
 adb_client = "*"
 ```
 
-To launch a command on host device :
+### Launch a command on host device
+
 ```rust
 use adb_client::AdbTcpConnexion;
 
@@ -20,7 +27,8 @@ let connexion = AdbTcpConnexion::new();
 connexion.shell_command(None, vec!["df", "-h"]);
 ```
 
-To get available ADB devices :
+### Get available ADB devices
+
 ```rust
 use adb_client::AdbTcpConnexion;
 
@@ -28,15 +36,23 @@ let connexion = AdbTcpConnexion::new();
 connexion.devices();
 ```
 
-
 ## Rust binary
 
-You can install the lightweight adb binary by running the following command :
+This crate also provides a lightweight binary based on the `adb_client` crate. You can install it by running the following command :
+
 ```shell
-cargo install adb_client --features adbclient 
+cargo install adb_cli 
 ```
 
+## Missing features
 
-<https://developer.android.com/studio/command-line/adb>
+- Pull / Push files
+- USB protocol 
 
-<https://github.com/cstyan/adbDocumentation>
+All pull requests are welcome !
+
+## Documentation
+
+- <https://developer.android.com/studio/command-line/adb>
+
+- <https://github.com/cstyan/adbDocumentation>
