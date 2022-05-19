@@ -11,6 +11,7 @@ use crate::{
 };
 
 /// Represents an ADB-over-TCP connexion.
+#[derive(Debug)]
 pub struct AdbTcpConnexion {
     pub(crate) socket_addr: SocketAddrV4,
     pub(crate) port: u16,

@@ -4,6 +4,7 @@ pub enum AdbCommand {
     Devices,
     DevicesLong,
     TrackDevices,
+    HostFeatures,
     // TODO: NOT IMPLEMENTED YET
     // Emulator(u16),
     // Transport(String),
@@ -53,6 +54,7 @@ impl ToString for AdbCommand {
             AdbCommand::TransportSerial(serial) => format!("host:transport:{}", serial),
             AdbCommand::ShellCommand(command) => format!("shell:{}", command),
             AdbCommand::Shell => "shell:".into(),
+            AdbCommand::HostFeatures => "host:features".into(),
         }
     }
 }

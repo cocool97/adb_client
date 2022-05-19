@@ -5,6 +5,7 @@ use regex::bytes::Regex;
 use crate::{DeviceState, RustADBError};
 
 /// Represents a device connected to the ADB server.
+#[derive(Debug)]
 pub struct Device {
     /// Unique device identifier.
     pub identifier: String,

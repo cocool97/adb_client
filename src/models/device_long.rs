@@ -6,6 +6,7 @@ use regex::bytes::Regex;
 use crate::{DeviceState, RustADBError};
 
 /// Represents a new device with more informations helded.
+#[derive(Debug)]
 pub struct DeviceLong {
     /// Unique device identifier.
     pub identifier: String,

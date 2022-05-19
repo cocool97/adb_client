@@ -4,6 +4,7 @@ use std::str;
 use crate::RustADBError;
 
 /// Represents the ADB server version.
+#[derive(Debug)]
 pub struct AdbVersion {
     /// Major version number.
     pub major: u32,
