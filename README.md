@@ -22,8 +22,9 @@ adb_client = "*"
 
 ```rust
 use adb_client::AdbTcpConnexion;
+use std::net::Ipv4Addr;
 
-let connexion = AdbTcpConnexion::new();
+let connexion = AdbTcpConnexion::new(Ipv4Addr::from([127,0,0,1]), 5037);
 connexion.shell_command(None, vec!["df", "-h"]);
 ```
 
@@ -31,8 +32,9 @@ connexion.shell_command(None, vec!["df", "-h"]);
 
 ```rust
 use adb_client::AdbTcpConnexion;
+use std::net::Ipv4Addr;
 
-let connexion = AdbTcpConnexion::new();
+let connexion = AdbTcpConnexion::new(Ipv4Addr::from([127,0,0,1]), 5037);
 connexion.devices();
 ```
 

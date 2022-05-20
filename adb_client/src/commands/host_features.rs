@@ -5,7 +5,7 @@ use crate::{
 
 impl AdbTcpConnexion {
     /// Lists available ADB server features.
-    pub fn host_features(&self) -> Result<Vec<HostFeatures>> {
+    pub fn host_features(&mut self) -> Result<Vec<HostFeatures>> {
         let features = self.proxy_connexion(AdbCommand::HostFeatures, true)?;
 
         Ok(features

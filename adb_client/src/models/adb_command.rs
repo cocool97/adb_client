@@ -52,8 +52,14 @@ impl ToString for AdbCommand {
             AdbCommand::TrackDevices => "host:track-devices".into(),
             AdbCommand::TransportAny => "host:transport-any".into(),
             AdbCommand::TransportSerial(serial) => format!("host:transport:{}", serial),
-            AdbCommand::ShellCommand(command) => format!("shell:{}", command),
-            AdbCommand::Shell => "shell:".into(),
+            AdbCommand::ShellCommand(command) => match std::env::var("TERM") {
+                Ok(term) => format!("shell,TERM={},raw:{}", term, command),
+                Err(_) => format!("shell,raw:{}", command),
+            },
+            AdbCommand::Shell => match std::env::var("TERM") {
+                Ok(term) => format!("shell,TERM={},raw:", term),
+                Err(_) => "shell,raw:".into(),
+            },
             AdbCommand::HostFeatures => "host:features".into(),
         }
     }

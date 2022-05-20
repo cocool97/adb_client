@@ -1,7 +1,18 @@
-#[derive(Debug)]
+use std::fmt::Display;
+
+#[derive(Debug, PartialEq)]
 pub enum HostFeatures {
     ShellV2,
     Cmd,
+}
+
+impl Display for HostFeatures {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HostFeatures::ShellV2 => write!(f, "ShellV2"),
+            HostFeatures::Cmd => write!(f, "Cmd"),
+        }
+    }
 }
 
 impl TryFrom<&[u8]> for HostFeatures {

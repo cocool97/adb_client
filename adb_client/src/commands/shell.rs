@@ -1,27 +1,32 @@
-use std::{
-    io::{ErrorKind, Read, Write},
-    net::TcpStream,
-    sync::Arc,
-};
+use std::io::{ErrorKind, Read, Write};
 
-use crate::{adb_termios::ADBTermios, models::AdbCommand, AdbTcpConnexion, Result, RustADBError};
+use crate::{
+    adb_termios::ADBTermios,
+    models::{AdbCommand, HostFeatures},
+    AdbTcpConnexion, Result, RustADBError,
+};
 
 impl AdbTcpConnexion {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
-    pub fn shell_command<S: ToString>(&self, serial: Option<S>, command: Vec<S>) -> Result<()> {
-        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
+    pub fn shell_command<S: ToString>(&mut self, serial: Option<S>, command: Vec<S>) -> Result<()> {
+        let supported_features = self.host_features()?;
+        if !supported_features.contains(&HostFeatures::ShellV2)
+            && !supported_features.contains(&HostFeatures::Cmd)
+        {
+            return Err(RustADBError::ADBShellNotSupported);
+        }
 
-        // TODO: Add host:features
+        self.new_connection()?;
 
         match serial {
-            None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
+            None => Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TransportAny)?,
             Some(serial) => Self::send_adb_request(
-                &mut tcp_stream,
+                &mut self.tcp_stream,
                 AdbCommand::TransportSerial(serial.to_string()),
             )?,
         }
         Self::send_adb_request(
-            &mut tcp_stream,
+            &mut self.tcp_stream,
             AdbCommand::ShellCommand(
                 command
                     .iter()
@@ -34,7 +39,7 @@ impl AdbTcpConnexion {
         let buffer_size = 512;
         loop {
             let mut buffer = vec![0; buffer_size];
-            match tcp_stream.read(&mut buffer) {
+            match self.tcp_stream.read(&mut buffer) {
                 Ok(size) => {
                     if size == 0 {
                         return Ok(());
@@ -51,36 +56,43 @@ impl AdbTcpConnexion {
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    pub fn shell<S: ToString>(&self, serial: Option<S>) -> Result<()> {
+    pub fn shell<S: ToString>(&mut self, serial: Option<S>) -> Result<()> {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
-        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
-        tcp_stream.set_nodelay(true)?;
+        self.tcp_stream.set_nodelay(true)?;
 
-        // TODO: Add host:features
+        // FORWARD CRTL+C !!
+
+        let supported_features = self.host_features()?;
+        if !supported_features.contains(&HostFeatures::ShellV2)
+            && !supported_features.contains(&HostFeatures::Cmd)
+        {
+            return Err(RustADBError::ADBShellNotSupported);
+        }
+
+        self.new_connection()?;
 
         match serial {
-            None => Self::send_adb_request(&mut tcp_stream, AdbCommand::TransportAny)?,
+            None => Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TransportAny)?,
             Some(serial) => Self::send_adb_request(
-                &mut tcp_stream,
+                &mut self.tcp_stream,
                 AdbCommand::TransportSerial(serial.to_string()),
             )?,
         }
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::Shell)?;
+        Self::send_adb_request(&mut self.tcp_stream, AdbCommand::Shell)?;
 
-        let read_stream = Arc::new(tcp_stream);
-
-        // TODO: Send terminal informations
+        // let read_stream = Arc::new(self.tcp_stream);
+        let mut read_stream = self.tcp_stream.try_clone()?;
 
         // Writing thread
-        let write_stream = read_stream.clone();
+        let mut write_stream = read_stream.try_clone()?;
         let writer_t = std::thread::spawn(move || -> Result<()> {
             let mut buf = [0; 1024];
             loop {
                 let size = std::io::stdin().read(&mut buf)?;
 
-                (&*write_stream).write_all(&buf[0..size])?;
+                write_stream.write_all(&buf[0..size])?;
             }
         });
 
@@ -89,11 +101,15 @@ impl AdbTcpConnexion {
             let buffer_size = 512;
             loop {
                 let mut buffer = vec![0; buffer_size];
-                match (&*read_stream).read(&mut buffer) {
+                match read_stream.read(&mut buffer) {
                     Ok(size) if size == 0 => {
-                        return Err(RustADBError::IOError(std::io::Error::from(
-                            ErrorKind::BrokenPipe,
-                        )));
+                        // TODO: check if return here is good.. return Ok(()) ?
+
+                        // return Err(RustADBError::IOError(std::io::Error::from(
+                        //     ErrorKind::BrokenPipe,
+                        // )));
+
+                        return Ok(());
                     }
                     Ok(_) => {
                         print!("{}", String::from_utf8(buffer.to_vec())?);

@@ -14,41 +14,37 @@ use crate::{
 #[derive(Debug)]
 pub struct AdbTcpConnexion {
     pub(crate) socket_addr: SocketAddrV4,
-    pub(crate) port: u16,
-    pub(crate) address: Ipv4Addr,
+    pub(crate) tcp_stream: TcpStream,
 }
 
 impl AdbTcpConnexion {
     /// Instantiates a new instance of [AdbTcpConnexion]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(address: Ipv4Addr, port: u16) -> Result<Self> {
+        let addr = SocketAddrV4::new(address, port);
+        Ok(Self {
+            socket_addr: addr,
+            tcp_stream: TcpStream::connect(addr)?,
+        })
     }
 
-    /// Sets a custom listening port for ADB server.
-    pub fn port(mut self, port: u16) -> Self {
-        self.port = port;
-        self.socket_addr = SocketAddrV4::new(self.address, self.port);
-        self
-    }
+    /// Creates a new connection to ADB server.
+    ///
+    /// Can be used after requests that closes connection.
+    pub(crate) fn new_connection(&mut self) -> Result<()> {
+        self.tcp_stream = TcpStream::connect(self.socket_addr)?;
 
-    /// Sets a custom listening address for ADB server.
-    pub fn address(mut self, address: Ipv4Addr) -> Self {
-        self.address = address;
-        self.socket_addr = SocketAddrV4::new(self.address, self.port);
-        self
+        Ok(())
     }
 
     pub(crate) fn proxy_connexion(
-        &self,
+        &mut self,
         adb_command: AdbCommand,
         with_response: bool,
     ) -> Result<Vec<u8>> {
-        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
-
-        Self::send_adb_request(&mut tcp_stream, adb_command)?;
+        Self::send_adb_request(&mut self.tcp_stream, adb_command)?;
 
         if with_response {
-            let length = Self::get_body_length(&mut tcp_stream)?;
+            let length = Self::get_body_length(&mut self.tcp_stream)?;
             let mut body = vec![
                 0;
                 length
@@ -56,7 +52,7 @@ impl AdbTcpConnexion {
                     .map_err(|_| RustADBError::ConvertionError)?
             ];
             if length > 0 {
-                tcp_stream.read_exact(&mut body)?;
+                self.tcp_stream.read_exact(&mut body)?;
             }
 
             Ok(body)
@@ -103,18 +99,5 @@ impl AdbTcpConnexion {
         tcp_stream.read_exact(&mut length)?;
 
         Ok(u32::from_str_radix(str::from_utf8(&length)?, 16)?)
-    }
-}
-
-impl Default for AdbTcpConnexion {
-    fn default() -> Self {
-        let default_port: u16 = 5037;
-        let default_address = Ipv4Addr::new(127, 0, 0, 1);
-
-        Self {
-            socket_addr: SocketAddrV4::new(default_address, default_port),
-            address: default_address,
-            port: default_port,
-        }
     }
 }

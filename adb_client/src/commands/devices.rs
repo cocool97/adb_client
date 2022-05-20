@@ -1,10 +1,10 @@
-use std::{io::Read, net::TcpStream};
+use std::io::Read;
 
 use crate::{models::AdbCommand, AdbTcpConnexion, Device, DeviceLong, Result, RustADBError};
 
 impl AdbTcpConnexion {
     /// Gets a list of connected devices.
-    pub fn devices(&self) -> Result<Vec<Device>> {
+    pub fn devices(&mut self) -> Result<Vec<Device>> {
         let devices = self.proxy_connexion(AdbCommand::Devices, true)?;
 
         let mut vec_devices: Vec<Device> = vec![];
@@ -20,7 +20,7 @@ impl AdbTcpConnexion {
     }
 
     /// Gets an extended list of connected devices including the device paths in the state.
-    pub fn devices_long(&self) -> Result<Vec<DeviceLong>> {
+    pub fn devices_long(&mut self) -> Result<Vec<DeviceLong>> {
         let devices_long = self.proxy_connexion(AdbCommand::DevicesLong, true)?;
 
         let mut vec_devices: Vec<DeviceLong> = vec![];
@@ -37,13 +37,11 @@ impl AdbTcpConnexion {
 
     /// Tracks new devices showing up.
     // TODO: Change with Generator when feature stabilizes
-    pub fn track_devices(&self, callback: fn(Device) -> Result<()>) -> Result<()> {
-        let mut tcp_stream = TcpStream::connect(self.socket_addr)?;
-
-        Self::send_adb_request(&mut tcp_stream, AdbCommand::TrackDevices)?;
+    pub fn track_devices(&mut self, callback: fn(Device) -> Result<()>) -> Result<()> {
+        Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TrackDevices)?;
 
         loop {
-            let length = Self::get_body_length(&mut tcp_stream)?;
+            let length = Self::get_body_length(&mut self.tcp_stream)?;
 
             if length > 0 {
                 let mut body = vec![
@@ -52,7 +50,7 @@ impl AdbTcpConnexion {
                         .try_into()
                         .map_err(|_| RustADBError::ConvertionError)?
                 ];
-                tcp_stream.read_exact(&mut body)?;
+                self.tcp_stream.read_exact(&mut body)?;
 
                 callback(Device::try_from(body)?)?;
             }

@@ -39,4 +39,7 @@ pub enum RustADBError {
     /// Indicates that an error occured when converting a value.
     #[error("Convertion error")]
     ConvertionError,
+    /// Remote ADB server does not support shell feature.
+    #[error("Remote ADB server does not support shell feature")]
+    ADBShellNotSupported,
 }
