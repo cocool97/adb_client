@@ -1,6 +1,27 @@
-[workspace]
+[package]
+description = "Rust ADB (Android Debug Bridge) client library"
+edition = "2021"
+keywords = ["adb", "android"]
+license = "MIT"
+name = "adb_client"
+readme = "README.md"
+repository = "https://github.com/cocool97/adb_client"
+version = "0.4.0"
 
-members = [
-    "adb_client",
-    "adb_cli"
-]
+[lib]
+name = "adb_client"
+path = "src/lib.rs"
+
+[[example]]
+name = "adb_cli"
+path = "examples/adb_cli.rs"
+
+[dependencies]
+regex = { version = "1.5.5", features = ["perf", "std", "unicode"] }
+termios = { version = "0.3.3" }
+thiserror = { version = "1.0.31" }
+
+## Binary-only dependencies
+## Marked as optional so that lib users do not depend on them
+[dev-dependencies]
+clap = { version = "= 4.1.4", features = ["derive"] }
