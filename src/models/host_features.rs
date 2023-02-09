@@ -22,7 +22,7 @@ impl TryFrom<&[u8]> for HostFeatures {
         match value {
             b"shell_v2" => Ok(Self::ShellV2),
             b"cmd" => Ok(Self::Cmd),
-            _ => Err(format!("Unknown value {:?}", value)),
+            _ => Err(format!("Unknown value {value:?}")),
         }
     }
 }

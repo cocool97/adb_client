@@ -11,4 +11,4 @@ mod error;
 mod models;
 pub use adb_tcp_connexion::AdbTcpConnexion;
 pub use error::{Result, RustADBError};
-pub use models::{AdbVersion, Device, DeviceLong, DeviceState};
+pub use models::{AdbVersion, Device, DeviceLong, DeviceState, RebootType};

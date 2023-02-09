@@ -1,3 +1,5 @@
+use super::RebootType;
+
 pub enum AdbCommand {
     Version,
     Kill,
@@ -39,7 +41,8 @@ pub enum AdbCommand {
     // JDWP(u32),
     // TrackJDWP,
     // Sync,
-    // Reverse(String)
+    // Reverse(String),
+    Reboot(RebootType),
 }
 
 impl ToString for AdbCommand {
@@ -51,16 +54,19 @@ impl ToString for AdbCommand {
             AdbCommand::DevicesLong => "host:devices-l".into(),
             AdbCommand::TrackDevices => "host:track-devices".into(),
             AdbCommand::TransportAny => "host:transport-any".into(),
-            AdbCommand::TransportSerial(serial) => format!("host:transport:{}", serial),
+            AdbCommand::TransportSerial(serial) => format!("host:transport:{serial}"),
             AdbCommand::ShellCommand(command) => match std::env::var("TERM") {
-                Ok(term) => format!("shell,TERM={},raw:{}", term, command),
-                Err(_) => format!("shell,raw:{}", command),
+                Ok(term) => format!("shell,TERM={term},raw:{command}"),
+                Err(_) => format!("shell,raw:{command}"),
             },
             AdbCommand::Shell => match std::env::var("TERM") {
-                Ok(term) => format!("shell,TERM={},raw:", term),
+                Ok(term) => format!("shell,TERM={term},raw:"),
                 Err(_) => "shell,raw:".into(),
             },
             AdbCommand::HostFeatures => "host:features".into(),
+            AdbCommand::Reboot(reboot_type) => {
+                format!("reboot:{reboot_type}")
+            }
         }
     }
 }

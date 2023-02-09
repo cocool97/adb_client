@@ -1,7 +1,7 @@
 use std::net::Ipv4Addr;
 
+use adb_client::{AdbTcpConnexion, Device, RebootType, RustADBError};
 use clap::Parser;
-use adb_client::{AdbTcpConnexion, Device, RustADBError};
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -36,6 +36,32 @@ pub enum Command {
     HostFeatures,
     /// Run 'command' in a shell on the device, and return its output and error streams.
     Shell { command: Vec<String> },
+    /// Reboots the device
+    Reboot {
+        #[clap(subcommand)]
+        sub_command: RebootTypeCommand,
+    },
+}
+
+#[derive(Parser, Debug)]
+pub enum RebootTypeCommand {
+    System,
+    Bootloader,
+    Recovery,
+    Sideload,
+    SideloadAutoReboot,
+}
+
+impl From<RebootTypeCommand> for RebootType {
+    fn from(value: RebootTypeCommand) -> Self {
+        match value {
+            RebootTypeCommand::System => RebootType::System,
+            RebootTypeCommand::Bootloader => RebootType::Bootloader,
+            RebootTypeCommand::Recovery => RebootType::Recovery,
+            RebootTypeCommand::Sideload => RebootType::Sideload,
+            RebootTypeCommand::SideloadAutoReboot => RebootType::SideloadAutoReboot,
+        }
+    }
 }
 
 fn main() -> Result<(), RustADBError> {
@@ -85,6 +111,10 @@ fn main() -> Result<(), RustADBError> {
             for feature in connexion.host_features()? {
                 println!("- {}", feature);
             }
+        }
+        Command::Reboot { sub_command } => {
+            println!("Reboots device");
+            connexion.reboot(opt.serial, sub_command.into())?
         }
     }
 
