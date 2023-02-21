@@ -8,7 +8,11 @@ use crate::{
 
 impl AdbTcpConnexion {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
-    pub fn shell_command<S: ToString>(&mut self, serial: Option<S>, command: Vec<S>) -> Result<()> {
+    pub fn shell_command<S: ToString>(
+        &mut self,
+        serial: Option<S>,
+        command: impl IntoIterator<Item = S>,
+    ) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -29,9 +33,9 @@ impl AdbTcpConnexion {
             &mut self.tcp_stream,
             AdbCommand::ShellCommand(
                 command
-                    .iter()
+                    .into_iter()
                     .map(|v| v.to_string())
-                    .collect::<Vec<String>>()
+                    .collect::<Vec<_>>()
                     .join(" "),
             ),
         )?;
