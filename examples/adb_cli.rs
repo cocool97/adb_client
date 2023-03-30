@@ -108,7 +108,7 @@ fn main() -> Result<(), RustADBError> {
         }
         Command::HostFeatures => {
             println!("Available host features");
-            for feature in connexion.host_features()? {
+            for feature in connexion.host_features(opt.serial)? {
                 println!("- {}", feature);
             }
         }
