@@ -101,20 +101,20 @@ fn main() -> Result<(), RustADBError> {
         }
         Command::Shell { command } => {
             if command.is_empty() {
-                connexion.shell(opt.serial)?;
+                connexion.shell(&opt.serial)?;
             } else {
-                connexion.shell_command(opt.serial, command)?;
+                connexion.shell_command(&opt.serial, command)?;
             }
         }
         Command::HostFeatures => {
             println!("Available host features");
-            for feature in connexion.host_features()? {
+            for feature in connexion.host_features(&opt.serial)? {
                 println!("- {}", feature);
             }
         }
         Command::Reboot { sub_command } => {
             println!("Reboots device");
-            connexion.reboot(opt.serial, sub_command.into())?
+            connexion.reboot(&opt.serial, sub_command.into())?
         }
     }
 

@@ -10,10 +10,10 @@ impl AdbTcpConnexion {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
     pub fn shell_command<S: ToString>(
         &mut self,
-        serial: Option<S>,
+        serial: &Option<S>,
         command: impl IntoIterator<Item = S>,
     ) -> Result<()> {
-        let supported_features = self.host_features()?;
+        let supported_features = self.host_features(serial)?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
         {
@@ -60,7 +60,7 @@ impl AdbTcpConnexion {
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    pub fn shell<S: ToString>(&mut self, serial: Option<S>) -> Result<()> {
+    pub fn shell<S: ToString>(&mut self, serial: &Option<S>) -> Result<()> {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
@@ -68,7 +68,7 @@ impl AdbTcpConnexion {
 
         // FORWARD CRTL+C !!
 
-        let supported_features = self.host_features()?;
+        let supported_features = self.host_features(serial)?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
         {
