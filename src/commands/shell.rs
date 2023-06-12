@@ -66,7 +66,7 @@ impl AdbTcpConnexion {
 
         self.tcp_stream.set_nodelay(true)?;
 
-        // FORWARD CRTL+C !!
+        // FORWARD CTRL+C !!
 
         let supported_features = self.host_features(serial)?;
         if !supported_features.contains(&HostFeatures::ShellV2)
