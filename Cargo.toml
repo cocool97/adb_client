@@ -18,6 +18,7 @@ path = "examples/adb_cli.rs"
 
 [dependencies]
 regex = { version = "1.9.3", features = ["perf", "std", "unicode"] }
+byteorder = { version = "1.4.3" }
 termios = { version = "0.3.3" }
 thiserror = { version = "1.0.44" }
 

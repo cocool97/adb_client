@@ -110,8 +110,8 @@ impl AdbTcpConnexion {
         // Send specific data depending on command
         match command {
             SyncCommand::List(a) => self.handle_list_command(a)?,
-            SyncCommand::Recv(a, b) => self.handle_recv_command(a, b)?,
-            SyncCommand::Send(a, b) => self.handle_send_command(a, b)?,
+            SyncCommand::Recv(a, b) => self.handle_recv_command(a, b.as_str())?,
+            SyncCommand::Send(a, b) => self.handle_send_command(a, b.as_str())?,
             SyncCommand::Stat(a) => self.handle_stat_command(a)?,
         }
 
@@ -120,15 +120,16 @@ impl AdbTcpConnexion {
 
     // This command does not seem to work correctly. The devices I test it on just resturn
     // 'DONE' directly without listing anything.
-    fn handle_list_command(&mut self, path: &str) -> Result<()> {
+    fn handle_list_command<S: AsRef<str>>(&mut self, path: S) -> Result<()> {
         let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, path.len() as u32);
+        LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
         // 4 bytes of command name is already sent by send_sync_request
         self.tcp_stream.write_all(&len_buf)?;
 
         // List sends the string of the directory to list, and then the server sends a list of files
-        self.tcp_stream.write_all(path.to_string().as_bytes())?;
+        self.tcp_stream
+            .write_all(path.as_ref().to_string().as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut response = [0_u8; 4];
@@ -158,16 +159,16 @@ impl AdbTcpConnexion {
         }
     }
 
-    fn handle_recv_command(&mut self, from: &str, to: String) -> Result<()> {
+    fn handle_recv_command<S: AsRef<str>>(&mut self, from: S, to: S) -> Result<()> {
         // First send 8 byte common header
         let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, from.len() as u32);
+        LittleEndian::write_u32(&mut len_buf, from.as_ref().len() as u32);
         self.tcp_stream.write_all(&len_buf)?;
-        self.tcp_stream.write_all(from.as_bytes())?;
+        self.tcp_stream.write_all(from.as_ref().as_bytes())?;
 
         // Then we receive the byte data in chunks of up to 64k
         // Chunk looks like 'DATA' <length> <data>
-        let mut output = File::create(Path::new(&to)).unwrap();
+        let mut output = File::create(Path::new(to.as_ref())).unwrap();
         // Should this be Boxed?
         let mut buffer = [0_u8; 64 * 1024];
         let mut data_header = [0_u8; 4]; // DATA
@@ -177,7 +178,7 @@ impl AdbTcpConnexion {
             // Check if data_header is DATA or DONE
             if data_header.eq(b"DATA") {
                 self.tcp_stream.read_exact(&mut len_header)?;
-                let length: usize = LittleEndian::read_u32(&mut len_header).try_into().unwrap();
+                let length: usize = LittleEndian::read_u32(&len_header).try_into().unwrap();
                 self.tcp_stream.read_exact(&mut buffer[..length])?;
                 output.write_all(&buffer)?;
             } else if data_header.eq(b"DONE") {
@@ -186,7 +187,7 @@ impl AdbTcpConnexion {
             } else if data_header.eq(b"FAIL") {
                 // Handle fail
                 self.tcp_stream.read_exact(&mut len_header)?;
-                let length: usize = LittleEndian::read_u32(&mut len_header).try_into().unwrap();
+                let length: usize = LittleEndian::read_u32(&len_header).try_into().unwrap();
                 self.tcp_stream.read_exact(&mut buffer[..length])?;
                 Err(RustADBError::ADBRequestFailed(String::from_utf8(
                     buffer[..length].to_vec(),
@@ -200,7 +201,7 @@ impl AdbTcpConnexion {
         Ok(())
     }
 
-    fn handle_send_command(&mut self, from: &str, to: String) -> Result<()> {
+    fn handle_send_command<S: AsRef<str>>(&mut self, from: S, to: S) -> Result<()> {
         // Append the filename from 'from' to the path of 'to'
         // FIXME: This should only be done if 'to' doesn't already contain a filename
         // I guess we need to STAT the to file first to check this
@@ -209,8 +210,14 @@ impl AdbTcpConnexion {
         // If we'd make the input here to be a IO trait, then we wouldn't need to care
         // about the name as the 'to' would need to contain the full name as the caller
         // would be the one handling the naming
-        let mut to = PathBuf::from(to);
-        to.push(Path::new(from).file_name().unwrap());
+        let mut to = PathBuf::from(to.as_ref());
+        to.push(
+            Path::new(from.as_ref())
+                .file_name()
+                .ok_or(RustADBError::ADBRequestFailed(
+                    "Could not get filename...".to_string(),
+                ))?,
+        );
         let to = to.display().to_string() + ",0777";
 
         // The name of command is already sent by send_sync_request
@@ -223,7 +230,7 @@ impl AdbTcpConnexion {
 
         // Then we send the byte data in chunks of up to 64k
         // Chunk looks like 'DATA' <length> <data>
-        let mut file = File::open(Path::new(from)).unwrap();
+        let mut file = File::open(Path::new(from.as_ref()))?;
         let mut buffer = [0_u8; 64 * 1024];
         loop {
             let bytes_read = file.read(&mut buffer)?;
@@ -239,7 +246,7 @@ impl AdbTcpConnexion {
 
         // When we are done sending, we send 'DONE' <last modified time>
         // Re-use len_buf to send the last modified time
-        let metadata = std::fs::metadata(Path::new(from))?;
+        let metadata = std::fs::metadata(Path::new(from.as_ref()))?;
         let last_modified = match metadata.modified()?.duration_since(SystemTime::UNIX_EPOCH) {
             Ok(n) => n,
             Err(_) => panic!("SystemTime before UNIX EPOCH!"),
@@ -273,13 +280,14 @@ impl AdbTcpConnexion {
         }
     }
 
-    fn handle_stat_command(&mut self, path: &str) -> Result<()> {
+    fn handle_stat_command<S: AsRef<str>>(&mut self, path: S) -> Result<()> {
         let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, path.len() as u32);
+        LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
         // 4 bytes of command name is already sent by send_sync_request
         self.tcp_stream.write_all(&len_buf)?;
-        self.tcp_stream.write_all(path.to_string().as_bytes())?;
+        self.tcp_stream
+            .write_all(path.as_ref().to_string().as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut response = [0_u8; 4];
@@ -291,11 +299,11 @@ impl AdbTcpConnexion {
                 let mut file_size = [0_u8; 4];
                 let mut mod_time = [0_u8; 4];
                 self.tcp_stream.read_exact(&mut file_mod)?;
-                let _file_mod: usize = LittleEndian::read_u32(&mut file_mod).try_into().unwrap();
+                let _file_mod: usize = LittleEndian::read_u32(&file_mod).try_into().unwrap();
                 self.tcp_stream.read_exact(&mut file_size)?;
-                let file_size: usize = LittleEndian::read_u32(&mut file_size).try_into().unwrap();
+                let file_size: usize = LittleEndian::read_u32(&file_size).try_into().unwrap();
                 self.tcp_stream.read_exact(&mut mod_time)?;
-                let _mod_time: usize = LittleEndian::read_u32(&mut mod_time).try_into().unwrap();
+                let _mod_time: usize = LittleEndian::read_u32(&mod_time).try_into().unwrap();
                 // TODO: Return data, instead of just checking if file exists
                 if file_size == 0 {
                     return Err(RustADBError::ADBRequestFailed(

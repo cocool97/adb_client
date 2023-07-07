@@ -5,7 +5,7 @@ use crate::{
 
 impl AdbTcpConnexion {
     /// Stat file given as [path] on the device.
-    pub fn stat<S: ToString>(&mut self, serial: Option<S>, path: S) -> Result<()> {
+    pub fn stat<S: ToString, A: AsRef<str>>(&mut self, serial: Option<S>, path: A) -> Result<()> {
         self.new_connection()?;
 
         match serial {
@@ -20,7 +20,7 @@ impl AdbTcpConnexion {
         Self::send_adb_request(&mut self.tcp_stream, AdbCommand::Sync)?;
 
         // Send a list command
-        self.send_sync_request(SyncCommand::Stat(&path.to_string()))?;
+        self.send_sync_request(SyncCommand::Stat(path.as_ref()))?;
 
         Ok(())
     }
