@@ -103,19 +103,7 @@ impl AdbTcpConnexion {
     pub(crate) fn send_sync_request(&mut self, command: SyncCommand) -> Result<()> {
         // First 4 bytes are the name of the command we want to send
         // (e.g. "SEND", "RECV", "STAT", "LIST")
-        self.tcp_stream.write_all(command.to_string().as_bytes())?;
-        // The other 4 bytes are the length of the path we want to process
-        // but that is handled in the handle_*_command functions
-
-        // Send specific data depending on command
-        match command {
-            SyncCommand::List(a) => self.handle_list_command(a)?,
-            SyncCommand::Recv(a, b) => self.handle_recv_command(a, b.as_str())?,
-            SyncCommand::Send(a, b) => self.handle_send_command(a, b.as_str())?,
-            SyncCommand::Stat(a) => self.handle_stat_command(a)?,
-        }
-
-        Ok(())
+        Ok(self.tcp_stream.write_all(command.to_string().as_bytes())?)
     }
 
     // This command does not seem to work correctly. The devices I test it on just resturn
@@ -278,42 +266,6 @@ impl AdbTcpConnexion {
             }
             AdbRequestStatus::Okay => Ok(()),
         }
-    }
-
-    fn handle_stat_command<S: AsRef<str>>(&mut self, path: S) -> Result<()> {
-        let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
-
-        // 4 bytes of command name is already sent by send_sync_request
-        self.tcp_stream.write_all(&len_buf)?;
-        self.tcp_stream
-            .write_all(path.as_ref().to_string().as_bytes())?;
-
-        // Reads returned status code from ADB server
-        let mut response = [0_u8; 4];
-        self.tcp_stream.read_exact(&mut response)?;
-        match str::from_utf8(response.as_ref())? {
-            "STAT" => {
-                // TODO: Move this to a struct that extract this data
-                let mut file_mod = [0_u8; 4];
-                let mut file_size = [0_u8; 4];
-                let mut mod_time = [0_u8; 4];
-                self.tcp_stream.read_exact(&mut file_mod)?;
-                let _file_mod: usize = LittleEndian::read_u32(&file_mod).try_into().unwrap();
-                self.tcp_stream.read_exact(&mut file_size)?;
-                let file_size: usize = LittleEndian::read_u32(&file_size).try_into().unwrap();
-                self.tcp_stream.read_exact(&mut mod_time)?;
-                let _mod_time: usize = LittleEndian::read_u32(&mod_time).try_into().unwrap();
-                // TODO: Return data, instead of just checking if file exists
-                if file_size == 0 {
-                    return Err(RustADBError::ADBRequestFailed(
-                        "File does not exist".to_string(),
-                    ));
-                }
-            }
-            x => println!("Unknown response {}", x),
-        }
-        Ok(())
     }
 
     pub(crate) fn get_body_length(tcp_stream: &mut TcpStream) -> Result<u32> {

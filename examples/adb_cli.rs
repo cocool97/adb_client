@@ -117,7 +117,8 @@ fn main() -> Result<(), RustADBError> {
             connexion.list(opt.serial, path)?;
         }
         Command::Stat { path } => {
-            connexion.stat(opt.serial, path)?;
+            let stat_response = connexion.stat(opt.serial, path)?;
+            println!("{}", stat_response);
         }
         Command::Shell { command } => {
             if command.is_empty() {
