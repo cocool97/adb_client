@@ -3,19 +3,15 @@ use crate::{
     AdbTcpConnexion, Result, RustADBError,
 };
 use byteorder::{ByteOrder, LittleEndian};
-use std::{
-    fs::File,
-    io::{Read, Write},
-    path::Path,
-};
+use std::io::{Read, Write};
 
 impl AdbTcpConnexion {
-    /// Pulls [path] to [filename] from the device.
-    pub fn pull<S: ToString, A: AsRef<str>>(
+    /// Receives [path] to [stream] from the device.
+    pub fn recv<S: ToString, A: AsRef<str>>(
         &mut self,
         serial: Option<S>,
         path: A,
-        filename: A,
+        stream: &mut dyn Write,
     ) -> Result<()> {
         self.new_connection()?;
 
@@ -31,15 +27,16 @@ impl AdbTcpConnexion {
         Self::send_adb_request(&mut self.tcp_stream, AdbCommand::Sync)?;
 
         // Send a recv command
-        self.send_sync_request(SyncCommand::Recv(
-            path.as_ref(),
-            filename.as_ref().to_string(), // Fix this uglyness by using IO Traits
-        ))?;
+        self.send_sync_request(SyncCommand::Recv(path.as_ref(), stream))?;
 
-        self.handle_recv_command(path, filename)
+        self.handle_recv_command(path, stream)
     }
 
-    fn handle_recv_command<S: AsRef<str>>(&mut self, from: S, to: S) -> Result<()> {
+    fn handle_recv_command<S: AsRef<str>>(
+        &mut self,
+        from: S,
+        output: &mut dyn Write,
+    ) -> Result<()> {
         // First send 8 byte common header
         let mut len_buf = [0_u8; 4];
         LittleEndian::write_u32(&mut len_buf, from.as_ref().len() as u32);
@@ -48,9 +45,7 @@ impl AdbTcpConnexion {
 
         // Then we receive the byte data in chunks of up to 64k
         // Chunk looks like 'DATA' <length> <data>
-        let mut output = File::create(Path::new(to.as_ref())).unwrap();
-        // Should this be Boxed?
-        let mut buffer = [0_u8; 64 * 1024];
+        let mut buffer = [0_u8; 64 * 1024]; // Should this be Boxed?
         let mut data_header = [0_u8; 4]; // DATA
         let mut len_header = [0_u8; 4]; // <len>
         loop {

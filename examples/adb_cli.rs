@@ -1,4 +1,6 @@
+use std::fs::File;
 use std::net::Ipv4Addr;
+use std::path::Path;
 
 use adb_client::{AdbTcpConnexion, Device, RebootType, RustADBError};
 use clap::Parser;
@@ -108,10 +110,14 @@ fn main() -> Result<(), RustADBError> {
             connexion.track_devices(callback)?;
         }
         Command::Pull { path, filename } => {
-            connexion.pull(opt.serial, path, filename)?;
+            let mut output = File::create(Path::new(&filename)).unwrap(); // TODO: Better error handling
+            connexion.recv(opt.serial, &path, &mut output)?;
+            println!("Downloaded {path} as {filename}");
         }
         Command::Push { filename, path } => {
-            connexion.push(opt.serial, filename, path)?;
+            let mut input = File::open(Path::new(&filename)).unwrap(); // TODO: Better error handling
+            connexion.send(opt.serial, &mut input, &path)?;
+            println!("Uploaded {filename} to {path}");
         }
         Command::List { path } => {
             connexion.list(opt.serial, path)?;

@@ -1,12 +1,10 @@
 pub enum SyncCommand<'a> {
     /// List files in a folder
     List(&'a str),
-    /// Retrieve a file from the device
-    /// TODO: Instead of having a String, use a IO trait
-    Recv(&'a str, String),
+    /// Receive a file from the device
+    Recv(&'a str, &'a mut dyn std::io::Write),
     /// Send a file to the device
-    /// TODO: Instead of having a String, use a IO trait
-    Send(&'a str, String),
+    Send(&'a mut dyn std::io::Read, &'a str),
     // Stat a file
     Stat(&'a str),
 }
