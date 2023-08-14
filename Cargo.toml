@@ -6,7 +6,7 @@ license = "MIT"
 name = "adb_client"
 readme = "README.md"
 repository = "https://github.com/cocool97/adb_client"
-version = "0.5.0"
+version = "0.6.0"
 
 [lib]
 name = "adb_client"
@@ -17,11 +17,11 @@ name = "adb_cli"
 path = "examples/adb_cli.rs"
 
 [dependencies]
-regex = { version = "1.7.3", features = ["perf", "std", "unicode"] }
+regex = { version = "1.9.3", features = ["perf", "std", "unicode"] }
 termios = { version = "0.3.3" }
-thiserror = { version = "1.0.40" }
+thiserror = { version = "1.0.44" }
 
 ## Binary-only dependencies
 ## Marked as optional so that lib users do not depend on them
 [dev-dependencies]
-clap = { version = "= 4.2.1", features = ["derive"] }
+clap = { version = "= 4.3.21", features = ["derive"] }
