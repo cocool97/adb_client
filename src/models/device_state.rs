@@ -11,6 +11,8 @@ pub enum DeviceState {
     Device,
     /// There is no device connected.
     NoDevice,
+    /// Device is being authorized
+    Authorizing,
     /// The device is unauthorized.
     Unauthorized,
 }
@@ -21,6 +23,7 @@ impl Display for DeviceState {
             DeviceState::Offline => write!(f, "offline"),
             DeviceState::Device => write!(f, "device"),
             DeviceState::NoDevice => write!(f, "no device"),
+            DeviceState::Authorizing => write!(f, "authorizing"),
             DeviceState::Unauthorized => write!(f, "unauthorized"),
         }
     }
@@ -35,6 +38,7 @@ impl FromStr for DeviceState {
             "offline" => Ok(Self::Offline),
             "device" => Ok(Self::Device),
             "no device" => Ok(Self::NoDevice),
+            "authorizing" => Ok(Self::Authorizing),
             "unauthorized" => Ok(Self::Unauthorized),
             _ => Err(RustADBError::UnknownDeviceState(lowercased)),
         }
