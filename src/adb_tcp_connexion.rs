@@ -95,7 +95,6 @@ impl AdbTcpConnexion {
     }
 
     /// Sends the given [SyncCommand] to ADB server, and checks that the request has been taken in consideration.
-    /// Note: This function does not take a tcp_stream anymore, as it is already stored in the struct.
     pub(crate) fn send_sync_request(&mut self, command: SyncCommand) -> Result<()> {
         // First 4 bytes are the name of the command we want to send
         // (e.g. "SEND", "RECV", "STAT", "LIST")
