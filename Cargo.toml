@@ -6,7 +6,7 @@ license = "MIT"
 name = "adb_client"
 readme = "README.md"
 repository = "https://github.com/cocool97/adb_client"
-version = "0.6.0"
+version = "0.7.0"
 
 [lib]
 name = "adb_client"

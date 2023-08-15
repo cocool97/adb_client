@@ -38,6 +38,17 @@ let mut connexion = AdbTcpConnexion::new(Ipv4Addr::from([127,0,0,1]), 5037).unwr
 connexion.devices();
 ```
 
+### Push a file to the device
+
+```rust
+use adb_client::AdbTcpConnexion;
+use std::net::Ipv4Addr;
+
+let mut connexion = AdbTcpConnexion::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
+let mut input = File::open(Path::new(&filename)).unwrap(); 
+connexion.send(None, &mut input, &path)?;
+```
+
 ## Rust binary
 
 This crate also provides a lightweight binary based on the `adb_client` crate. You can install it by running the following command :
