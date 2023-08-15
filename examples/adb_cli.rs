@@ -1,4 +1,6 @@
+use std::fs::File;
 use std::net::Ipv4Addr;
+use std::path::Path;
 
 use adb_client::{AdbTcpConnexion, Device, RebootType, RustADBError};
 use clap::Parser;
@@ -34,6 +36,14 @@ pub enum Command {
     TrackDevices,
     /// Lists available server features.
     HostFeatures,
+    /// Pushes 'filename' to the 'path' on device
+    Push { filename: String, path: String },
+    /// Pushes 'path' on the device to 'filename'
+    Pull { path: String, filename: String },
+    /// List files for 'path' on device
+    List { path: String },
+    /// Stat file specified as 'path' on device
+    Stat { path: String },
     /// Run 'command' in a shell on the device, and return its output and error streams.
     Shell { command: Vec<String> },
     /// Reboots the device
@@ -98,6 +108,23 @@ fn main() -> Result<(), RustADBError> {
             };
             println!("Live list of devices attached");
             connexion.track_devices(callback)?;
+        }
+        Command::Pull { path, filename } => {
+            let mut output = File::create(Path::new(&filename)).unwrap(); // TODO: Better error handling
+            connexion.recv(opt.serial, &path, &mut output)?;
+            println!("Downloaded {path} as {filename}");
+        }
+        Command::Push { filename, path } => {
+            let mut input = File::open(Path::new(&filename)).unwrap(); // TODO: Better error handling
+            connexion.send(opt.serial, &mut input, &path)?;
+            println!("Uploaded {filename} to {path}");
+        }
+        Command::List { path } => {
+            connexion.list(opt.serial, path)?;
+        }
+        Command::Stat { path } => {
+            let stat_response = connexion.stat(opt.serial, path)?;
+            println!("{}", stat_response);
         }
         Command::Shell { command } => {
             if command.is_empty() {

@@ -23,22 +23,18 @@ impl AdbTcpConnexion {
         self.new_connection()?;
 
         match serial {
-            None => Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => Self::send_adb_request(
-                &mut self.tcp_stream,
-                AdbCommand::TransportSerial(serial.to_string()),
-            )?,
+            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => {
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+            }
         }
-        Self::send_adb_request(
-            &mut self.tcp_stream,
-            AdbCommand::ShellCommand(
-                command
-                    .into_iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<_>>()
-                    .join(" "),
-            ),
-        )?;
+        self.send_adb_request(AdbCommand::ShellCommand(
+            command
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(" "),
+        ))?;
 
         let buffer_size = 512;
         loop {
@@ -66,7 +62,7 @@ impl AdbTcpConnexion {
 
         self.tcp_stream.set_nodelay(true)?;
 
-        // FORWARD CRTL+C !!
+        // FORWARD CTRL+C !!
 
         let supported_features = self.host_features(serial)?;
         if !supported_features.contains(&HostFeatures::ShellV2)
@@ -78,13 +74,12 @@ impl AdbTcpConnexion {
         self.new_connection()?;
 
         match serial {
-            None => Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => Self::send_adb_request(
-                &mut self.tcp_stream,
-                AdbCommand::TransportSerial(serial.to_string()),
-            )?,
+            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => {
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+            }
         }
-        Self::send_adb_request(&mut self.tcp_stream, AdbCommand::Shell)?;
+        self.send_adb_request(AdbCommand::Shell)?;
 
         // let read_stream = Arc::new(self.tcp_stream);
         let mut read_stream = self.tcp_stream.try_clone()?;

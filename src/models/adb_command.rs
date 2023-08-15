@@ -40,7 +40,7 @@ pub enum AdbCommand {
     // FrameBuffer,
     // JDWP(u32),
     // TrackJDWP,
-    // Sync,
+    Sync,
     // Reverse(String),
     Reboot(RebootType),
 }
@@ -52,6 +52,7 @@ impl ToString for AdbCommand {
             AdbCommand::Kill => "host:kill".into(),
             AdbCommand::Devices => "host:devices".into(),
             AdbCommand::DevicesLong => "host:devices-l".into(),
+            AdbCommand::Sync => "sync:".into(),
             AdbCommand::TrackDevices => "host:track-devices".into(),
             AdbCommand::TransportAny => "host:transport-any".into(),
             AdbCommand::TransportSerial(serial) => format!("host:transport:{serial}"),

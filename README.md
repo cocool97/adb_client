@@ -48,7 +48,6 @@ cargo install adb_client --example adb_cli
 
 ## Missing features
 
-- Pull / Push files
 - USB protocol
 
 All pull requests are welcome !

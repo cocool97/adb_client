@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    models::{AdbCommand, AdbRequestStatus},
+    models::{AdbCommand, AdbRequestStatus, SyncCommand},
     Result, RustADBError,
 };
 
@@ -41,10 +41,10 @@ impl AdbTcpConnexion {
         adb_command: AdbCommand,
         with_response: bool,
     ) -> Result<Vec<u8>> {
-        Self::send_adb_request(&mut self.tcp_stream, adb_command)?;
+        self.send_adb_request(adb_command)?;
 
         if with_response {
-            let length = Self::get_body_length(&mut self.tcp_stream)?;
+            let length = self.get_body_length()?;
             let mut body = vec![
                 0;
                 length
@@ -63,20 +63,20 @@ impl AdbTcpConnexion {
 
     /// Sends the given [AdbCommand] to ADB server, and checks that the request has been taken in consideration.
     /// If an error occured, a [RustADBError] is returned with the response error string.
-    pub(crate) fn send_adb_request(tcp_stream: &mut TcpStream, command: AdbCommand) -> Result<()> {
+    pub(crate) fn send_adb_request(&mut self, command: AdbCommand) -> Result<()> {
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
 
-        tcp_stream.write_all(adb_request.as_bytes())?;
+        self.tcp_stream.write_all(adb_request.as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut request_status = [0; 4];
-        tcp_stream.read_exact(&mut request_status)?;
+        self.tcp_stream.read_exact(&mut request_status)?;
 
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
-                let length = Self::get_body_length(tcp_stream)?;
+                let length = self.get_body_length()?;
 
                 let mut body = vec![
                     0;
@@ -85,7 +85,7 @@ impl AdbTcpConnexion {
                         .map_err(|_| RustADBError::ConvertionError)?
                 ];
                 if length > 0 {
-                    tcp_stream.read_exact(&mut body)?;
+                    self.tcp_stream.read_exact(&mut body)?;
                 }
 
                 Err(RustADBError::ADBRequestFailed(String::from_utf8(body)?))
@@ -94,9 +94,16 @@ impl AdbTcpConnexion {
         }
     }
 
-    pub(crate) fn get_body_length(tcp_stream: &mut TcpStream) -> Result<u32> {
+    /// Sends the given [SyncCommand] to ADB server, and checks that the request has been taken in consideration.
+    pub(crate) fn send_sync_request(&mut self, command: SyncCommand) -> Result<()> {
+        // First 4 bytes are the name of the command we want to send
+        // (e.g. "SEND", "RECV", "STAT", "LIST")
+        Ok(self.tcp_stream.write_all(command.to_string().as_bytes())?)
+    }
+
+    pub(crate) fn get_body_length(&mut self) -> Result<u32> {
         let mut length = [0; 4];
-        tcp_stream.read_exact(&mut length)?;
+        self.tcp_stream.read_exact(&mut length)?;
 
         Ok(u32::from_str_radix(str::from_utf8(&length)?, 16)?)
     }
