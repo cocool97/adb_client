@@ -18,10 +18,10 @@ path = "examples/adb_cli.rs"
 
 [dependencies]
 byteorder = { version = "1.4.3" }
-chrono = { version = "0.4.24" }
+chrono = { version = "0.4.26" }
 regex = { version = "1.9.3", features = ["perf", "std", "unicode"] }
 termios = { version = "0.3.3" }
-thiserror = { version = "1.0.44" }
+thiserror = { version = "1.0.46" }
 
 ## Binary-only dependencies
 ## Marked as optional so that lib users do not depend on them

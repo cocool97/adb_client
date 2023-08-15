@@ -21,15 +21,14 @@ impl AdbTcpConnexion {
         self.new_connection()?;
 
         match serial {
-            None => Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => Self::send_adb_request(
-                &mut self.tcp_stream,
-                AdbCommand::TransportSerial(serial.to_string()),
-            )?,
+            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => {
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+            }
         }
 
         // Set device in SYNC mode
-        Self::send_adb_request(&mut self.tcp_stream, AdbCommand::Sync)?;
+        self.send_adb_request(AdbCommand::Sync)?;
 
         // Send a send command
         self.send_sync_request(SyncCommand::Send(stream, path.as_ref()))?;
@@ -81,7 +80,7 @@ impl AdbTcpConnexion {
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
-                let length = Self::get_body_length(&mut self.tcp_stream)?;
+                let length = self.get_body_length()?;
 
                 let mut body = vec![
                     0;

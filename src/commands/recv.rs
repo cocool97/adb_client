@@ -16,15 +16,14 @@ impl AdbTcpConnexion {
         self.new_connection()?;
 
         match serial {
-            None => Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => Self::send_adb_request(
-                &mut self.tcp_stream,
-                AdbCommand::TransportSerial(serial.to_string()),
-            )?,
+            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => {
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+            }
         }
 
         // Set device in SYNC mode
-        Self::send_adb_request(&mut self.tcp_stream, AdbCommand::Sync)?;
+        self.send_adb_request(AdbCommand::Sync)?;
 
         // Send a recv command
         self.send_sync_request(SyncCommand::Recv(path.as_ref(), stream))?;

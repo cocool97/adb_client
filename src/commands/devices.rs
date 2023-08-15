@@ -38,10 +38,10 @@ impl AdbTcpConnexion {
     /// Tracks new devices showing up.
     // TODO: Change with Generator when feature stabilizes
     pub fn track_devices(&mut self, callback: impl Fn(Device) -> Result<()>) -> Result<()> {
-        Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TrackDevices)?;
+        self.send_adb_request(AdbCommand::TrackDevices)?;
 
         loop {
-            let length = Self::get_body_length(&mut self.tcp_stream)?;
+            let length = self.get_body_length()?;
 
             if length > 0 {
                 let mut body = vec![

@@ -7,11 +7,10 @@ impl AdbTcpConnexion {
     /// Lists available ADB server features.
     pub fn host_features<S: ToString>(&mut self, serial: &Option<S>) -> Result<Vec<HostFeatures>> {
         match serial {
-            None => Self::send_adb_request(&mut self.tcp_stream, AdbCommand::TransportAny)?,
-            Some(serial) => Self::send_adb_request(
-                &mut self.tcp_stream,
-                AdbCommand::TransportSerial(serial.to_string()),
-            )?,
+            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => {
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+            }
         }
 
         let features = self.proxy_connexion(AdbCommand::HostFeatures, true)?;
