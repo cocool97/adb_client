@@ -3,10 +3,10 @@ use std::io::{ErrorKind, Read, Write};
 use crate::{
     adb_termios::ADBTermios,
     models::{AdbCommand, HostFeatures},
-    AdbTcpConnexion, Result, RustADBError,
+    AdbTcpConnection, Result, RustADBError,
 };
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
     pub fn shell_command<S: ToString>(
         &mut self,

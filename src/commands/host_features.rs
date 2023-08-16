@@ -1,9 +1,9 @@
 use crate::{
     models::{AdbCommand, HostFeatures},
-    AdbTcpConnexion, Result,
+    AdbTcpConnection, Result,
 };
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Lists available ADB server features.
     pub fn host_features<S: ToString>(&mut self, serial: &Option<S>) -> Result<Vec<HostFeatures>> {
         match serial {
@@ -13,7 +13,7 @@ impl AdbTcpConnexion {
             }
         }
 
-        let features = self.proxy_connexion(AdbCommand::HostFeatures, true)?;
+        let features = self.proxy_connection(AdbCommand::HostFeatures, true)?;
 
         Ok(features
             .split(|x| x.eq(&b','))

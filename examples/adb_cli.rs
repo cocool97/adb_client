@@ -2,7 +2,7 @@ use std::fs::File;
 use std::net::Ipv4Addr;
 use std::path::Path;
 
-use adb_client::{AdbTcpConnexion, Device, RebootType, RustADBError};
+use adb_client::{AdbTcpConnection, Device, RebootType, RustADBError};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -77,26 +77,26 @@ impl From<RebootTypeCommand> for RebootType {
 fn main() -> Result<(), RustADBError> {
     let opt = Args::parse();
 
-    let mut connexion = AdbTcpConnexion::new(opt.address, opt.port)?;
+    let mut connection = AdbTcpConnection::new(opt.address, opt.port)?;
 
     match opt.command {
         Command::Version => {
-            let version = connexion.version()?;
+            let version = connection.version()?;
             println!("Android Debug Bridge version {}", version);
             println!("Package version {}-rust", std::env!("CARGO_PKG_VERSION"));
         }
         Command::Kill => {
-            connexion.kill()?;
+            connection.kill()?;
         }
         Command::Devices { long } => {
             if long {
                 println!("List of devices attached (extended)");
-                for device in connexion.devices_long()? {
+                for device in connection.devices_long()? {
                     println!("{}", device);
                 }
             } else {
                 println!("List of devices attached");
-                for device in connexion.devices()? {
+                for device in connection.devices()? {
                     println!("{}", device);
                 }
             }
@@ -107,41 +107,41 @@ fn main() -> Result<(), RustADBError> {
                 Ok(())
             };
             println!("Live list of devices attached");
-            connexion.track_devices(callback)?;
+            connection.track_devices(callback)?;
         }
         Command::Pull { path, filename } => {
             let mut output = File::create(Path::new(&filename)).unwrap(); // TODO: Better error handling
-            connexion.recv(opt.serial, &path, &mut output)?;
+            connection.recv(opt.serial, &path, &mut output)?;
             println!("Downloaded {path} as {filename}");
         }
         Command::Push { filename, path } => {
             let mut input = File::open(Path::new(&filename)).unwrap(); // TODO: Better error handling
-            connexion.send(opt.serial, &mut input, &path)?;
+            connection.send(opt.serial, &mut input, &path)?;
             println!("Uploaded {filename} to {path}");
         }
         Command::List { path } => {
-            connexion.list(opt.serial, path)?;
+            connection.list(opt.serial, path)?;
         }
         Command::Stat { path } => {
-            let stat_response = connexion.stat(opt.serial, path)?;
+            let stat_response = connection.stat(opt.serial, path)?;
             println!("{}", stat_response);
         }
         Command::Shell { command } => {
             if command.is_empty() {
-                connexion.shell(&opt.serial)?;
+                connection.shell(&opt.serial)?;
             } else {
-                connexion.shell_command(&opt.serial, command)?;
+                connection.shell_command(&opt.serial, command)?;
             }
         }
         Command::HostFeatures => {
             println!("Available host features");
-            for feature in connexion.host_features(&opt.serial)? {
+            for feature in connection.host_features(&opt.serial)? {
                 println!("- {}", feature);
             }
         }
         Command::Reboot { sub_command } => {
             println!("Reboots device");
-            connexion.reboot(&opt.serial, sub_command.into())?
+            connection.reboot(&opt.serial, sub_command.into())?
         }
     }
 

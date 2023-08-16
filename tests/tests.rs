@@ -3,11 +3,11 @@ mod tests {
     use std::net::Ipv4Addr;
     use std::str::FromStr;
 
-    use adb_client::AdbTcpConnexion;
+    use adb_client::AdbTcpConnection;
 
-    fn new_client() -> AdbTcpConnexion {
+    fn new_client() -> AdbTcpConnection {
         let address = Ipv4Addr::from_str("127.0.0.1").unwrap();
-        AdbTcpConnexion::new(address, 5037).expect("Could not build ADB client...")
+        AdbTcpConnection::new(address, 5037).expect("Could not build ADB client...")
     }
 
     #[test]
@@ -32,6 +32,6 @@ mod tests {
     #[should_panic]
     fn test_wrong_addr() {
         let address = Ipv4Addr::from_str("127.0.0.300").unwrap();
-        let _ = AdbTcpConnexion::new(address, 5037).expect("Could not create ADB connexion...");
+        let _ = AdbTcpConnection::new(address, 5037).expect("Could not create ADB connection...");
     }
 }

@@ -1,9 +1,9 @@
 use crate::{
     models::{AdbCommand, RebootType},
-    AdbTcpConnexion, Result,
+    AdbTcpConnection, Result,
 };
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Reboots the device
     pub fn reboot<S: ToString>(
         &mut self,
@@ -17,7 +17,7 @@ impl AdbTcpConnexion {
             }
         }
 
-        self.proxy_connexion(AdbCommand::Reboot(reboot_type), false)
+        self.proxy_connection(AdbCommand::Reboot(reboot_type), false)
             .map(|_| ())
     }
 }

@@ -4,11 +4,11 @@
 #![forbid(missing_docs)]
 #![doc = include_str!("../README.md")]
 
-mod adb_tcp_connexion;
+mod adb_tcp_connection;
 mod adb_termios;
 mod commands;
 mod error;
 mod models;
-pub use adb_tcp_connexion::AdbTcpConnexion;
+pub use adb_tcp_connection::AdbTcpConnection;
 pub use error::{Result, RustADBError};
 pub use models::{AdbVersion, Device, DeviceLong, DeviceState, RebootType};

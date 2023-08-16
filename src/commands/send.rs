@@ -1,6 +1,6 @@
 use crate::{
     models::{AdbCommand, AdbRequestStatus, SyncCommand},
-    AdbTcpConnexion, Result, RustADBError,
+    AdbTcpConnection, Result, RustADBError,
 };
 use byteorder::{ByteOrder, LittleEndian};
 use std::{
@@ -10,7 +10,7 @@ use std::{
     time::SystemTime,
 };
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Sends [stream] to [path] on the device.
     pub fn send<S: ToString, A: AsRef<str>>(
         &mut self,
@@ -86,7 +86,7 @@ impl AdbTcpConnexion {
                     0;
                     length
                         .try_into()
-                        .map_err(|_| RustADBError::ConvertionError)?
+                        .map_err(|_| RustADBError::ConversionError)?
                 ];
                 if length > 0 {
                     self.tcp_stream.read_exact(&mut body)?;
