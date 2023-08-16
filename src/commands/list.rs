@@ -1,6 +1,6 @@
 use crate::{
     models::{AdbCommand, SyncCommand},
-    AdbTcpConnexion, Result,
+    AdbTcpConnection, Result,
 };
 use byteorder::{ByteOrder, LittleEndian};
 use std::{
@@ -8,7 +8,7 @@ use std::{
     str,
 };
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Lists files in [path] on the device.
     pub fn list<S: ToString, A: AsRef<str>>(&mut self, serial: Option<S>, path: A) -> Result<()> {
         self.new_connection()?;

@@ -10,15 +10,15 @@ use crate::{
     Result, RustADBError,
 };
 
-/// Represents an ADB-over-TCP connexion.
+/// Represents an ADB-over-TCP connection.
 #[derive(Debug)]
-pub struct AdbTcpConnexion {
+pub struct AdbTcpConnection {
     pub(crate) socket_addr: SocketAddrV4,
     pub(crate) tcp_stream: TcpStream,
 }
 
-impl AdbTcpConnexion {
-    /// Instantiates a new instance of [AdbTcpConnexion]
+impl AdbTcpConnection {
+    /// Instantiates a new instance of [AdbTcpConnection]
     pub fn new(address: Ipv4Addr, port: u16) -> Result<Self> {
         let addr = SocketAddrV4::new(address, port);
         Ok(Self {
@@ -36,7 +36,7 @@ impl AdbTcpConnexion {
         Ok(())
     }
 
-    pub(crate) fn proxy_connexion(
+    pub(crate) fn proxy_connection(
         &mut self,
         adb_command: AdbCommand,
         with_response: bool,
@@ -49,7 +49,7 @@ impl AdbTcpConnexion {
                 0;
                 length
                     .try_into()
-                    .map_err(|_| RustADBError::ConvertionError)?
+                    .map_err(|_| RustADBError::ConversionError)?
             ];
             if length > 0 {
                 self.tcp_stream.read_exact(&mut body)?;
@@ -62,7 +62,7 @@ impl AdbTcpConnexion {
     }
 
     /// Sends the given [AdbCommand] to ADB server, and checks that the request has been taken in consideration.
-    /// If an error occured, a [RustADBError] is returned with the response error string.
+    /// If an error occurred, a [RustADBError] is returned with the response error string.
     pub(crate) fn send_adb_request(&mut self, command: AdbCommand) -> Result<()> {
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
@@ -82,7 +82,7 @@ impl AdbTcpConnexion {
                     0;
                     length
                         .try_into()
-                        .map_err(|_| RustADBError::ConvertionError)?
+                        .map_err(|_| RustADBError::ConversionError)?
                 ];
                 if length > 0 {
                     self.tcp_stream.read_exact(&mut body)?;

@@ -1,8 +1,8 @@
-use crate::{models::AdbCommand, AdbTcpConnexion, Result};
+use crate::{models::AdbCommand, AdbTcpConnection, Result};
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Asks the ADB server to quit immediately.
     pub fn kill(&mut self) -> Result<()> {
-        self.proxy_connexion(AdbCommand::Kill, false).map(|_| ())
+        self.proxy_connection(AdbCommand::Kill, false).map(|_| ())
     }
 }

@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 
 use crate::{
     models::{AdbCommand, SyncCommand},
-    AdbTcpConnexion, Result, RustADBError,
+    AdbTcpConnection, Result, RustADBError,
 };
 
 #[derive(Debug)]
@@ -46,7 +46,7 @@ impl Display for AdbStatResponse {
     }
 }
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     fn handle_stat_command<S: AsRef<str>>(&mut self, path: S) -> Result<AdbStatResponse> {
         let mut len_buf = [0_u8; 4];
         LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);

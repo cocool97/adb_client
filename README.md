@@ -1,6 +1,6 @@
 # adb_client
 
-**A**ndroid **D**ebug **B**ridge (ADB) client implementation in pure Rust !
+Android Debug Bridge (ADB) client implementation in pure Rust !
 
 Main features :
 
@@ -21,32 +21,32 @@ adb_client = "*"
 ### Launch a command on host device
 
 ```rust
-use adb_client::AdbTcpConnexion;
+use adb_client::AdbTcpConnection;
 use std::net::Ipv4Addr;
 
-let mut connexion = AdbTcpConnexion::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
-connexion.shell_command(None, vec!["df", "-h"]);
+let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
+connection.shell_command(None, vec!["df", "-h"]);
 ```
 
 ### Get available ADB devices
 
 ```rust
-use adb_client::AdbTcpConnexion;
+use adb_client::AdbTcpConnection;
 use std::net::Ipv4Addr;
 
-let mut connexion = AdbTcpConnexion::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
-connexion.devices();
+let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
+connection.devices();
 ```
 
 ### Push a file to the device
 
 ```rust
-use adb_client::AdbTcpConnexion;
+use adb_client::AdbTcpConnection;
 use std::net::Ipv4Addr;
 
-let mut connexion = AdbTcpConnexion::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
+let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
 let mut input = File::open(Path::new(&filename)).unwrap(); 
-connexion.send(None, &mut input, &path)?;
+connection.send(None, &mut input, &path)?;
 ```
 
 ## Rust binary

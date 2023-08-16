@@ -1,11 +1,11 @@
 use std::io::Read;
 
-use crate::{models::AdbCommand, AdbTcpConnexion, Device, DeviceLong, Result, RustADBError};
+use crate::{models::AdbCommand, AdbTcpConnection, Device, DeviceLong, Result, RustADBError};
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Gets a list of connected devices.
     pub fn devices(&mut self) -> Result<Vec<Device>> {
-        let devices = self.proxy_connexion(AdbCommand::Devices, true)?;
+        let devices = self.proxy_connection(AdbCommand::Devices, true)?;
 
         let mut vec_devices: Vec<Device> = vec![];
         for device in devices.split(|x| x.eq(&b'\n')) {
@@ -21,7 +21,7 @@ impl AdbTcpConnexion {
 
     /// Gets an extended list of connected devices including the device paths in the state.
     pub fn devices_long(&mut self) -> Result<Vec<DeviceLong>> {
-        let devices_long = self.proxy_connexion(AdbCommand::DevicesLong, true)?;
+        let devices_long = self.proxy_connection(AdbCommand::DevicesLong, true)?;
 
         let mut vec_devices: Vec<DeviceLong> = vec![];
         for device in devices_long.split(|x| x.eq(&b'\n')) {
@@ -48,7 +48,7 @@ impl AdbTcpConnexion {
                     0;
                     length
                         .try_into()
-                        .map_err(|_| RustADBError::ConvertionError)?
+                        .map_err(|_| RustADBError::ConversionError)?
                 ];
                 self.tcp_stream.read_exact(&mut body)?;
 

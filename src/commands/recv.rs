@@ -1,11 +1,11 @@
 use crate::{
     models::{AdbCommand, SyncCommand},
-    AdbTcpConnexion, Result, RustADBError,
+    AdbTcpConnection, Result, RustADBError,
 };
 use byteorder::{ByteOrder, LittleEndian};
 use std::io::{Read, Write};
 
-impl AdbTcpConnexion {
+impl AdbTcpConnection {
     /// Receives [path] to [stream] from the device.
     pub fn recv<S: ToString, A: AsRef<str>>(
         &mut self,
