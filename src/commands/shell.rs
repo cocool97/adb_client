@@ -37,22 +37,27 @@ impl AdbTcpConnection {
         ))?;
 
         const BUFFER_SIZE: usize = 512;
-        let mut result = Vec::new();
-        loop {
-            let mut buffer = [0; BUFFER_SIZE];
-            match self.tcp_stream.read(&mut buffer) {
-                Ok(size) => {
-                    if size == 0 {
-                        return Ok(result);
-                    } else {
-                        result.extend_from_slice(&buffer[..size]);
+        let result = (|| {
+            let mut result = Vec::new();
+            loop {
+                let mut buffer = [0; BUFFER_SIZE];
+                match self.tcp_stream.read(&mut buffer) {
+                    Ok(size) => {
+                        if size == 0 {
+                            return Ok(result);
+                        } else {
+                            result.extend_from_slice(&buffer[..size]);
+                        }
+                    }
+                    Err(e) => {
+                        return Err(RustADBError::IOError(e));
                     }
                 }
-                Err(e) => {
-                    return Err(RustADBError::IOError(e));
-                }
             }
-        }
+        })();
+
+        self.new_connection()?;
+        result
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
