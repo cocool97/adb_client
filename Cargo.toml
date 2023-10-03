@@ -26,4 +26,4 @@ thiserror = { version = "1.0.46" }
 ## Binary-only dependencies
 ## Marked as optional so that lib users do not depend on them
 [dev-dependencies]
-clap = { version = "= 4.3.21", features = ["derive"] }
+clap = { version = "4.4.6", features = ["derive"] }
