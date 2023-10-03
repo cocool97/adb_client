@@ -12,7 +12,7 @@ impl AdbTcpConnection {
         &mut self,
         serial: &Option<S>,
         command: impl IntoIterator<Item = S>,
-    ) -> Result<()> {
+    ) -> Result<Vec<u8>> {
         let supported_features = self.host_features(serial)?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -36,23 +36,28 @@ impl AdbTcpConnection {
                 .join(" "),
         ))?;
 
-        let buffer_size = 512;
-        loop {
-            let mut buffer = vec![0; buffer_size];
-            match self.tcp_stream.read(&mut buffer) {
-                Ok(size) => {
-                    if size == 0 {
-                        return Ok(());
-                    } else {
-                        print!("{}", String::from_utf8(buffer.to_vec())?);
-                        std::io::stdout().flush()?;
+        const BUFFER_SIZE: usize = 512;
+        let result = (|| {
+            let mut result = Vec::new();
+            loop {
+                let mut buffer = [0; BUFFER_SIZE];
+                match self.tcp_stream.read(&mut buffer) {
+                    Ok(size) => {
+                        if size == 0 {
+                            return Ok(result);
+                        } else {
+                            result.extend_from_slice(&buffer[..size]);
+                        }
+                    }
+                    Err(e) => {
+                        return Err(RustADBError::IOError(e));
                     }
                 }
-                Err(e) => {
-                    return Err(RustADBError::IOError(e));
-                }
             }
-        }
+        })();
+
+        self.new_connection()?;
+        result
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
@@ -97,9 +102,9 @@ impl AdbTcpConnection {
 
         // Reading thread
         let reader_t = std::thread::spawn(move || -> Result<()> {
-            let buffer_size = 512;
+            const BUFFER_SIZE: usize = 512;
             loop {
-                let mut buffer = vec![0; buffer_size];
+                let mut buffer = [0; BUFFER_SIZE];
                 match read_stream.read(&mut buffer) {
                     Ok(size) if size == 0 => {
                         // TODO: check if return here is good.. return Ok(()) ?
@@ -110,8 +115,8 @@ impl AdbTcpConnection {
 
                         return Ok(());
                     }
-                    Ok(_) => {
-                        print!("{}", String::from_utf8(buffer.to_vec())?);
+                    Ok(size) => {
+                        std::io::stdout().write(&buffer[..size])?;
                         std::io::stdout().flush()?;
                     }
                     Err(e) => {

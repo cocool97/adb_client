@@ -43,6 +43,8 @@ connection.devices();
 ```rust
 use adb_client::AdbTcpConnection;
 use std::net::Ipv4Addr;
+use std::fs::File;
+use std::path::Path;
 
 let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
 let mut input = File::open(Path::new(&filename)).unwrap(); 

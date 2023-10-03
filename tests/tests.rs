@@ -17,6 +17,13 @@ mod tests {
     }
 
     #[test]
+    fn test_shell() {
+        let mut adb = new_client();
+        adb.shell_command(&None, vec!["ls"]).unwrap();
+        adb.shell_command(&None, vec!["pwd"]).unwrap();
+    }
+
+    #[test]
     fn test_devices() {
         let mut adb = new_client();
         adb.devices().unwrap();
