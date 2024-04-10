@@ -1,8 +1,12 @@
+use lazy_static::lazy_static;
+use regex::bytes::Regex;
 use std::{fmt::Display, str::FromStr};
 
-use regex::bytes::Regex;
-
 use crate::{DeviceState, RustADBError};
+
+lazy_static! {
+    static ref DEVICES_REGEX: Regex = Regex::new("^(\\S+)\t(\\w+)\n?$").unwrap();
+}
 
 /// Represents a device connected to the ADB server.
 #[derive(Debug)]
@@ -22,12 +26,9 @@ impl Display for Device {
 impl TryFrom<Vec<u8>> for Device {
     type Error = RustADBError;
 
-    // TODO: Prevent regex compilation every call to try_from()
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         // Optional final '\n' is used to match TrackDevices inputs
-        let parse_regex = Regex::new("^(\\w+)\t(\\w+)\n?$")?;
-
-        let groups = parse_regex.captures(&value).unwrap();
+        let groups = DEVICES_REGEX.captures(&value).unwrap();
         Ok(Device {
             identifier: String::from_utf8(
                 groups

@@ -106,17 +106,11 @@ impl AdbTcpConnection {
             loop {
                 let mut buffer = [0; BUFFER_SIZE];
                 match read_stream.read(&mut buffer) {
-                    Ok(size) if size == 0 => {
-                        // TODO: check if return here is good.. return Ok(()) ?
-
-                        // return Err(RustADBError::IOError(std::io::Error::from(
-                        //     ErrorKind::BrokenPipe,
-                        // )));
-
+                    Ok(0) => {
                         return Ok(());
                     }
                     Ok(size) => {
-                        std::io::stdout().write(&buffer[..size])?;
+                        std::io::stdout().write_all(&buffer[..size])?;
                         std::io::stdout().flush()?;
                     }
                     Err(e) => {
