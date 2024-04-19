@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use std::net::Ipv4Addr;
 use super::RebootType;
 
 pub(crate) enum AdbCommand {
@@ -9,6 +10,8 @@ pub(crate) enum AdbCommand {
     DevicesLong,
     TrackDevices,
     HostFeatures,
+    Connect(Ipv4Addr, u16),
+    Pair(Ipv4Addr, u16, u32),
     // TODO: NOT IMPLEMENTED YET
     // Emulator(u16),
     // Transport(String),
@@ -69,7 +72,9 @@ impl Display for AdbCommand {
             AdbCommand::HostFeatures => write!(f, "host:features"),
             AdbCommand::Reboot(reboot_type) => {
                 write!(f, "reboot:{reboot_type}")
-            }
+            },
+            AdbCommand::Connect(addr, port) => write!(f, "host:connect:{addr}:{port}"),
+            AdbCommand::Pair(addr, port, code) => write!(f, "host:pair:{code}:{addr}:{port}")
         }
     }
 }
