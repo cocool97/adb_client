@@ -64,6 +64,14 @@ pub enum HostCommand {
     },
     /// Track new devices showing up.
     TrackDevices,
+    /// Pair new device on a specific port with a given code
+    Pair {
+        address: Ipv4Addr,
+        port: u16,
+        code: u32,
+    },
+    /// Connect device over WI-FI
+    Connect { address: Ipv4Addr, port: u16 },
 }
 
 #[derive(Parser, Debug)]
@@ -162,6 +170,18 @@ fn main() -> Result<()> {
                 };
                 println!("Live list of devices attached");
                 adb_server.track_devices(callback)?;
+            }
+            HostCommand::Pair {
+                address,
+                port,
+                code,
+            } => {
+                println!("Pairing device");
+                adb_server.pair(address, port, code)?
+            }
+            HostCommand::Connect { address, port } => {
+                println!("Connect device");
+                adb_server.connect_device(address, port)?
             }
         },
     }

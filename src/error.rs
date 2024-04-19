@@ -45,4 +45,7 @@ pub enum RustADBError {
     /// Desired device has not been found
     #[error("Device not found: {0}")]
     DeviceNotFound(String),
+    /// Indicates that the device must be paired before attempting a connection over WI-FI
+    #[error("Device not paired before attempting to connect")]
+    ADBDeviceNotPaired,
 }
