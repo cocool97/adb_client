@@ -5,6 +5,7 @@
 #![doc = include_str!("../README.md")]
 
 mod adb_tcp_connection;
+#[cfg(unix)]
 mod adb_termios;
 mod commands;
 mod error;

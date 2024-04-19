@@ -128,7 +128,11 @@ fn main() -> Result<(), RustADBError> {
         }
         Command::Shell { command } => {
             if command.is_empty() {
+                #[cfg(unix)]
                 connection.shell(&opt.serial)?;
+                if cfg!(windows) {
+                    println!("Interative shell not supported on Windows");
+                }
             } else {
                 connection.shell_command(&opt.serial, command)?;
             }

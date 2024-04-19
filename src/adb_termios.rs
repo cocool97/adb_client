@@ -1,3 +1,4 @@
+#![cfg(unix)]
 use std::os::unix::prelude::{AsRawFd, RawFd};
 
 use termios::{tcsetattr, Termios, TCSANOW, VMIN, VTIME};

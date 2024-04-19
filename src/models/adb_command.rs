@@ -28,6 +28,7 @@ pub enum AdbCommand {
     // KillForwardAll(String),
     // ListForward(String),
     ShellCommand(String),
+    #[cfg(unix)]
     Shell,
     // Remount,
     // DevPath(String),
@@ -60,6 +61,7 @@ impl ToString for AdbCommand {
                 Ok(term) => format!("shell,TERM={term},raw:{command}"),
                 Err(_) => format!("shell,raw:{command}"),
             },
+            #[cfg(unix)]
             AdbCommand::Shell => match std::env::var("TERM") {
                 Ok(term) => format!("shell,TERM={term},raw:"),
                 Err(_) => "shell,raw:".into(),
