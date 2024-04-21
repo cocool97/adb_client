@@ -1,9 +1,14 @@
+use lazy_static::lazy_static;
 use std::str::FromStr;
 use std::{fmt::Display, str};
 
 use crate::{DeviceState, RustADBError};
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
+
+lazy_static! {
+    static ref DEVICES_LONG_REGEX: Regex = Regex::new("^(?P<identifier>\\S+)\\s+(?P<state>\\w+) (usb:(?P<usb>.*) )?(product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+) )?transport_id:(?P<transport_id>\\d+)$").unwrap();
+}
 
 /// Represents a new device with more informations helded.
 #[derive(Debug)]
