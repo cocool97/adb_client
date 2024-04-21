@@ -1,7 +1,8 @@
 use std::io::{ErrorKind, Read, Write};
 
+#[cfg(unix)]
+use crate::adb_termios::ADBTermios;
 use crate::{
-    adb_termios::ADBTermios,
     models::{AdbCommand, HostFeatures},
     AdbTcpConnection, Result, RustADBError,
 };
@@ -62,7 +63,9 @@ impl AdbTcpConnection {
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
     pub fn shell<S: ToString>(&mut self, serial: &Option<S>) -> Result<()> {
+        #[cfg(unix)]
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
+        #[cfg(unix)]
         adb_termios.set_adb_termios()?;
 
         self.tcp_stream.set_nodelay(true)?;
