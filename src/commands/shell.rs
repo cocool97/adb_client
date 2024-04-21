@@ -1,6 +1,4 @@
-#[cfg(unix)]
-use std::io::{ErrorKind, Write};
-use std::io::{Read};
+use std::io::{ErrorKind, Read, Write};
 
 #[cfg(unix)]
 use crate::adb_termios::ADBTermios;
@@ -64,9 +62,10 @@ impl AdbTcpConnection {
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    #[cfg(unix)]
     pub fn shell<S: ToString>(&mut self, serial: &Option<S>) -> Result<()> {
+        #[cfg(unix)]
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
+        #[cfg(unix)]
         adb_termios.set_adb_termios()?;
 
         self.tcp_stream.set_nodelay(true)?;
