@@ -8,7 +8,6 @@ impl ADBServer {
 
         match String::from_utf8(response).unwrap() {
             s if s.starts_with("connected to") => Ok(()),
-            s if s.starts_with("failed to connect to") => Err(RustADBError::ADBDeviceNotPaired),
             s => Err(RustADBError::ADBRequestFailed(s))
         }
     }
