@@ -9,3 +9,5 @@ mod shell;
 mod stat;
 mod transport;
 mod version;
+mod connect;
+mod pair;

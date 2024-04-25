@@ -51,6 +51,10 @@ pub enum Command {
         #[clap(subcommand)]
         sub_command: RebootTypeCommand,
     },
+    /// Pair new device on a specific port with a generated 'code'
+    Pair { address: Ipv4Addr, port: u16, code: u32 },
+    /// Connect device over WI-FI
+    Connect { address: Ipv4Addr, port: u16 }
 }
 
 #[derive(Parser, Debug)]
@@ -142,6 +146,14 @@ fn main() -> Result<(), RustADBError> {
         Command::Reboot { sub_command } => {
             println!("Reboots device");
             connection.reboot(&opt.serial, sub_command.into())?
+        }
+        Command::Pair { address, port, code } => {
+            println!("Pairing device");
+            connection.pair(address, port, code)?
+        }
+        Command::Connect { address, port } => {
+            println!("Connect device");
+            connection.connect(address, port)?
         }
     }
 

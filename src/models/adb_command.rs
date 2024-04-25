@@ -1,3 +1,4 @@
+use std::net::Ipv4Addr;
 use super::RebootType;
 
 pub enum AdbCommand {
@@ -7,6 +8,8 @@ pub enum AdbCommand {
     DevicesLong,
     TrackDevices,
     HostFeatures,
+    Connect(Ipv4Addr, u16),
+    Pair(Ipv4Addr, u16, u32),
     // TODO: NOT IMPLEMENTED YET
     // Emulator(u16),
     // Transport(String),
@@ -67,7 +70,9 @@ impl ToString for AdbCommand {
             AdbCommand::HostFeatures => "host:features".into(),
             AdbCommand::Reboot(reboot_type) => {
                 format!("reboot:{reboot_type}")
-            }
+            },
+            AdbCommand::Connect(addr, port) => format!("host:connect:{addr}:{port}"),
+            AdbCommand::Pair(addr, port, code) => format!("host:pair:{code}:{addr}:{port}")
         }
     }
 }
