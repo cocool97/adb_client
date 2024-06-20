@@ -5,6 +5,8 @@ use std::{
     str::FromStr,
 };
 
+use byteorder::{ByteOrder, LittleEndian};
+
 use crate::{
     models::{AdbCommand, AdbRequestStatus, SyncCommand},
     Result, RustADBError,
@@ -102,9 +104,8 @@ impl AdbTcpConnection {
     }
 
     pub(crate) fn get_body_length(&mut self) -> Result<u32> {
-        let mut length = [0; 4];
-        self.tcp_stream.read_exact(&mut length)?;
-
-        Ok(u32::from_str_radix(str::from_utf8(&length)?, 16)?)
+        let mut len_buf = [0; 4];
+        self.tcp_stream.read_exact(&mut len_buf)?;
+        Ok(LittleEndian::read_u32(&len_buf))
     }
 }
