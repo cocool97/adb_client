@@ -46,7 +46,7 @@ impl AdbTcpConnection {
         self.send_adb_request(adb_command)?;
 
         if with_response {
-            let length = self.get_body_length()?;
+            let length = self.get_body_length(true)?;
             let mut body = vec![
                 0;
                 length
@@ -78,7 +78,7 @@ impl AdbTcpConnection {
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
-                let length = self.get_body_length()?;
+                let length = self.get_body_length(false)?;
 
                 let mut body = vec![
                     0;
@@ -103,9 +103,13 @@ impl AdbTcpConnection {
         Ok(self.tcp_stream.write_all(command.to_string().as_bytes())?)
     }
 
-    pub(crate) fn get_body_length(&mut self) -> Result<u32> {
+    pub(crate) fn get_body_length(&mut self, hex: bool) -> Result<u32> {
         let mut len_buf = [0; 4];
         self.tcp_stream.read_exact(&mut len_buf)?;
-        Ok(LittleEndian::read_u32(&len_buf))
+        if hex {
+            Ok(u32::from_str_radix(str::from_utf8(&len_buf)?, 16)?)
+        } else {
+            Ok(LittleEndian::read_u32(&len_buf))
+        }
     }
 }

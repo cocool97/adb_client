@@ -80,7 +80,7 @@ impl AdbTcpConnection {
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
-                let length = self.get_body_length()?;
+                let length = self.get_body_length(false)?;
 
                 let mut body = vec![
                     0;

@@ -52,14 +52,14 @@ impl AdbTcpConnection {
             match &data_header {
                 b"DATA" => {
                     // Handle received data
-                    let length: usize = self.get_body_length()?.try_into().unwrap();
+                    let length: usize = self.get_body_length(false)?.try_into().unwrap();
                     self.tcp_stream.read_exact(&mut buffer[..length])?;
                     output.write_all(&buffer)?;
                 }
                 b"DONE" => break, // We're done here
                 b"FAIL" => {
                     // Handle fail
-                    let length: usize = self.get_body_length()?.try_into().unwrap();
+                    let length: usize = self.get_body_length(false)?.try_into().unwrap();
                     self.tcp_stream.read_exact(&mut buffer[..length])?;
                     Err(RustADBError::ADBRequestFailed(String::from_utf8(
                         buffer[..length].to_vec(),
