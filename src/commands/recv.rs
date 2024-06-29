@@ -26,7 +26,7 @@ impl AdbTcpConnection {
         self.send_adb_request(AdbCommand::Sync)?;
 
         // Send a recv command
-        self.send_sync_request(SyncCommand::Recv(path.as_ref(), stream))?;
+        self.send_sync_request(SyncCommand::Recv)?;
 
         self.handle_recv_command(path, stream)
     }

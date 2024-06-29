@@ -24,7 +24,7 @@ impl AdbTcpConnection {
         self.send_adb_request(AdbCommand::Sync)?;
 
         // Send a list command
-        self.send_sync_request(SyncCommand::List(path.as_ref()))?;
+        self.send_sync_request(SyncCommand::List)?;
 
         self.handle_list_command(path)
     }
