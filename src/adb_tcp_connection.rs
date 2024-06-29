@@ -46,7 +46,7 @@ impl AdbTcpConnection {
         self.send_adb_request(adb_command)?;
 
         if with_response {
-            let length = self.get_body_length(true)?;
+            let length = self.get_hex_body_length()?;
             let mut body = vec![
                 0;
                 length
@@ -78,7 +78,7 @@ impl AdbTcpConnection {
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
-                let length = self.get_body_length(false)?;
+                let length = self.get_body_length()?;
 
                 let mut body = vec![
                     0;
@@ -103,13 +103,23 @@ impl AdbTcpConnection {
         Ok(self.tcp_stream.write_all(command.to_string().as_bytes())?)
     }
 
-    pub(crate) fn get_body_length(&mut self, hex: bool) -> Result<u32> {
-        let mut len_buf = [0; 4];
-        self.tcp_stream.read_exact(&mut len_buf)?;
-        if hex {
-            Ok(u32::from_str_radix(str::from_utf8(&len_buf)?, 16)?)
-        } else {
-            Ok(LittleEndian::read_u32(&len_buf))
-        }
+    /// Gets the body length from hexadecimal value
+    pub(crate) fn get_hex_body_length(&mut self) -> Result<u32> {
+        let length_buffer = self.read_body_length()?;
+        Ok(u32::from_str_radix(str::from_utf8(&length_buffer)?, 16)?)
+    }
+
+    /// Gets the body length from a LittleEndian value
+    pub(crate) fn get_body_length(&mut self) -> Result<u32> {
+        let length_buffer = self.read_body_length()?;
+        Ok(LittleEndian::read_u32(&length_buffer))
+    }
+
+    /// Read 4 bytes representing body length
+    fn read_body_length(&mut self) -> Result<[u8; 4]> {
+        let mut length_buffer = [0; 4];
+        self.tcp_stream.read_exact(&mut length_buffer)?;
+
+        Ok(length_buffer)
     }
 }

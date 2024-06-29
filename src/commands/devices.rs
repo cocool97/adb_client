@@ -41,7 +41,7 @@ impl AdbTcpConnection {
         self.send_adb_request(AdbCommand::TrackDevices)?;
 
         loop {
-            let length = self.get_body_length(true)?;
+            let length = self.get_hex_body_length()?;
 
             if length > 0 {
                 let mut body = vec![
