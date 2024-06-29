@@ -92,7 +92,7 @@ impl AdbTcpConnection {
         self.send_adb_request(AdbCommand::Sync)?;
 
         // Send a "Stat" command
-        self.send_sync_request(SyncCommand::Stat(path.as_ref()))?;
+        self.send_sync_request(SyncCommand::Stat)?;
 
         self.handle_stat_command(path)
     }

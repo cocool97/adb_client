@@ -1,22 +1,23 @@
-pub enum SyncCommand<'a> {
+use std::fmt::Display;
+
+pub enum SyncCommand {
     /// List files in a folder
-    List(&'a str),
+    List,
     /// Receive a file from the device
-    Recv(&'a str, &'a mut dyn std::io::Write),
+    Recv,
     /// Send a file to the device
-    Send(&'a mut dyn std::io::Read, &'a str),
+    Send,
     // Stat a file
-    Stat(&'a str),
+    Stat,
 }
 
-impl ToString for SyncCommand<'_> {
-    fn to_string(&self) -> String {
+impl Display for SyncCommand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SyncCommand::List(_) => "LIST",
-            SyncCommand::Recv(_, _) => "RECV",
-            SyncCommand::Send(_, _) => "SEND",
-            SyncCommand::Stat(_) => "STAT",
+            SyncCommand::List => write!(f, "LIST"),
+            SyncCommand::Recv => write!(f, "RECV"),
+            SyncCommand::Send => write!(f, "SEND"),
+            SyncCommand::Stat => write!(f, "STAT"),
         }
-        .to_string()
     }
 }

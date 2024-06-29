@@ -31,7 +31,7 @@ impl AdbTcpConnection {
         self.send_adb_request(AdbCommand::Sync)?;
 
         // Send a send command
-        self.send_sync_request(SyncCommand::Send(stream, path.as_ref()))?;
+        self.send_sync_request(SyncCommand::Send)?;
 
         self.handle_send_command(stream, path)
     }
