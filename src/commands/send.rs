@@ -14,21 +14,19 @@ impl AdbTcpConnection {
     /// Sends [stream] to [path] on the device.
     pub fn send<S: ToString, A: AsRef<str>>(
         &mut self,
-        serial: Option<S>,
+        serial: Option<&S>,
         stream: &mut dyn Read,
         path: A,
     ) -> Result<()> {
-        self.new_connection()?;
-
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            None => self.send_adb_request(AdbCommand::TransportAny, true)?,
             Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), true)?
             }
         }
 
         // Set device in SYNC mode
-        self.send_adb_request(AdbCommand::Sync)?;
+        self.send_adb_request(AdbCommand::Sync, false)?;
 
         // Send a send command
         self.send_sync_request(SyncCommand::Send)?;

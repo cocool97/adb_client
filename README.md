@@ -47,9 +47,8 @@ use std::fs::File;
 use std::path::Path;
 
 let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
-let serial: Option<&str> = None;
 let mut input = File::open(Path::new("/tmp")).unwrap();
-connection.send(serial, &mut input, "/data/local/tmp");
+connection.send::<&str,&str>(None, &mut input, "/data/local/tmp");
 ```
 
 ## Rust binary

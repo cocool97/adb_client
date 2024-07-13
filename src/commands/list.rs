@@ -10,18 +10,16 @@ use std::{
 
 impl AdbTcpConnection {
     /// Lists files in [path] on the device.
-    pub fn list<S: ToString, A: AsRef<str>>(&mut self, serial: Option<S>, path: A) -> Result<()> {
-        self.new_connection()?;
-
+    pub fn list<S: ToString, A: AsRef<str>>(&mut self, serial: Option<&S>, path: A) -> Result<()> {
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            None => self.send_adb_request(AdbCommand::TransportAny, false)?,
             Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), false)?
             }
         }
 
         // Set device in SYNC mode
-        self.send_adb_request(AdbCommand::Sync)?;
+        self.send_adb_request(AdbCommand::Sync, false)?;
 
         // Send a list command
         self.send_sync_request(SyncCommand::List)?;

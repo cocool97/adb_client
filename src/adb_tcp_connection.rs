@@ -42,8 +42,9 @@ impl AdbTcpConnection {
         &mut self,
         adb_command: AdbCommand,
         with_response: bool,
+        fresh_connection: bool
     ) -> Result<Vec<u8>> {
-        self.send_adb_request(adb_command)?;
+        self.send_adb_request(adb_command, fresh_connection)?;
 
         if with_response {
             let length = self.get_hex_body_length()?;
@@ -65,7 +66,16 @@ impl AdbTcpConnection {
 
     /// Sends the given [AdbCommand] to ADB server, and checks that the request has been taken in consideration.
     /// If an error occurred, a [RustADBError] is returned with the response error string.
-    pub(crate) fn send_adb_request(&mut self, command: AdbCommand) -> Result<()> {
+    pub(crate) fn send_adb_request(
+        &mut self,
+        command: AdbCommand,
+        fresh_connection: bool,
+    ) -> Result<()> {
+        if fresh_connection {
+            // Recreate a new connection (likely because command does not need "state" server side)
+            self.new_connection()?;
+        }
+
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
 

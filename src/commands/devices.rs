@@ -5,7 +5,7 @@ use crate::{models::AdbCommand, AdbTcpConnection, Device, DeviceLong, Result, Ru
 impl AdbTcpConnection {
     /// Gets a list of connected devices.
     pub fn devices(&mut self) -> Result<Vec<Device>> {
-        let devices = self.proxy_connection(AdbCommand::Devices, true)?;
+        let devices = self.proxy_connection(AdbCommand::Devices, true, true)?;
 
         let mut vec_devices: Vec<Device> = vec![];
         for device in devices.split(|x| x.eq(&b'\n')) {
@@ -21,7 +21,7 @@ impl AdbTcpConnection {
 
     /// Gets an extended list of connected devices including the device paths in the state.
     pub fn devices_long(&mut self) -> Result<Vec<DeviceLong>> {
-        let devices_long = self.proxy_connection(AdbCommand::DevicesLong, true)?;
+        let devices_long = self.proxy_connection(AdbCommand::DevicesLong, true, true)?;
 
         let mut vec_devices: Vec<DeviceLong> = vec![];
         for device in devices_long.split(|x| x.eq(&b'\n')) {
@@ -38,7 +38,7 @@ impl AdbTcpConnection {
     /// Tracks new devices showing up.
     // TODO: Change with Generator when feature stabilizes
     pub fn track_devices(&mut self, callback: impl Fn(Device) -> Result<()>) -> Result<()> {
-        self.send_adb_request(AdbCommand::TrackDevices)?;
+        self.send_adb_request(AdbCommand::TrackDevices, true)?;
 
         loop {
             let length = self.get_hex_body_length()?;

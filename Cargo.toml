@@ -29,3 +29,4 @@ thiserror = { version = "1.0.61" }
 ## Marked as optional so that lib users do not depend on them
 [dev-dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
+rand = { version = "0.8.5" }
