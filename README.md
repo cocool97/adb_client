@@ -25,7 +25,7 @@ use adb_client::AdbTcpConnection;
 use std::net::Ipv4Addr;
 
 let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
-connection.shell_command(None, vec!["df", "-h"]);
+connection.shell_command(None, ["df", "-h"]);
 ```
 
 ### Get available ADB devices
@@ -47,8 +47,9 @@ use std::fs::File;
 use std::path::Path;
 
 let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
-let mut input = File::open(Path::new(&filename)).unwrap(); 
-connection.send(None, &mut input, &path)?;
+let serial: Option<&str> = None;
+let mut input = File::open(Path::new("/tmp")).unwrap();
+connection.send(serial, &mut input, "/data/local/tmp");
 ```
 
 ## Rust binary
