@@ -111,16 +111,16 @@ fn main() -> Result<(), RustADBError> {
         }
         Command::Pull { path, filename } => {
             let mut output = File::create(Path::new(&filename)).unwrap(); // TODO: Better error handling
-            connection.recv(opt.serial, &path, &mut output)?;
+            connection.recv(opt.serial.as_ref(), &path, &mut output)?;
             println!("Downloaded {path} as {filename}");
         }
         Command::Push { filename, path } => {
             let mut input = File::open(Path::new(&filename)).unwrap(); // TODO: Better error handling
-            connection.send(opt.serial, &mut input, &path)?;
+            connection.send(opt.serial.as_ref(), &mut input, &path)?;
             println!("Uploaded {filename} to {path}");
         }
         Command::List { path } => {
-            connection.list(opt.serial, path)?;
+            connection.list(opt.serial.as_ref(), path)?;
         }
         Command::Stat { path } => {
             let stat_response = connection.stat(opt.serial, path)?;
@@ -128,20 +128,20 @@ fn main() -> Result<(), RustADBError> {
         }
         Command::Shell { command } => {
             if command.is_empty() {
-                connection.shell(&opt.serial)?;
+                connection.shell(opt.serial.as_ref())?;
             } else {
-                connection.shell_command(&opt.serial, command)?;
+                connection.shell_command(opt.serial.as_ref(), command)?;
             }
         }
         Command::HostFeatures => {
             println!("Available host features");
-            for feature in connection.host_features(&opt.serial)? {
+            for feature in connection.host_features(opt.serial.as_ref())? {
                 println!("- {}", feature);
             }
         }
         Command::Reboot { sub_command } => {
             println!("Reboots device");
-            connection.reboot(&opt.serial, sub_command.into())?
+            connection.reboot(opt.serial.as_ref(), sub_command.into())?
         }
     }
 

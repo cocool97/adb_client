@@ -9,21 +9,19 @@ impl AdbTcpConnection {
     /// Receives [path] to [stream] from the device.
     pub fn recv<S: ToString, A: AsRef<str>>(
         &mut self,
-        serial: Option<S>,
+        serial: Option<&S>,
         path: A,
         stream: &mut dyn Write,
     ) -> Result<()> {
-        self.new_connection()?;
-
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            None => self.send_adb_request(AdbCommand::TransportAny, true)?,
             Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), true)?
             }
         }
 
         // Set device in SYNC mode
-        self.send_adb_request(AdbCommand::Sync)?;
+        self.send_adb_request(AdbCommand::Sync, false)?;
 
         // Send a recv command
         self.send_sync_request(SyncCommand::Recv)?;
@@ -54,7 +52,7 @@ impl AdbTcpConnection {
                     // Handle received data
                     let length: usize = self.get_body_length()?.try_into().unwrap();
                     self.tcp_stream.read_exact(&mut buffer[..length])?;
-                    output.write_all(&buffer)?;
+                    output.write_all(&buffer[..length])?;
                 }
                 b"DONE" => break, // We're done here
                 b"FAIL" => {

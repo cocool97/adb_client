@@ -29,7 +29,7 @@ impl AdbTcpConnection {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
     pub fn shell_command<S: ToString>(
         &mut self,
-        serial: &Option<S>,
+        serial: Option<&S>,
         command: impl IntoIterator<Item = S>,
     ) -> Result<Vec<u8>> {
         let supported_features = self.host_features(serial)?;
@@ -39,24 +39,25 @@ impl AdbTcpConnection {
             return Err(RustADBError::ADBShellNotSupported);
         }
 
-        self.new_connection()?;
-
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            None => self.send_adb_request(AdbCommand::TransportAny, true)?,
             Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), true)?
             }
         }
-        self.send_adb_request(AdbCommand::ShellCommand(
-            command
-                .into_iter()
-                .map(|v| v.to_string())
-                .collect::<Vec<_>>()
-                .join(" "),
-        ))?;
+        self.send_adb_request(
+            AdbCommand::ShellCommand(
+                command
+                    .into_iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
+            false,
+        )?;
 
         const BUFFER_SIZE: usize = 512;
-        let result = (|| {
+        (|| {
             let mut result = Vec::new();
             loop {
                 let mut buffer = [0; BUFFER_SIZE];
@@ -73,20 +74,17 @@ impl AdbTcpConnection {
                     }
                 }
             }
-        })();
-
-        self.new_connection()?;
-        result
+        })()
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    pub fn shell<S: ToString>(&mut self, serial: &Option<S>) -> Result<()> {
+    pub fn shell<S: ToString>(&mut self, serial: Option<&S>) -> Result<()> {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
         self.tcp_stream.set_nodelay(true)?;
 
-        // FORWARD CTRL+C !!
+        // TODO: FORWARD CTRL+C !!
 
         let supported_features = self.host_features(serial)?;
         if !supported_features.contains(&HostFeatures::ShellV2)
@@ -95,15 +93,13 @@ impl AdbTcpConnection {
             return Err(RustADBError::ADBShellNotSupported);
         }
 
-        self.new_connection()?;
-
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            None => self.send_adb_request(AdbCommand::TransportAny, true)?,
             Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), true)?
             }
         }
-        self.send_adb_request(AdbCommand::Shell)?;
+        self.send_adb_request(AdbCommand::Shell, false)?;
 
         // let read_stream = Arc::new(self.tcp_stream);
         let mut read_stream = self.tcp_stream.try_clone()?;

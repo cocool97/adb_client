@@ -79,17 +79,15 @@ impl AdbTcpConnection {
         serial: Option<S>,
         path: A,
     ) -> Result<AdbStatResponse> {
-        self.new_connection()?;
-
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny)?,
+            None => self.send_adb_request(AdbCommand::TransportAny, false)?,
             Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?
+                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), false)?
             }
         }
 
         // Set device in SYNC mode
-        self.send_adb_request(AdbCommand::Sync)?;
+        self.send_adb_request(AdbCommand::Sync, false)?;
 
         // Send a "Stat" command
         self.send_sync_request(SyncCommand::Stat)?;
