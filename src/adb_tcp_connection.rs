@@ -12,6 +12,9 @@ use crate::{
     Result, RustADBError,
 };
 
+const DEFAULT_SERVER_IP: Ipv4Addr = Ipv4Addr::new(127, 0, 0, 1);
+const DEFAULT_SERVER_PORT: u16 = 5037;
+
 /// Represents an ADB-over-TCP connection.
 #[derive(Debug)]
 pub struct AdbTcpConnection {
@@ -29,6 +32,11 @@ impl AdbTcpConnection {
         })
     }
 
+    /// Instantiates a new instance of [AdbTcpConnection] with default ip/port.
+    pub fn new_with_default() -> Result<Self> {
+        Self::new(DEFAULT_SERVER_IP, DEFAULT_SERVER_PORT)
+    }
+
     /// Creates a new connection to ADB server.
     ///
     /// Can be used after requests that closes connection.
@@ -42,7 +50,7 @@ impl AdbTcpConnection {
         &mut self,
         adb_command: AdbCommand,
         with_response: bool,
-        fresh_connection: bool
+        fresh_connection: bool,
     ) -> Result<Vec<u8>> {
         self.send_adb_request(adb_command, fresh_connection)?;
 
