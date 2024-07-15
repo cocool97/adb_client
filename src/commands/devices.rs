@@ -50,7 +50,7 @@ impl AdbTcpConnection {
                         .try_into()
                         .map_err(|_| RustADBError::ConversionError)?
                 ];
-                self.tcp_stream.read_exact(&mut body)?;
+                self.get_connection()?.read_exact(&mut body)?;
 
                 callback(Device::try_from(body)?)?;
             }

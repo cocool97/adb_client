@@ -4,12 +4,12 @@ mod tests {
     use std::net::Ipv4Addr;
     use std::str::FromStr;
 
-    use adb_client::AdbTcpConnection;
+    use adb_client::{AdbTcpConnection, DeviceLong};
     use rand::Rng;
 
     fn new_client() -> AdbTcpConnection {
         let address = Ipv4Addr::from_str("127.0.0.1").unwrap();
-        AdbTcpConnection::new(address, 5037).expect("Could not build ADB client...")
+        AdbTcpConnection::new(address, 5037)
     }
 
     #[test]
@@ -38,10 +38,19 @@ mod tests {
     }
 
     #[test]
+    fn test_static_devices_long() {
+        let inputs = ["7a5158f05122195aa       device 1-5 product:gts210vewifixx model:SM_T813 device:gts210vewifi transport_id:4"];
+        for input in inputs {
+            DeviceLong::try_from(input.as_bytes().to_vec())
+                .expect(&format!("cannot parse input: '{input}'"));
+        }
+    }
+
+    #[test]
     #[should_panic]
     fn test_wrong_addr() {
         let address = Ipv4Addr::from_str("127.0.0.300").unwrap();
-        let _ = AdbTcpConnection::new(address, 5037).expect("Could not create ADB connection...");
+        let _ = AdbTcpConnection::new(address, 5037);
     }
 
     #[test]

@@ -61,7 +61,7 @@ impl AdbTcpConnection {
             let mut result = Vec::new();
             loop {
                 let mut buffer = [0; BUFFER_SIZE];
-                match self.tcp_stream.read(&mut buffer) {
+                match self.get_connection()?.read(&mut buffer) {
                     Ok(size) => {
                         if size == 0 {
                             return Ok(result);
@@ -82,7 +82,7 @@ impl AdbTcpConnection {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
-        self.tcp_stream.set_nodelay(true)?;
+        self.get_connection()?.set_nodelay(true)?;
 
         // TODO: FORWARD CTRL+C !!
 
@@ -102,7 +102,7 @@ impl AdbTcpConnection {
         self.send_adb_request(AdbCommand::Shell, false)?;
 
         // let read_stream = Arc::new(self.tcp_stream);
-        let mut read_stream = self.tcp_stream.try_clone()?;
+        let mut read_stream = self.get_connection()?.try_clone()?;
 
         let (tx, rx) = mpsc::channel::<bool>();
 

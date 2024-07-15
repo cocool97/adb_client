@@ -41,10 +41,10 @@ impl AdbTcpConnection {
         // The name of command is already sent by send_sync_request
         let mut len_buf = [0_u8; 4];
         LittleEndian::write_u32(&mut len_buf, to.len() as u32);
-        self.tcp_stream.write_all(&len_buf)?;
+        self.get_connection()?.write_all(&len_buf)?;
 
         // Send appends the filemode to the string sent
-        self.tcp_stream.write_all(to.as_bytes())?;
+        self.get_connection()?.write_all(to.as_bytes())?;
 
         // Then we send the byte data in chunks of up to 64k
         // Chunk looks like 'DATA' <length> <data>
@@ -56,9 +56,9 @@ impl AdbTcpConnection {
             }
             let mut chunk_len_buf = [0_u8; 4];
             LittleEndian::write_u32(&mut chunk_len_buf, bytes_read as u32);
-            self.tcp_stream.write_all(b"DATA")?;
-            self.tcp_stream.write_all(&chunk_len_buf)?;
-            self.tcp_stream.write_all(&buffer[..bytes_read])?;
+            self.get_connection()?.write_all(b"DATA")?;
+            self.get_connection()?.write_all(&chunk_len_buf)?;
+            self.get_connection()?.write_all(&buffer[..bytes_read])?;
         }
 
         // When we are done sending, we send 'DONE' <last modified time>
@@ -68,12 +68,12 @@ impl AdbTcpConnection {
             Err(_) => panic!("SystemTime before UNIX EPOCH!"),
         };
         LittleEndian::write_u32(&mut len_buf, last_modified.as_secs() as u32);
-        self.tcp_stream.write_all(b"DONE")?;
-        self.tcp_stream.write_all(&len_buf)?;
+        self.get_connection()?.write_all(b"DONE")?;
+        self.get_connection()?.write_all(&len_buf)?;
 
         // We expect 'OKAY' response from this
         let mut request_status = [0; 4];
-        self.tcp_stream.read_exact(&mut request_status)?;
+        self.get_connection()?.read_exact(&mut request_status)?;
 
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
@@ -87,7 +87,7 @@ impl AdbTcpConnection {
                         .map_err(|_| RustADBError::ConversionError)?
                 ];
                 if length > 0 {
-                    self.tcp_stream.read_exact(&mut body)?;
+                    self.get_connection()?.read_exact(&mut body)?;
                 }
 
                 Err(RustADBError::ADBRequestFailed(String::from_utf8(body)?))

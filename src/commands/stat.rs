@@ -52,17 +52,17 @@ impl AdbTcpConnection {
         LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
         // 4 bytes of command name is already sent by send_sync_request
-        self.tcp_stream.write_all(&len_buf)?;
-        self.tcp_stream
+        self.get_connection()?.write_all(&len_buf)?;
+        self.get_connection()?
             .write_all(path.as_ref().to_string().as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut response = [0_u8; 4];
-        self.tcp_stream.read_exact(&mut response)?;
+        self.get_connection()?.read_exact(&mut response)?;
         match std::str::from_utf8(response.as_ref())? {
             "STAT" => {
                 let mut data = [0_u8; 12];
-                self.tcp_stream.read_exact(&mut data)?;
+                self.get_connection()?.read_exact(&mut data)?;
 
                 Ok(data.into())
             }

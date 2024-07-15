@@ -24,7 +24,7 @@ adb_client = "*"
 use adb_client::AdbTcpConnection;
 use std::net::Ipv4Addr;
 
-let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
+let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037);
 connection.shell_command(None, ["df", "-h"]);
 ```
 
@@ -34,7 +34,7 @@ connection.shell_command(None, ["df", "-h"]);
 use adb_client::AdbTcpConnection;
 use std::net::Ipv4Addr;
 
-let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
+let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037);
 connection.devices();
 ```
 
@@ -46,7 +46,7 @@ use std::net::Ipv4Addr;
 use std::fs::File;
 use std::path::Path;
 
-let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037).unwrap();
+let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037);
 let mut input = File::open(Path::new("/tmp")).unwrap();
 connection.send::<&str,&str>(None, &mut input, "/data/local/tmp");
 ```

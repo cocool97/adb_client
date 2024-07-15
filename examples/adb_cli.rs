@@ -77,7 +77,7 @@ impl From<RebootTypeCommand> for RebootType {
 fn main() -> Result<(), RustADBError> {
     let opt = Args::parse();
 
-    let mut connection = AdbTcpConnection::new(opt.address, opt.port)?;
+    let mut connection = AdbTcpConnection::new(opt.address, opt.port);
 
     match opt.command {
         Command::Version => {

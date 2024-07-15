@@ -1,9 +1,9 @@
 use std::str::FromStr;
 use std::{fmt::Display, str};
 
-use regex::bytes::Regex;
-
 use crate::{DeviceState, RustADBError};
+use lazy_static::lazy_static;
+use regex::bytes::Regex;
 
 /// Represents a new device with more informations helded.
 #[derive(Debug)]
@@ -40,14 +40,15 @@ impl Display for DeviceLong {
     }
 }
 
+lazy_static! {
+    static ref DEVICES_LONG_REGEX: Regex = Regex::new("^(?P<identifier>\\S+)\\s+(?P<state>\\w+) ((usb:(?P<usb1>.*)|(?P<usb2>\\d-\\d)) )?(product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+) )?transport_id:(?P<transport_id>\\d+)$").expect("cannot build devices long regex");
+}
+
 impl TryFrom<Vec<u8>> for DeviceLong {
     type Error = RustADBError;
 
-    // TODO: Prevent regex compilation every call to try_from()
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        let parse_regex = Regex::new("^(?P<identifier>\\w+)\\s+(?P<state>\\w+) usb:(?P<usb>.*) (product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+) )?transport_id:(?P<transport_id>\\d+)$")?;
-
-        let groups = parse_regex
+        let groups = DEVICES_LONG_REGEX
             .captures(&value)
             .ok_or(RustADBError::RegexParsingError)?;
 
@@ -68,7 +69,8 @@ impl TryFrom<Vec<u8>> for DeviceLong {
             )?)?,
             usb: String::from_utf8(
                 groups
-                    .name("usb")
+                    .name("usb1")
+                    .or_else(|| groups.name("usb2"))
                     .ok_or(RustADBError::RegexParsingError)?
                     .as_bytes()
                     .to_vec(),

@@ -18,32 +18,42 @@ const DEFAULT_SERVER_PORT: u16 = 5037;
 /// Represents an ADB-over-TCP connection.
 #[derive(Debug)]
 pub struct AdbTcpConnection {
+    /// Address to use for further connections
     pub(crate) socket_addr: SocketAddrV4,
-    pub(crate) tcp_stream: TcpStream,
+    /// Internal [TcpStream], lazily initialized
+    tcp_stream: Option<TcpStream>,
 }
 
 impl AdbTcpConnection {
     /// Instantiates a new instance of [AdbTcpConnection]
-    pub fn new(address: Ipv4Addr, port: u16) -> Result<Self> {
+    pub fn new(address: Ipv4Addr, port: u16) -> Self {
         let addr = SocketAddrV4::new(address, port);
-        Ok(Self {
+        Self {
             socket_addr: addr,
-            tcp_stream: TcpStream::connect(addr)?,
-        })
-    }
-
-    /// Instantiates a new instance of [AdbTcpConnection] with default ip/port.
-    pub fn new_with_default() -> Result<Self> {
-        Self::new(DEFAULT_SERVER_IP, DEFAULT_SERVER_PORT)
+            tcp_stream: None,
+        }
     }
 
     /// Creates a new connection to ADB server.
     ///
     /// Can be used after requests that closes connection.
     pub(crate) fn new_connection(&mut self) -> Result<()> {
-        self.tcp_stream = TcpStream::connect(self.socket_addr)?;
+        if let Some(previous) = &self.tcp_stream {
+            // Ignoring underlying error, we will recreate a new connection
+            let _ = previous.shutdown(std::net::Shutdown::Both);
+        }
+        self.tcp_stream = Some(TcpStream::connect(self.socket_addr)?);
 
         Ok(())
+    }
+
+    pub(crate) fn get_connection(&mut self) -> Result<&TcpStream> {
+        self.tcp_stream
+            .as_ref()
+            .ok_or(RustADBError::IOError(std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "not connected",
+            )))
     }
 
     pub(crate) fn proxy_connection(
@@ -63,7 +73,7 @@ impl AdbTcpConnection {
                     .map_err(|_| RustADBError::ConversionError)?
             ];
             if length > 0 {
-                self.tcp_stream.read_exact(&mut body)?;
+                self.get_connection()?.read_exact(&mut body)?;
             }
 
             Ok(body)
@@ -87,11 +97,11 @@ impl AdbTcpConnection {
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
 
-        self.tcp_stream.write_all(adb_request.as_bytes())?;
+        self.get_connection()?.write_all(adb_request.as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut request_status = [0; 4];
-        self.tcp_stream.read_exact(&mut request_status)?;
+        self.get_connection()?.read_exact(&mut request_status)?;
 
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
@@ -105,7 +115,7 @@ impl AdbTcpConnection {
                         .map_err(|_| RustADBError::ConversionError)?
                 ];
                 if length > 0 {
-                    self.tcp_stream.read_exact(&mut body)?;
+                    self.get_connection()?.read_exact(&mut body)?;
                 }
 
                 Err(RustADBError::ADBRequestFailed(String::from_utf8(body)?))
@@ -118,7 +128,9 @@ impl AdbTcpConnection {
     pub(crate) fn send_sync_request(&mut self, command: SyncCommand) -> Result<()> {
         // First 4 bytes are the name of the command we want to send
         // (e.g. "SEND", "RECV", "STAT", "LIST")
-        Ok(self.tcp_stream.write_all(command.to_string().as_bytes())?)
+        Ok(self
+            .get_connection()?
+            .write_all(command.to_string().as_bytes())?)
     }
 
     /// Gets the body length from hexadecimal value
@@ -136,8 +148,14 @@ impl AdbTcpConnection {
     /// Read 4 bytes representing body length
     fn read_body_length(&mut self) -> Result<[u8; 4]> {
         let mut length_buffer = [0; 4];
-        self.tcp_stream.read_exact(&mut length_buffer)?;
+        self.get_connection()?.read_exact(&mut length_buffer)?;
 
         Ok(length_buffer)
+    }
+}
+
+impl Default for AdbTcpConnection {
+    fn default() -> Self {
+        Self::new(DEFAULT_SERVER_IP, DEFAULT_SERVER_PORT)
     }
 }
