@@ -1,9 +1,10 @@
+use adb_client::{ADBServer, DeviceShort, RebootType};
+use anyhow::Result;
+use clap::Parser;
 use std::fs::File;
+use std::io::{self, Write};
 use std::net::Ipv4Addr;
 use std::path::Path;
-
-use adb_client::{AdbTcpConnection, Device, RebootType, RustADBError};
-use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -23,34 +24,46 @@ pub struct Args {
 
 #[derive(Parser, Debug)]
 pub enum Command {
-    /// Prints current ADB version.
+    #[clap(flatten)]
+    LocalCommand(LocalCommand),
+    #[clap(flatten)]
+    HostCommand(HostCommand),
+}
+
+#[derive(Parser, Debug)]
+pub enum LocalCommand {
+    /// List available server features.
+    HostFeatures,
+    /// Push a file on device
+    Push { filename: String, path: String },
+    /// Pull a file from device
+    Pull { path: String, filename: String },
+    /// List a directory on device
+    List { path: String },
+    /// Stat a file specified on device
+    Stat { path: String },
+    /// Spawn an interactive shell or run a list of commands on the device
+    Shell { command: Vec<String> },
+    /// Reboot the device
+    Reboot {
+        #[clap(subcommand)]
+        sub_command: RebootTypeCommand,
+    },
+}
+
+#[derive(Parser, Debug)]
+pub enum HostCommand {
+    /// Print current ADB version.
     Version,
-    /// Asks ADB server to quit immediately.
+    /// Ask ADB server to quit immediately.
     Kill,
     /// List connected devices.
     Devices {
         #[clap(short = 'l', long = "long")]
         long: bool,
     },
-    /// Tracks new devices showing up.
+    /// Track new devices showing up.
     TrackDevices,
-    /// Lists available server features.
-    HostFeatures,
-    /// Pushes 'filename' to the 'path' on device
-    Push { filename: String, path: String },
-    /// Pushes 'path' on the device to 'filename'
-    Pull { path: String, filename: String },
-    /// List files for 'path' on device
-    List { path: String },
-    /// Stat file specified as 'path' on device
-    Stat { path: String },
-    /// Run 'command' in a shell on the device, and return its output and error streams.
-    Shell { command: Vec<String> },
-    /// Reboots the device
-    Reboot {
-        #[clap(subcommand)]
-        sub_command: RebootTypeCommand,
-    },
 }
 
 #[derive(Parser, Debug)]
@@ -74,75 +87,83 @@ impl From<RebootTypeCommand> for RebootType {
     }
 }
 
-fn main() -> Result<(), RustADBError> {
+fn main() -> Result<()> {
     let opt = Args::parse();
 
-    let mut connection = AdbTcpConnection::new(opt.address, opt.port);
+    let mut adb_server = ADBServer::new(opt.address, opt.port);
 
     match opt.command {
-        Command::Version => {
-            let version = connection.version()?;
-            println!("Android Debug Bridge version {}", version);
-            println!("Package version {}-rust", std::env!("CARGO_PKG_VERSION"));
-        }
-        Command::Kill => {
-            connection.kill()?;
-        }
-        Command::Devices { long } => {
-            if long {
-                println!("List of devices attached (extended)");
-                for device in connection.devices_long()? {
-                    println!("{}", device);
+        Command::LocalCommand(local) => {
+            let mut device = adb_server.get_device(opt.serial.to_owned())?;
+            match local {
+                LocalCommand::Pull { path, filename } => {
+                    let mut output = File::create(Path::new(&filename))?;
+                    device.recv(opt.serial.as_ref(), &path, &mut output)?;
+                    println!("Downloaded {path} as {filename}");
                 }
-            } else {
-                println!("List of devices attached");
-                for device in connection.devices()? {
-                    println!("{}", device);
+                LocalCommand::Push { filename, path } => {
+                    let mut input = File::open(Path::new(&filename))?;
+                    device.send(opt.serial.as_ref(), &mut input, &path)?;
+                    println!("Uploaded {filename} to {path}");
+                }
+                LocalCommand::List { path } => {
+                    device.list(opt.serial.as_ref(), path)?;
+                }
+                LocalCommand::Stat { path } => {
+                    let stat_response = device.stat(opt.serial, path)?;
+                    println!("{}", stat_response);
+                }
+                LocalCommand::Shell { command } => {
+                    if command.is_empty() {
+                        device.shell(opt.serial.as_ref())?;
+                    } else {
+                        let stdout = device.shell_command(opt.serial.as_ref(), command)?;
+                        io::stdout().write_all(&stdout)?;
+                    }
+                }
+                LocalCommand::HostFeatures => {
+                    println!("Available host features");
+                    for feature in device.host_features(opt.serial.as_ref())? {
+                        println!("- {}", feature);
+                    }
+                }
+                LocalCommand::Reboot { sub_command } => {
+                    println!("Reboots device");
+                    device.reboot(opt.serial.as_ref(), sub_command.into())?
                 }
             }
         }
-        Command::TrackDevices => {
-            let callback = |device: Device| {
-                println!("{}", device);
-                Ok(())
-            };
-            println!("Live list of devices attached");
-            connection.track_devices(callback)?;
-        }
-        Command::Pull { path, filename } => {
-            let mut output = File::create(Path::new(&filename)).unwrap(); // TODO: Better error handling
-            connection.recv(opt.serial.as_ref(), &path, &mut output)?;
-            println!("Downloaded {path} as {filename}");
-        }
-        Command::Push { filename, path } => {
-            let mut input = File::open(Path::new(&filename)).unwrap(); // TODO: Better error handling
-            connection.send(opt.serial.as_ref(), &mut input, &path)?;
-            println!("Uploaded {filename} to {path}");
-        }
-        Command::List { path } => {
-            connection.list(opt.serial.as_ref(), path)?;
-        }
-        Command::Stat { path } => {
-            let stat_response = connection.stat(opt.serial, path)?;
-            println!("{}", stat_response);
-        }
-        Command::Shell { command } => {
-            if command.is_empty() {
-                connection.shell(opt.serial.as_ref())?;
-            } else {
-                connection.shell_command(opt.serial.as_ref(), command)?;
+        Command::HostCommand(host) => match host {
+            HostCommand::Version => {
+                let version = adb_server.version()?;
+                println!("Android Debug Bridge version {}", version);
+                println!("Package version {}-rust", std::env!("CARGO_PKG_VERSION"));
             }
-        }
-        Command::HostFeatures => {
-            println!("Available host features");
-            for feature in connection.host_features(opt.serial.as_ref())? {
-                println!("- {}", feature);
+            HostCommand::Kill => {
+                adb_server.kill()?;
             }
-        }
-        Command::Reboot { sub_command } => {
-            println!("Reboots device");
-            connection.reboot(opt.serial.as_ref(), sub_command.into())?
-        }
+            HostCommand::Devices { long } => {
+                if long {
+                    println!("List of devices attached (extended)");
+                    for device in adb_server.devices_long()? {
+                        println!("{}", device);
+                    }
+                } else {
+                    println!("List of devices attached");
+                    for device in adb_server.devices()? {
+                        println!("{}", device);
+                    }
+                }
+            }
+            HostCommand::TrackDevices => {
+                let callback = |device: DeviceShort| {
+                    println!("{}", device);
+                    Ok(())
+                };
+                println!("Live list of devices attached");
+                adb_server.track_devices(callback)?;
+            }
+        },
     }
 
     Ok(())

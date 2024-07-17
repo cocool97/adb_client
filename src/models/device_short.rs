@@ -9,27 +9,27 @@ lazy_static! {
 }
 
 /// Represents a device connected to the ADB server.
-#[derive(Debug)]
-pub struct Device {
+#[derive(Debug, Clone)]
+pub struct DeviceShort {
     /// Unique device identifier.
     pub identifier: String,
     /// Connection state of the device.
     pub state: DeviceState,
 }
 
-impl Display for Device {
+impl Display for DeviceShort {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}\t{}", self.identifier, self.state)
     }
 }
 
-impl TryFrom<Vec<u8>> for Device {
+impl TryFrom<Vec<u8>> for DeviceShort {
     type Error = RustADBError;
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         // Optional final '\n' is used to match TrackDevices inputs
         let groups = DEVICES_REGEX.captures(&value).unwrap();
-        Ok(Device {
+        Ok(DeviceShort {
             identifier: String::from_utf8(
                 groups
                     .get(1)

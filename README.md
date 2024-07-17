@@ -18,37 +18,38 @@ First declare `adb_client` as a dependency by simply adding this to your `Cargo.
 adb_client = "*"
 ```
 
-### Launch a command on host device
+### Launch a command on host device via ADB server
 
 ```rust
-use adb_client::AdbTcpConnection;
-use std::net::Ipv4Addr;
+use adb_client::ADBServer;
 
-let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037);
-connection.shell_command(None, ["df", "-h"]);
+let mut server = ADBServer::default();
+let mut device = server.get_device(None).expect("cannot get device");
+device.shell_command(None, ["df", "-h"]);
 ```
 
 ### Get available ADB devices
 
 ```rust
-use adb_client::AdbTcpConnection;
+use adb_client::ADBServer;
 use std::net::Ipv4Addr;
 
-let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037);
-connection.devices();
+let mut server = ADBServer::new(Ipv4Addr::from([127,0,0,1]), 5037);
+server.devices();
 ```
 
 ### Push a file to the device
 
 ```rust
-use adb_client::AdbTcpConnection;
+use adb_client::ADBServer;
 use std::net::Ipv4Addr;
 use std::fs::File;
 use std::path::Path;
 
-let mut connection = AdbTcpConnection::new(Ipv4Addr::from([127,0,0,1]), 5037);
+let mut server = ADBServer::default();
+let mut device = server.get_device(None).expect("cannot get device");
 let mut input = File::open(Path::new("/tmp")).unwrap();
-connection.send::<&str,&str>(None, &mut input, "/data/local/tmp");
+device.send::<&str,&str>(None, &mut input, "/data/local/tmp");
 ```
 
 ## Rust binary

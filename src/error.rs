@@ -42,4 +42,7 @@ pub enum RustADBError {
     /// Remote ADB server does not support shell feature.
     #[error("Remote ADB server does not support shell feature")]
     ADBShellNotSupported,
+    /// Desired device has not been found
+    #[error("Device not found: {0}")]
+    DeviceNotFound(String),
 }
