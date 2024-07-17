@@ -29,22 +29,18 @@ impl ADBServerDevice {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
     pub fn shell_command<S: ToString>(
         &mut self,
-        serial: Option<&S>,
         command: impl IntoIterator<Item = S>,
     ) -> Result<Vec<u8>> {
-        let supported_features = self.host_features(serial)?;
+        let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
         {
             return Err(RustADBError::ADBShellNotSupported);
         }
 
-        match serial {
-            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
-            Some(serial) => self
-                .connect()?
-                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
-        }
+        let serial = self.identifier.clone();
+        self.connect()?
+            .send_adb_request(AdbCommand::TransportSerial(serial))?;
         self.get_transport()?
             .send_adb_request(AdbCommand::ShellCommand(
                 command
@@ -74,7 +70,7 @@ impl ADBServerDevice {
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
-    pub fn shell<S: ToString>(&mut self, serial: Option<&S>) -> Result<()> {
+    pub fn shell(&mut self) -> Result<()> {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
@@ -82,19 +78,16 @@ impl ADBServerDevice {
 
         // TODO: FORWARD CTRL+C !!
 
-        let supported_features = self.host_features(serial)?;
+        let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
         {
             return Err(RustADBError::ADBShellNotSupported);
         }
 
-        match serial {
-            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
-            Some(serial) => self
-                .connect()?
-                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
-        }
+        let serial = self.identifier.clone();
+        self.connect()?
+            .send_adb_request(AdbCommand::TransportSerial(serial))?;
         self.get_transport()?.send_adb_request(AdbCommand::Shell)?;
 
         // let read_stream = Arc::new(self.tcp_stream);

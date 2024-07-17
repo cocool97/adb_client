@@ -100,38 +100,38 @@ fn main() -> Result<()> {
             match local {
                 LocalCommand::Pull { path, filename } => {
                     let mut output = File::create(Path::new(&filename))?;
-                    device.recv(opt.serial.as_ref(), &path, &mut output)?;
+                    device.recv(&path, &mut output)?;
                     println!("Downloaded {path} as {filename}");
                 }
                 LocalCommand::Push { filename, path } => {
                     let mut input = File::open(Path::new(&filename))?;
-                    device.send(opt.serial.as_ref(), &mut input, &path)?;
+                    device.send(&mut input, &path)?;
                     println!("Uploaded {filename} to {path}");
                 }
                 LocalCommand::List { path } => {
-                    device.list(opt.serial.as_ref(), path)?;
+                    device.list(path)?;
                 }
                 LocalCommand::Stat { path } => {
-                    let stat_response = device.stat(opt.serial, path)?;
+                    let stat_response = device.stat(path)?;
                     println!("{}", stat_response);
                 }
                 LocalCommand::Shell { command } => {
                     if command.is_empty() {
-                        device.shell(opt.serial.as_ref())?;
+                        device.shell()?;
                     } else {
-                        let stdout = device.shell_command(opt.serial.as_ref(), command)?;
+                        let stdout = device.shell_command(command)?;
                         io::stdout().write_all(&stdout)?;
                     }
                 }
                 LocalCommand::HostFeatures => {
                     println!("Available host features");
-                    for feature in device.host_features(opt.serial.as_ref())? {
+                    for feature in device.host_features()? {
                         println!("- {}", feature);
                     }
                 }
                 LocalCommand::Reboot { sub_command } => {
                     println!("Reboots device");
-                    device.reboot(opt.serial.as_ref(), sub_command.into())?
+                    device.reboot(sub_command.into())?
                 }
             }
         }

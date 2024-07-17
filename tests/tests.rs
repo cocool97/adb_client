@@ -24,8 +24,8 @@ mod tests {
     fn test_shell() {
         let mut device = new_device();
 
-        device.shell_command(None, vec!["ls"]).unwrap();
-        device.shell_command(None, vec!["pwd"]).unwrap();
+        device.shell_command(vec!["ls"]).unwrap();
+        device.shell_command(vec!["pwd"]).unwrap();
     }
 
     #[test]
@@ -61,20 +61,20 @@ mod tests {
         const TEST_FILENAME: &'static str = "/data/local/tmp/test_file";
         // Send it
         device
-            .send::<&str, &str>(None, &mut c, TEST_FILENAME)
+            .send(&mut c, TEST_FILENAME)
             .expect("cannot send file");
 
         // Pull it to memory
         let mut res = vec![];
         device
-            .recv::<&str, &str>(None, TEST_FILENAME, &mut res)
+            .recv(TEST_FILENAME, &mut res)
             .expect("cannot recv file");
 
         // diff
         assert_eq!(c.get_ref(), &res);
 
         device
-            .shell_command::<&str>(None, [format!("rm {TEST_FILENAME}").as_str()])
+            .shell_command::<&str>([format!("rm {TEST_FILENAME}").as_str()])
             .expect("cannot remove test file");
     }
 

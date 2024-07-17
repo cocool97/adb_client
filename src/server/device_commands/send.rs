@@ -12,18 +12,10 @@ use std::{
 
 impl ADBServerDevice {
     /// Sends [stream] to [path] on the device.
-    pub fn send<S: ToString, A: AsRef<str>>(
-        &mut self,
-        serial: Option<&S>,
-        stream: &mut dyn Read,
-        path: A,
-    ) -> Result<()> {
-        match serial {
-            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
-            Some(serial) => self
-                .connect()?
-                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
-        }
+    pub fn send<A: AsRef<str>>(&mut self, stream: &mut dyn Read, path: A) -> Result<()> {
+        let serial = self.identifier.clone();
+        self.connect()?
+            .send_adb_request(AdbCommand::TransportSerial(serial))?;
 
         // Set device in SYNC mode
         self.get_transport()?.send_adb_request(AdbCommand::Sync)?;

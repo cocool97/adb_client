@@ -25,16 +25,18 @@ use adb_client::ADBServer;
 
 let mut server = ADBServer::default();
 let mut device = server.get_device(None).expect("cannot get device");
-device.shell_command(None, ["df", "-h"]);
+device.shell_command(["df", "-h"]);
 ```
 
 ### Get available ADB devices
 
 ```rust
 use adb_client::ADBServer;
-use std::net::Ipv4Addr;
+use std::net::{SocketAddrV4, Ipv4Addr};
 
-let mut server = ADBServer::new(Ipv4Addr::from([127,0,0,1]), 5037);
+let server_ip = Ipv4Addr::new(127, 0, 0, 1);
+let server_port = 5037;
+let mut server = ADBServer::new(SocketAddrV4::new(server_ip, server_port));
 server.devices();
 ```
 
@@ -49,7 +51,7 @@ use std::path::Path;
 let mut server = ADBServer::default();
 let mut device = server.get_device(None).expect("cannot get device");
 let mut input = File::open(Path::new("/tmp")).unwrap();
-device.send::<&str,&str>(None, &mut input, "/data/local/tmp");
+device.send(&mut input, "/data/local/tmp");
 ```
 
 ## Rust binary

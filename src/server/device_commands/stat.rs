@@ -81,17 +81,10 @@ impl ADBServerDevice {
     }
 
     /// Stat file given as [path] on the device.
-    pub fn stat<S: ToString, A: AsRef<str>>(
-        &mut self,
-        serial: Option<S>,
-        path: A,
-    ) -> Result<AdbStatResponse> {
-        match serial {
-            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
-            Some(serial) => self
-                .connect()?
-                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
-        }
+    pub fn stat<A: AsRef<str>>(&mut self, path: A) -> Result<AdbStatResponse> {
+        let serial = self.identifier.clone();
+        self.connect()?
+            .send_adb_request(AdbCommand::TransportSerial(serial))?;
 
         // Set device in SYNC mode
         self.get_transport()?.send_adb_request(AdbCommand::Sync)?;

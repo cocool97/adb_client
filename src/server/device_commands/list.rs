@@ -10,13 +10,10 @@ use std::{
 
 impl ADBServerDevice {
     /// Lists files in [path] on the device.
-    pub fn list<S: ToString, A: AsRef<str>>(&mut self, serial: Option<&S>, path: A) -> Result<()> {
-        match serial {
-            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
-            Some(serial) => self
-                .connect()?
-                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
-        }
+    pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<()> {
+        let serial = self.identifier.clone();
+        self.connect()?
+            .send_adb_request(AdbCommand::TransportSerial(serial))?;
 
         // Set device in SYNC mode
         self.get_transport()?.send_adb_request(AdbCommand::Sync)?;

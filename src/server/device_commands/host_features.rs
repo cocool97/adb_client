@@ -5,13 +5,10 @@ use crate::{
 
 impl ADBServerDevice {
     /// Lists available ADB server features.
-    pub fn host_features<S: ToString>(&mut self, serial: Option<&S>) -> Result<Vec<HostFeatures>> {
-        match serial {
-            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
-            Some(serial) => self
-                .connect()?
-                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
-        }
+    pub fn host_features(&mut self) -> Result<Vec<HostFeatures>> {
+        let serial = self.identifier.clone();
+        self.connect()?
+            .send_adb_request(AdbCommand::TransportSerial(serial))?;
 
         let features = self
             .get_transport()?
