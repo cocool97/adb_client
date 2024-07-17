@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
-    use std::net::Ipv4Addr;
-    use std::str::FromStr;
 
     use adb_client::{ADBServer, ADBServerDevice, DeviceLong};
     use rand::Rng;
@@ -49,13 +47,6 @@ mod tests {
             DeviceLong::try_from(input.as_bytes().to_vec())
                 .expect(&format!("cannot parse input: '{input}'"));
         }
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_wrong_addr() {
-        let address = Ipv4Addr::from_str("127.0.0.300").unwrap();
-        let _ = ADBServer::new(address, 5037);
     }
 
     #[test]

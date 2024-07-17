@@ -3,18 +3,14 @@ use anyhow::Result;
 use clap::Parser;
 use std::fs::File;
 use std::io::{self, Write};
-use std::net::Ipv4Addr;
+use std::net::SocketAddrV4;
 use std::path::Path;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 pub struct Args {
-    /// Sets the listening address of ADB server
-    #[clap(short = 'a', long = "address", default_value = "127.0.0.1")]
-    pub address: Ipv4Addr,
-    /// Sets the listening port of ADB server
-    #[clap(short = 'p', long = "port", default_value = "5037")]
-    pub port: u16,
+    #[clap(short = 'a', long = "address", default_value = "127.0.0.1:5037")]
+    pub address: SocketAddrV4,
     /// Serial id of a specific device. Every request will be sent to this device.
     #[clap(short = 's', long = "serial")]
     pub serial: Option<String>,
@@ -64,14 +60,12 @@ pub enum HostCommand {
     },
     /// Track new devices showing up.
     TrackDevices,
-    /// Pair new device on a specific port with a given code
-    Pair {
-        address: Ipv4Addr,
-        port: u16,
-        code: u32,
-    },
+    /// Pair device with a given code
+    Pair { address: SocketAddrV4, code: u32 },
     /// Connect device over WI-FI
-    Connect { address: Ipv4Addr, port: u16 },
+    Connect { address: SocketAddrV4 },
+    /// Disconnect device over WI-FI
+    Disconnect { address: SocketAddrV4 },
 }
 
 #[derive(Parser, Debug)]
@@ -98,7 +92,7 @@ impl From<RebootTypeCommand> for RebootType {
 fn main() -> Result<()> {
     let opt = Args::parse();
 
-    let mut adb_server = ADBServer::new(opt.address, opt.port);
+    let mut adb_server = ADBServer::new(opt.address);
 
     match opt.command {
         Command::LocalCommand(local) => {
@@ -171,17 +165,17 @@ fn main() -> Result<()> {
                 println!("Live list of devices attached");
                 adb_server.track_devices(callback)?;
             }
-            HostCommand::Pair {
-                address,
-                port,
-                code,
-            } => {
-                println!("Pairing device");
-                adb_server.pair(address, port, code)?
+            HostCommand::Pair { address, code } => {
+                adb_server.pair(address, code)?;
+                println!("paired device {address}");
             }
-            HostCommand::Connect { address, port } => {
-                println!("Connect device");
-                adb_server.connect_device(address, port)?
+            HostCommand::Connect { address } => {
+                adb_server.connect_device(address)?;
+                println!("connected to {address}");
+            }
+            HostCommand::Disconnect { address } => {
+                adb_server.disconnect_device(address)?;
+                println!("disconnected {address}");
             }
         },
     }
