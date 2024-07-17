@@ -2,7 +2,6 @@ use crate::Result;
 use crate::RustADBError;
 use crate::TCPServerProtocol;
 use crate::Transport;
-use std::net::Ipv4Addr;
 use std::net::SocketAddrV4;
 
 /// Represents an ADB Server
@@ -16,10 +15,10 @@ pub struct ADBServer {
 
 impl ADBServer {
     /// Instantiates a new [ADBServer]
-    pub fn new(ip: Ipv4Addr, port: u16) -> Self {
+    pub fn new(address: SocketAddrV4) -> Self {
         Self {
             transport: None,
-            socket_addr: Some(SocketAddrV4::new(ip, port)),
+            socket_addr: Some(address),
         }
     }
 
