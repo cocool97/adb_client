@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use super::RebootType;
 
-pub enum AdbCommand {
+pub(crate) enum AdbCommand {
     Version,
     Kill,
     Devices,

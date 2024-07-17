@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 
 use crate::{
     models::{AdbCommand, SyncCommand},
-    AdbTcpConnection, Result, RustADBError,
+    ADBServerDevice, Result, RustADBError,
 };
 
 #[derive(Debug)]
@@ -46,23 +46,30 @@ impl Display for AdbStatResponse {
     }
 }
 
-impl AdbTcpConnection {
+impl ADBServerDevice {
     fn handle_stat_command<S: AsRef<str>>(&mut self, path: S) -> Result<AdbStatResponse> {
         let mut len_buf = [0_u8; 4];
         LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
         // 4 bytes of command name is already sent by send_sync_request
-        self.get_connection()?.write_all(&len_buf)?;
-        self.get_connection()?
+        self.get_transport()?
+            .get_connection()?
+            .write_all(&len_buf)?;
+        self.get_transport()?
+            .get_connection()?
             .write_all(path.as_ref().to_string().as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut response = [0_u8; 4];
-        self.get_connection()?.read_exact(&mut response)?;
+        self.get_transport()?
+            .get_connection()?
+            .read_exact(&mut response)?;
         match std::str::from_utf8(response.as_ref())? {
             "STAT" => {
                 let mut data = [0_u8; 12];
-                self.get_connection()?.read_exact(&mut data)?;
+                self.get_transport()?
+                    .get_connection()?
+                    .read_exact(&mut data)?;
 
                 Ok(data.into())
             }
@@ -80,17 +87,17 @@ impl AdbTcpConnection {
         path: A,
     ) -> Result<AdbStatResponse> {
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny, false)?,
-            Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), false)?
-            }
+            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => self
+                .connect()?
+                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
         }
 
         // Set device in SYNC mode
-        self.send_adb_request(AdbCommand::Sync, false)?;
+        self.get_transport()?.send_adb_request(AdbCommand::Sync)?;
 
         // Send a "Stat" command
-        self.send_sync_request(SyncCommand::Stat)?;
+        self.get_transport()?.send_sync_request(SyncCommand::Stat)?;
 
         self.handle_stat_command(path)
     }

@@ -4,12 +4,16 @@ mod tests {
     use std::net::Ipv4Addr;
     use std::str::FromStr;
 
-    use adb_client::{AdbTcpConnection, DeviceLong};
+    use adb_client::{ADBServer, ADBServerDevice, DeviceLong};
     use rand::Rng;
 
-    fn new_client() -> AdbTcpConnection {
-        let address = Ipv4Addr::from_str("127.0.0.1").unwrap();
-        AdbTcpConnection::new(address, 5037)
+    fn new_client() -> ADBServer {
+        ADBServer::default()
+    }
+
+    fn new_device() -> ADBServerDevice {
+        let mut client = new_client();
+        return client.get_device(None).expect("cannot get device");
     }
 
     #[test]
@@ -20,9 +24,10 @@ mod tests {
 
     #[test]
     fn test_shell() {
-        let mut adb = new_client();
-        adb.shell_command(None, vec!["ls"]).unwrap();
-        adb.shell_command(None, vec!["pwd"]).unwrap();
+        let mut device = new_device();
+
+        device.shell_command(None, vec!["ls"]).unwrap();
+        device.shell_command(None, vec!["pwd"]).unwrap();
     }
 
     #[test]
@@ -50,7 +55,7 @@ mod tests {
     #[should_panic]
     fn test_wrong_addr() {
         let address = Ipv4Addr::from_str("127.0.0.300").unwrap();
-        let _ = AdbTcpConnection::new(address, 5037);
+        let _ = ADBServer::new(address, 5037);
     }
 
     #[test]
@@ -60,24 +65,24 @@ mod tests {
         rand::thread_rng().fill(&mut key[..]);
         let mut c: Cursor<Vec<u8>> = Cursor::new(key.to_vec());
 
-        let mut connection = new_client();
+        let mut device = new_device();
 
         const TEST_FILENAME: &'static str = "/data/local/tmp/test_file";
         // Send it
-        connection
+        device
             .send::<&str, &str>(None, &mut c, TEST_FILENAME)
             .expect("cannot send file");
 
         // Pull it to memory
         let mut res = vec![];
-        connection
+        device
             .recv::<&str, &str>(None, TEST_FILENAME, &mut res)
             .expect("cannot recv file");
 
         // diff
         assert_eq!(c.get_ref(), &res);
 
-        connection
+        device
             .shell_command::<&str>(None, [format!("rm {TEST_FILENAME}").as_str()])
             .expect("cannot remove test file");
     }

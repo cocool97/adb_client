@@ -1,6 +1,6 @@
 use crate::{
     models::{AdbCommand, AdbRequestStatus, SyncCommand},
-    AdbTcpConnection, Result, RustADBError,
+    ADBServerDevice, Result, RustADBError,
 };
 use byteorder::{ByteOrder, LittleEndian};
 use std::{
@@ -10,7 +10,7 @@ use std::{
     time::SystemTime,
 };
 
-impl AdbTcpConnection {
+impl ADBServerDevice {
     /// Sends [stream] to [path] on the device.
     pub fn send<S: ToString, A: AsRef<str>>(
         &mut self,
@@ -19,17 +19,17 @@ impl AdbTcpConnection {
         path: A,
     ) -> Result<()> {
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny, true)?,
-            Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), true)?
-            }
+            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => self
+                .connect()?
+                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
         }
 
         // Set device in SYNC mode
-        self.send_adb_request(AdbCommand::Sync, false)?;
+        self.get_transport()?.send_adb_request(AdbCommand::Sync)?;
 
         // Send a send command
-        self.send_sync_request(SyncCommand::Send)?;
+        self.get_transport()?.send_sync_request(SyncCommand::Send)?;
 
         self.handle_send_command(stream, path)
     }
@@ -38,13 +38,17 @@ impl AdbTcpConnection {
         // Append the permission flags to the filename
         let to = to.as_ref().to_string() + ",0777";
 
-        // The name of command is already sent by send_sync_request
+        // The name of command is already sent by get_transport()?.send_sync_request
         let mut len_buf = [0_u8; 4];
         LittleEndian::write_u32(&mut len_buf, to.len() as u32);
-        self.get_connection()?.write_all(&len_buf)?;
+        self.get_transport()?
+            .get_connection()?
+            .write_all(&len_buf)?;
 
         // Send appends the filemode to the string sent
-        self.get_connection()?.write_all(to.as_bytes())?;
+        self.get_transport()?
+            .get_connection()?
+            .write_all(to.as_bytes())?;
 
         // Then we send the byte data in chunks of up to 64k
         // Chunk looks like 'DATA' <length> <data>
@@ -56,9 +60,13 @@ impl AdbTcpConnection {
             }
             let mut chunk_len_buf = [0_u8; 4];
             LittleEndian::write_u32(&mut chunk_len_buf, bytes_read as u32);
-            self.get_connection()?.write_all(b"DATA")?;
-            self.get_connection()?.write_all(&chunk_len_buf)?;
-            self.get_connection()?.write_all(&buffer[..bytes_read])?;
+            self.get_transport()?.get_connection()?.write_all(b"DATA")?;
+            self.get_transport()?
+                .get_connection()?
+                .write_all(&chunk_len_buf)?;
+            self.get_transport()?
+                .get_connection()?
+                .write_all(&buffer[..bytes_read])?;
         }
 
         // When we are done sending, we send 'DONE' <last modified time>
@@ -68,17 +76,21 @@ impl AdbTcpConnection {
             Err(_) => panic!("SystemTime before UNIX EPOCH!"),
         };
         LittleEndian::write_u32(&mut len_buf, last_modified.as_secs() as u32);
-        self.get_connection()?.write_all(b"DONE")?;
-        self.get_connection()?.write_all(&len_buf)?;
+        self.get_transport()?.get_connection()?.write_all(b"DONE")?;
+        self.get_transport()?
+            .get_connection()?
+            .write_all(&len_buf)?;
 
         // We expect 'OKAY' response from this
         let mut request_status = [0; 4];
-        self.get_connection()?.read_exact(&mut request_status)?;
+        self.get_transport()?
+            .get_connection()?
+            .read_exact(&mut request_status)?;
 
         match AdbRequestStatus::from_str(str::from_utf8(request_status.as_ref())?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
-                let length = self.get_body_length()?;
+                let length = self.get_transport()?.get_body_length()?;
 
                 let mut body = vec![
                     0;
@@ -87,7 +99,9 @@ impl AdbTcpConnection {
                         .map_err(|_| RustADBError::ConversionError)?
                 ];
                 if length > 0 {
-                    self.get_connection()?.read_exact(&mut body)?;
+                    self.get_transport()?
+                        .get_connection()?
+                        .read_exact(&mut body)?;
                 }
 
                 Err(RustADBError::ADBRequestFailed(String::from_utf8(body)?))

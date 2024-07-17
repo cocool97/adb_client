@@ -9,7 +9,7 @@ use mio::{unix::SourceFd, Events, Interest, Poll, Token};
 use crate::{
     adb_termios::ADBTermios,
     models::{AdbCommand, HostFeatures},
-    AdbTcpConnection, Result, RustADBError,
+    ADBServerDevice, Result, RustADBError,
 };
 
 const STDIN: Token = Token(0);
@@ -25,7 +25,7 @@ fn setup_poll_stdin() -> std::result::Result<Poll, io::Error> {
     Ok(poll)
 }
 
-impl AdbTcpConnection {
+impl ADBServerDevice {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
     pub fn shell_command<S: ToString>(
         &mut self,
@@ -40,41 +40,37 @@ impl AdbTcpConnection {
         }
 
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny, true)?,
-            Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), true)?
-            }
+            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => self
+                .connect()?
+                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
         }
-        self.send_adb_request(
-            AdbCommand::ShellCommand(
+        self.get_transport()?
+            .send_adb_request(AdbCommand::ShellCommand(
                 command
                     .into_iter()
                     .map(|v| v.to_string())
                     .collect::<Vec<_>>()
                     .join(" "),
-            ),
-            false,
-        )?;
+            ))?;
 
         const BUFFER_SIZE: usize = 512;
-        (|| {
-            let mut result = Vec::new();
-            loop {
-                let mut buffer = [0; BUFFER_SIZE];
-                match self.get_connection()?.read(&mut buffer) {
-                    Ok(size) => {
-                        if size == 0 {
-                            return Ok(result);
-                        } else {
-                            result.extend_from_slice(&buffer[..size]);
-                        }
-                    }
-                    Err(e) => {
-                        return Err(RustADBError::IOError(e));
+        let mut result = Vec::new();
+        loop {
+            let mut buffer = [0; BUFFER_SIZE];
+            match self.get_transport()?.get_connection()?.read(&mut buffer) {
+                Ok(size) => {
+                    if size == 0 {
+                        return Ok(result);
+                    } else {
+                        result.extend_from_slice(&buffer[..size]);
                     }
                 }
+                Err(e) => {
+                    return Err(RustADBError::IOError(e));
+                }
             }
-        })()
+        }
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.
@@ -82,7 +78,7 @@ impl AdbTcpConnection {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
-        self.get_connection()?.set_nodelay(true)?;
+        self.connect()?.get_connection()?.set_nodelay(true)?;
 
         // TODO: FORWARD CTRL+C !!
 
@@ -94,15 +90,15 @@ impl AdbTcpConnection {
         }
 
         match serial {
-            None => self.send_adb_request(AdbCommand::TransportAny, true)?,
-            Some(serial) => {
-                self.send_adb_request(AdbCommand::TransportSerial(serial.to_string()), true)?
-            }
+            None => self.connect()?.send_adb_request(AdbCommand::TransportAny)?,
+            Some(serial) => self
+                .connect()?
+                .send_adb_request(AdbCommand::TransportSerial(serial.to_string()))?,
         }
-        self.send_adb_request(AdbCommand::Shell, false)?;
+        self.get_transport()?.send_adb_request(AdbCommand::Shell)?;
 
         // let read_stream = Arc::new(self.tcp_stream);
-        let mut read_stream = self.get_connection()?.try_clone()?;
+        let mut read_stream = self.get_transport()?.get_connection()?.try_clone()?;
 
         let (tx, rx) = mpsc::channel::<bool>();
 

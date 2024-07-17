@@ -23,10 +23,11 @@ lazy_static = { version = "1.5.0" }
 mio = { version = "1.0.0", features = ["os-ext", "os-poll"] }
 regex = { version = "1.10.5", features = ["perf", "std", "unicode"] }
 termios = { version = "0.3.3" }
-thiserror = { version = "1.0.61" }
+thiserror = { version = "1.0.62" }
 
 ## Binary-only dependencies
 ## Marked as optional so that lib users do not depend on them
 [dev-dependencies]
-clap = { version = "4.5.4", features = ["derive"] }
+anyhow = { version = "1.0.86" }
+clap = { version = "4.5.9", features = ["derive"] }
 rand = { version = "0.8.5" }
