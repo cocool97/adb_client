@@ -48,4 +48,10 @@ pub enum RustADBError {
     /// Indicates that the device must be paired before attempting a connection over WI-FI
     #[error("Device not paired before attempting to connect")]
     ADBDeviceNotPaired,
+    /// An error occurred when getting device's framebuffer image
+    #[error(transparent)]
+    FramebufferImageError(#[from] image::error::ImageError),
+    /// An error occurred when converting framebuffer content
+    #[error("Cannot convert framebuffer into image")]
+    FramebufferConversionError,
 }

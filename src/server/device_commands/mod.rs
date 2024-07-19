@@ -1,3 +1,4 @@
+mod framebuffer;
 mod host_features;
 mod list;
 mod reboot;

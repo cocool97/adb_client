@@ -31,19 +31,35 @@ pub enum LocalCommand {
     /// List available server features.
     HostFeatures,
     /// Push a file on device
-    Push { filename: String, path: String },
+    Push {
+        filename: String,
+        path: String,
+    },
     /// Pull a file from device
-    Pull { path: String, filename: String },
+    Pull {
+        path: String,
+        filename: String,
+    },
     /// List a directory on device
-    List { path: String },
+    List {
+        path: String,
+    },
     /// Stat a file specified on device
-    Stat { path: String },
+    Stat {
+        path: String,
+    },
     /// Spawn an interactive shell or run a list of commands on the device
-    Shell { command: Vec<String> },
+    Shell {
+        command: Vec<String>,
+    },
     /// Reboot the device
     Reboot {
         #[clap(subcommand)]
         sub_command: RebootTypeCommand,
+    },
+    // Get framebuffer of device
+    Framebuffer {
+        path: String,
     },
 }
 
@@ -132,6 +148,10 @@ fn main() -> Result<()> {
                 LocalCommand::Reboot { sub_command } => {
                     println!("Reboots device");
                     device.reboot(sub_command.into())?
+                }
+                LocalCommand::Framebuffer { path } => {
+                    device.framebuffer(&path)?;
+                    println!("Framebuffer dropped: {path}");
                 }
             }
         }

@@ -13,41 +13,12 @@ pub(crate) enum AdbCommand {
     Connect(SocketAddrV4),
     Disconnect(SocketAddrV4),
     Pair(SocketAddrV4, u32),
-    // TODO: NOT IMPLEMENTED YET
-    // Emulator(u16),
-    // Transport(String),
-    // TransportUSB,
-    // TransportLocal,
     TransportAny,
     TransportSerial(String),
-    // Serial((String, String)),
-    // USB(String),
-    // Local(String),
-    // Request(String),
-    // GetProduct(String),
-    // GetSerialNo(String),
-    // GetDevPath(String),
-    // GetState(String),
-    // Forward((String, String, String)),
-    // ForwardNoRebind((String, String, String)),
-    // KillForward((String, String)),
-    // KillForwardAll(String),
-    // ListForward(String),
     ShellCommand(String),
     Shell,
-    // Remount,
-    // DevPath(String),
-    // Tcp(u16),
-    // Tcp((u16, String)),
-    // Local(String),
-    // LocalReserved(String),
-    // LocalAbstract(String),
-    // LocalFileSystem(String),
-    // FrameBuffer,
-    // JDWP(u32),
-    // TrackJDWP,
+    FrameBuffer,
     Sync,
-    // Reverse(String),
     Reboot(RebootType),
 }
 
@@ -79,6 +50,7 @@ impl Display for AdbCommand {
             AdbCommand::Pair(addr, code) => {
                 write!(f, "host:pair:{code}:{}", addr)
             }
+            AdbCommand::FrameBuffer => write!(f, "framebuffer:"),
         }
     }
 }

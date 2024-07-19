@@ -9,6 +9,8 @@ mod error;
 mod models;
 mod server;
 mod transports;
+mod utils;
+
 pub use error::{Result, RustADBError};
 pub use models::{AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType};
 pub use server::*;

@@ -19,6 +19,7 @@ path = "examples/adb_cli.rs"
 [dependencies]
 byteorder = { version = "1.5.0" }
 chrono = { version = "0.4.38" }
+image = { version = "0.25.1" }
 lazy_static = { version = "1.5.0" }
 mio = { version = "1.0.0", features = ["os-ext", "os-poll"] }
 regex = { version = "1.10.5", features = ["perf", "std", "unicode"] }
