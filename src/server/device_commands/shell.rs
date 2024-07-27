@@ -1,29 +1,17 @@
+#[cfg(feature = "termios")]
+use mio::{Events, Interest, Poll, Token};
+use std::io::Read;
+#[cfg(feature = "termios")]
 use std::{
-    io::{self, Read, Write},
+    io::{self, Write},
     sync::mpsc,
     time::Duration,
 };
 
-use mio::{unix::SourceFd, Events, Interest, Poll, Token};
-
 use crate::{
-    adb_termios::ADBTermios,
     models::{AdbCommand, HostFeatures},
     ADBServerDevice, Result, RustADBError,
 };
-
-const STDIN: Token = Token(0);
-const BUFFER_SIZE: usize = 512;
-const POLL_DURATION: Duration = Duration::from_millis(100);
-
-fn setup_poll_stdin() -> std::result::Result<Poll, io::Error> {
-    let poll = Poll::new()?;
-    let stdin_fd = 0;
-    poll.registry()
-        .register(&mut SourceFd(&stdin_fd), STDIN, Interest::READABLE)?;
-
-    Ok(poll)
-}
 
 impl ADBServerDevice {
     /// Runs 'command' in a shell on the device, and return its output and error streams.
@@ -67,6 +55,22 @@ impl ADBServerDevice {
                 }
             }
         }
+    }
+}
+
+#[cfg(feature = "termios")]
+impl ADBServerDevice {
+    const STDIN: Token = Token(0);
+    const BUFFER_SIZE: usize = 512;
+    const POLL_DURATION: Duration = Duration::from_millis(100);
+
+    fn setup_poll_stdin() -> std::result::Result<Poll, io::Error> {
+        let poll = Poll::new()?;
+        let stdin_fd = 0;
+        poll.registry()
+            .register(&mut SourceFd(&stdin_fd), STDIN, Interest::READABLE)?;
+
+        Ok(poll)
     }
 
     /// Starts an interactive shell session on the device. Redirects stdin/stdout/stderr as appropriate.

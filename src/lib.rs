@@ -4,6 +4,7 @@
 #![forbid(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "termios")]
 mod adb_termios;
 mod error;
 mod models;

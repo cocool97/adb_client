@@ -16,6 +16,7 @@ pub(crate) enum AdbCommand {
     TransportAny,
     TransportSerial(String),
     ShellCommand(String),
+    #[cfg(feature = "termios")]
     Shell,
     FrameBuffer,
     Sync,
@@ -37,6 +38,7 @@ impl Display for AdbCommand {
                 Ok(term) => write!(f, "shell,TERM={term},raw:{command}"),
                 Err(_) => write!(f, "shell,raw:{command}"),
             },
+            #[cfg(feature = "termios")]
             AdbCommand::Shell => match std::env::var("TERM") {
                 Ok(term) => write!(f, "shell,TERM={term},raw:"),
                 Err(_) => write!(f, "shell,raw:"),

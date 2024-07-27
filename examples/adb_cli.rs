@@ -2,6 +2,7 @@ use adb_client::{ADBServer, DeviceShort, RebootType};
 use anyhow::Result;
 use clap::Parser;
 use std::fs::File;
+#[cfg(feature = "termios")]
 use std::io::{self, Write};
 use std::net::SocketAddrV4;
 use std::path::Path;
@@ -49,6 +50,7 @@ pub enum LocalCommand {
         path: String,
     },
     /// Spawn an interactive shell or run a list of commands on the device
+    #[cfg(feature = "termios")]
     Shell {
         command: Vec<String>,
     },
@@ -131,6 +133,7 @@ fn main() -> Result<()> {
                     let stat_response = device.stat(path)?;
                     println!("{}", stat_response);
                 }
+                #[cfg(feature = "termios")]
                 LocalCommand::Shell { command } => {
                     if command.is_empty() {
                         device.shell()?;
