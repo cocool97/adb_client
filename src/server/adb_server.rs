@@ -49,7 +49,7 @@ impl ADBServer {
 
         if is_local_ip {
             // ADB Server is local, we start it if not already running
-            let child = Command::new("/usr/bin/adb").arg("start-server").spawn();
+            let child = Command::new("adb").arg("start-server").spawn();
             match child {
                 Ok(mut child) => {
                     if let Err(e) = child.wait() {
