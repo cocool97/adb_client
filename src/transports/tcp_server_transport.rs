@@ -5,7 +5,7 @@ use std::str::FromStr;
 use byteorder::{ByteOrder, LittleEndian};
 
 use crate::models::{AdbRequestStatus, SyncCommand};
-use crate::{models::AdbCommand, Transport};
+use crate::{models::AdbCommand, ADBTransport};
 use crate::{Result, RustADBError};
 
 const DEFAULT_SERVER_IP: Ipv4Addr = Ipv4Addr::new(127, 0, 0, 1);
@@ -147,7 +147,7 @@ impl TCPServerProtocol {
     }
 }
 
-impl Transport for TCPServerProtocol {
+impl ADBTransport for TCPServerProtocol {
     fn disconnect(&mut self) -> Result<()> {
         if let Some(conn) = &mut self.tcp_stream {
             conn.shutdown(std::net::Shutdown::Both)?;

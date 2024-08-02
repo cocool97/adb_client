@@ -1,8 +1,9 @@
+use crate::ADBTransport;
 use crate::Result;
 use crate::RustADBError;
 use crate::TCPServerProtocol;
-use crate::Transport;
 use std::net::SocketAddrV4;
+use std::process::Command;
 
 /// Represents an ADB Server
 #[derive(Debug, Default)]
@@ -34,11 +35,31 @@ impl ADBServer {
 
     /// Connect to underlying transport
     pub(crate) fn connect(&mut self) -> Result<&mut TCPServerProtocol> {
+        let mut is_local_ip = false;
         let mut transport = if let Some(addr) = &self.socket_addr {
+            let ip = addr.ip();
+            if ip.is_loopback() || ip.is_unspecified() {
+                is_local_ip = true;
+            }
             TCPServerProtocol::new(*addr)
         } else {
+            is_local_ip = true;
             TCPServerProtocol::default()
         };
+
+        if is_local_ip {
+            // ADB Server is local, we start it if not already running
+            let child = Command::new("/usr/bin/adb").arg("start-server").spawn();
+            match child {
+                Ok(mut child) => {
+                    if let Err(e) = child.wait() {
+                        log::error!("error while starting adb server: {e}")
+                    }
+                }
+                Err(e) => log::error!("error while starting adb server: {e}"),
+            }
+        }
+
         transport.connect()?;
         self.transport = Some(transport);
 

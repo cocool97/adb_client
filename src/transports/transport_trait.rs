@@ -1,7 +1,7 @@
 use crate::Result;
 
 /// Trait representing a transport
-pub trait Transport {
+pub trait ADBTransport {
     /// Initializes the connection
     fn connect(&mut self) -> Result<()>;
 

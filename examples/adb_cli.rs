@@ -31,36 +31,22 @@ pub enum LocalCommand {
     /// List available server features.
     HostFeatures,
     /// Push a file on device
-    Push {
-        filename: String,
-        path: String,
-    },
+    Push { filename: String, path: String },
     /// Pull a file from device
-    Pull {
-        path: String,
-        filename: String,
-    },
+    Pull { path: String, filename: String },
     /// List a directory on device
-    List {
-        path: String,
-    },
+    List { path: String },
     /// Stat a file specified on device
-    Stat {
-        path: String,
-    },
+    Stat { path: String },
     /// Spawn an interactive shell or run a list of commands on the device
-    Shell {
-        command: Vec<String>,
-    },
+    Shell { command: Vec<String> },
     /// Reboot the device
     Reboot {
         #[clap(subcommand)]
         sub_command: RebootTypeCommand,
     },
-    // Get framebuffer of device
-    Framebuffer {
-        path: String,
-    },
+    /// Get framebuffer of device
+    Framebuffer { path: String },
 }
 
 #[derive(Parser, Debug)]
@@ -112,7 +98,11 @@ fn main() -> Result<()> {
 
     match opt.command {
         Command::LocalCommand(local) => {
-            let mut device = adb_server.get_device(opt.serial.to_owned())?;
+            let mut device = match opt.serial {
+                Some(serial) => adb_server.get_device_by_name(serial)?,
+                None => adb_server.get_device()?,
+            };
+
             match local {
                 LocalCommand::Pull { path, filename } => {
                     let mut output = File::create(Path::new(&filename))?;

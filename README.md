@@ -1,30 +1,35 @@
 # adb_client
 
+[![Latest version](https://img.shields.io/crates/v/adb_client.svg)](https://crates.io/crates/adb_client)
+[![MIT licensed](https://img.shields.io/crates/l/adb_client.svg)](./LICENSE-MIT)
+[![dependency status](https://deps.rs/repo/github/cocool97/adb_client/status.svg)](https://deps.rs/repo/github/cocool97/adb_client)
+[![Documentation](https://docs.rs/adb_client/badge.svg)](https://docs.rs/adb_client)
+
 Android Debug Bridge (ADB) client implementation in pure Rust !
 
 Main features :
 
-- Full Rust, no need to use shell commands
+- Full Rust, no need to use `adb *` shell commands
 - Currently only support server TCP/IP protocol
 - Highly configurable
 - Easy to use !
 
 ## Examples
 
-First declare `adb_client` as a dependency by simply adding this to your `Cargo.toml`:
+First declare `adb_client` as a dependency by simply adding it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 adb_client = "*"
 ```
 
-### Launch a command on host device via ADB server
+### Launch a command on device via ADB server
 
 ```rust
 use adb_client::ADBServer;
 
 let mut server = ADBServer::default();
-let mut device = server.get_device(None).expect("cannot get device");
+let mut device = server.get_device().expect("cannot get device");
 device.shell_command(["df", "-h"]);
 ```
 
@@ -34,8 +39,10 @@ device.shell_command(["df", "-h"]);
 use adb_client::ADBServer;
 use std::net::{SocketAddrV4, Ipv4Addr};
 
+// A custom server address can be provided
 let server_ip = Ipv4Addr::new(127, 0, 0, 1);
 let server_port = 5037;
+
 let mut server = ADBServer::new(SocketAddrV4::new(server_ip, server_port));
 server.devices();
 ```
@@ -49,7 +56,7 @@ use std::fs::File;
 use std::path::Path;
 
 let mut server = ADBServer::default();
-let mut device = server.get_device(None).expect("cannot get device");
+let mut device = server.get_device().expect("cannot get device");
 let mut input = File::open(Path::new("/tmp")).unwrap();
 device.send(&mut input, "/data/local/tmp");
 ```
@@ -67,9 +74,3 @@ cargo install adb_client --example adb_cli
 - USB protocol
 
 All pull requests are welcome !
-
-## Documentation
-
-- <https://developer.android.com/studio/command-line/adb>
-
-- <https://github.com/cstyan/adbDocumentation>

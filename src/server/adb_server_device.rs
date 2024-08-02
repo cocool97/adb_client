@@ -1,6 +1,6 @@
 use std::net::SocketAddrV4;
 
-use crate::{Result, RustADBError, TCPServerProtocol, Transport};
+use crate::{ADBTransport, Result, RustADBError, TCPServerProtocol};
 
 /// Represents a device connected to the ADB server.
 #[derive(Debug)]

@@ -11,7 +11,7 @@ mod tests {
 
     fn new_device() -> ADBServerDevice {
         let mut client = new_client();
-        return client.get_device(None).expect("cannot get device");
+        return client.get_device().expect("cannot get device");
     }
 
     #[test]
