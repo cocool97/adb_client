@@ -86,4 +86,13 @@ mod tests {
             let _ = connection.devices().expect("cannot get version");
         }
     }
+
+    #[test]
+    fn command_emulator() {
+        let mut connection = new_client();
+        let mut emulator = connection
+            .get_emulator_device()
+            .expect("no emulator running");
+        emulator.hello().expect("cannot hello");
+    }
 }

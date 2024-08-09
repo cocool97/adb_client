@@ -1,0 +1,21 @@
+[package]
+description = "Rust ADB (Android Debug Bridge) client library"
+edition.workspace = true
+keywords = ["adb", "android"]
+license.workspace = true
+name = "adb_client"
+readme = "README.md"
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+byteorder = { version = "1.5.0" }
+chrono = { version = "0.4.38" }
+homedir = "0.3.3"
+image = { version = "0.25.2" }
+lazy_static = { version = "1.5.0" }
+log = { version = "0.4.22" }
+mio = { version = "1.0.1", features = ["os-ext", "os-poll"] }
+regex = { version = "1.10.5", features = ["perf", "std", "unicode"] }
+termios = { version = "0.3.3" }
+thiserror = { version = "1.0.63" }

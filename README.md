@@ -66,7 +66,7 @@ device.send(&mut input, "/data/local/tmp");
 This crate also provides a lightweight binary based on the `adb_client` crate. You can install it by running the following command :
 
 ```shell
-cargo install adb_client --example adb_cli 
+cargo install adb_cli 
 ```
 
 ## Missing features
