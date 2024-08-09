@@ -4,11 +4,11 @@ edition.workspace = true
 keywords = ["adb", "android"]
 license.workspace = true
 name = "adb_cli"
-readme = "README.md"
+readme = "../README.md"
 repository.workspace = true
 version.workspace = true
 
 [dependencies]
-adb_client = { version = "1.0.3" }
+adb_client = { version = "1.0.4" }
 anyhow = { version = "1.0.86" }
 clap = { version = "4.5.9", features = ["derive"] }
