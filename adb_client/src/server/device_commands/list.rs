@@ -37,7 +37,7 @@ impl ADBServerDevice {
             .get_raw_connection()?
             .write_all(&len_buf)?;
 
-        // List sends the string of the directory to list, and then the server sends a list of files
+        // List send the string of the directory to list, and then the server send a list of files
         self.get_transport_mut()
             .get_raw_connection()?
             .write_all(path.as_ref().to_string().as_bytes())?;

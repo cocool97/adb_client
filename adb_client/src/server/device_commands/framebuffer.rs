@@ -98,7 +98,7 @@ impl TryFrom<[u8; std::mem::size_of::<Self>()]> for FrameBufferInfoV2 {
 }
 
 impl ADBServerDevice {
-    /// Get framebuffer of this device
+    /// Dump framebuffer of this device
     /// Big help from source code (https://android.googlesource.com/platform/system/adb/+/refs/heads/main/framebuffer_service.cpp)
     pub fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         let img = self.framebuffer_inner()?;

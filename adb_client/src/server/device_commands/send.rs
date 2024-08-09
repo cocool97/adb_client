@@ -11,7 +11,7 @@ use std::{
 };
 
 impl ADBServerDevice {
-    /// Sends [stream] to [path] on the device.
+    /// Send [stream] to [path] on the device.
     pub fn send<A: AsRef<str>>(&mut self, stream: &mut dyn Read, path: A) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?

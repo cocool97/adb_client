@@ -9,6 +9,6 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-adb_client = { path = "../adb_client" }
+adb_client = { version = "1.0.3" }
 anyhow = { version = "1.0.86" }
 clap = { version = "4.5.9", features = ["derive"] }

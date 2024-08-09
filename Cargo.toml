@@ -1,9 +1,13 @@
 [workspace]
-members = ["adb_cli"]
+members = ["adb_cli", "adb_client"]
 resolver = "2"
 
 [workspace.package]
 edition = "2021"
 license = "GPL-3.0"
 repository = "https://github.com/cocool97/adb_client"
-version = "1.0.3"
+version = "1.0.4"
+
+# To build locally when working on a new version
+[patch.crates-io]
+adb_client = { path = "./adb_client" }

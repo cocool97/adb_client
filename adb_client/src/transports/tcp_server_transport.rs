@@ -81,7 +81,7 @@ impl TCPServerTransport {
         )?)
     }
 
-    /// Sends the given [SyncCommand] to ADB server, and checks that the request has been taken in consideration.
+    /// Send the given [SyncCommand] to ADB server, and checks that the request has been taken in consideration.
     pub(crate) fn send_sync_request(&mut self, command: SyncCommand) -> Result<()> {
         // First 4 bytes are the name of the command we want to send
         // (e.g. "SEND", "RECV", "STAT", "LIST")
@@ -104,7 +104,7 @@ impl TCPServerTransport {
         Ok(length_buffer)
     }
 
-    /// Sends the given [AdbCommand] to ADB server, and checks that the request has been taken in consideration.
+    /// Send the given [AdbCommand] to ADB server, and checks that the request has been taken in consideration.
     /// If an error occurred, a [RustADBError] is returned with the response error string.
     pub(crate) fn send_adb_request(&mut self, command: AdbServerCommand) -> Result<()> {
         let adb_command_string = command.to_string();

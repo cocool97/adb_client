@@ -4,7 +4,7 @@ edition.workspace = true
 keywords = ["adb", "android"]
 license.workspace = true
 name = "adb_client"
-readme = "README.md"
+readme = "../README.md"
 repository.workspace = true
 version.workspace = true
 
