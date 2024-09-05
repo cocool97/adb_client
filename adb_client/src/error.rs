@@ -57,4 +57,13 @@ pub enum RustADBError {
     /// An error occurred while getting user's home directory
     #[error(transparent)]
     HomeError(#[from] homedir::GetHomeError),
+    /// Generic USB error
+    #[error(transparent)]
+    UsbError(#[from] rusb::Error),
+    /// USB device not found
+    #[error("USB Device not found: {0} {1}")]
+    USBDeviceNotFound(u16, u16),
+    /// No descriptor found
+    #[error("No USB descriptor found")]
+    USBNoDescriptorFound
 }
