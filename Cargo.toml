@@ -4,9 +4,9 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-license = "GPL-3.0"
+license = "MIT"
 repository = "https://github.com/cocool97/adb_client"
-version = "1.0.4"
+version = "1.0.5"
 
 # To build locally when working on a new version
 [patch.crates-io]

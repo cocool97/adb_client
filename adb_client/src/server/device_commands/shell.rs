@@ -26,11 +26,12 @@ fn setup_poll_stdin() -> std::result::Result<Poll, io::Error> {
 }
 
 impl ADBServerDevice {
-    /// Runs 'command' in a shell on the device, and return its output and error streams.
-    pub fn shell_command<S: ToString>(
+    /// Runs 'command' in a shell on the device, and write its output and error streams into [`output`].
+    pub fn shell_command<S: ToString, W: Write>(
         &mut self,
         command: impl IntoIterator<Item = S>,
-    ) -> Result<Vec<u8>> {
+        mut output: W,
+    ) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -50,8 +51,7 @@ impl ADBServerDevice {
                     .join(" "),
             ))?;
 
-        const BUFFER_SIZE: usize = 512;
-        let mut result = Vec::new();
+        const BUFFER_SIZE: usize = 4096;
         loop {
             let mut buffer = [0; BUFFER_SIZE];
             match self
@@ -61,9 +61,9 @@ impl ADBServerDevice {
             {
                 Ok(size) => {
                     if size == 0 {
-                        return Ok(result);
+                        return Ok(());
                     } else {
-                        result.extend_from_slice(&buffer[..size]);
+                        output.write_all(&buffer[..size])?;
                     }
                 }
                 Err(e) => {

@@ -91,6 +91,7 @@ impl ADBTransport for TCPEmulatorTransport {
     fn disconnect(&mut self) -> Result<()> {
         if let Some(conn) = &mut self.tcp_stream {
             conn.shutdown(std::net::Shutdown::Both)?;
+            log::trace!("Disconnected from {}", conn.peer_addr()?);
         }
 
         Ok(())
@@ -100,6 +101,8 @@ impl ADBTransport for TCPEmulatorTransport {
     fn connect(&mut self) -> Result<()> {
         if self.tcp_stream.is_none() {
             let stream = TcpStream::connect(self.socket_addr)?;
+
+            log::trace!("Successfully connected to {}", self.socket_addr);
 
             self.tcp_stream = Some(stream.try_clone()?);
 
@@ -115,6 +118,8 @@ impl ADBTransport for TCPEmulatorTransport {
             }
 
             self.authenticate()?;
+
+            log::trace!("Authentication successful");
         }
 
         Ok(())

@@ -70,7 +70,7 @@ impl ADBServerDevice {
                 "DONE" => {
                     return Ok(());
                 }
-                x => println!("Unknown response {}", x),
+                x => log::error!("Got an unknown response {}", x),
             }
         }
     }

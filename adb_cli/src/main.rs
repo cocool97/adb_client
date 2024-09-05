@@ -5,13 +5,24 @@ use adb_client::{ADBEmulatorDevice, ADBServer, DeviceShort};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use commands::{EmuCommand, HostCommand, LocalCommand};
+use env_logger::Builder;
+use log::LevelFilter;
 use models::{Command, Opts};
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::Path;
 
 fn main() -> Result<()> {
     let opt = Opts::parse();
+
+    let max_level = if opt.verbose {
+        LevelFilter::Trace
+    } else {
+        LevelFilter::Info
+    };
+    let mut builder = Builder::default();
+    builder.filter_level(max_level);
+    builder.init();
 
     match opt.command {
         Command::Local(local) => {
@@ -26,41 +37,52 @@ fn main() -> Result<()> {
                 LocalCommand::Pull { path, filename } => {
                     let mut output = File::create(Path::new(&filename))?;
                     device.recv(&path, &mut output)?;
-                    println!("Downloaded {path} as {filename}");
+                    log::info!("Downloaded {path} as {filename}");
                 }
                 LocalCommand::Push { filename, path } => {
                     let mut input = File::open(Path::new(&filename))?;
                     device.send(&mut input, &path)?;
-                    println!("Uploaded {filename} to {path}");
+                    log::info!("Uploaded {filename} to {path}");
                 }
                 LocalCommand::List { path } => {
                     device.list(path)?;
                 }
                 LocalCommand::Stat { path } => {
                     let stat_response = device.stat(path)?;
-                    println!("{}", stat_response);
+                    log::info!("{}", stat_response);
                 }
                 LocalCommand::Shell { command } => {
                     if command.is_empty() {
                         device.shell()?;
                     } else {
-                        let stdout = device.shell_command(command)?;
-                        io::stdout().write_all(&stdout)?;
+                        device.shell_command(command, std::io::stdout())?;
                     }
                 }
                 LocalCommand::HostFeatures => {
-                    println!("Available host features");
-                    for feature in device.host_features()? {
-                        println!("- {}", feature);
-                    }
+                    let features = device
+                        .host_features()?
+                        .iter()
+                        .map(|v| v.to_string())
+                        .reduce(|a, b| format!("{a},{b}"))
+                        .ok_or(anyhow!("cannot list features"))?;
+                    log::info!("Available host features: {features}");
                 }
                 LocalCommand::Reboot { sub_command } => {
-                    println!("Reboots device");
+                    log::info!("Reboots device");
                     device.reboot(sub_command.into())?
                 }
                 LocalCommand::Framebuffer { path } => {
                     device.framebuffer(&path)?;
-                    println!("Framebuffer dropped: {path}");
+                    log::info!("Framebuffer dropped: {path}");
+                }
+                LocalCommand::Logcat { path } => {
+                    let writer: Box<dyn Write> = if let Some(path) = path {
+                        let f = File::create(path)?;
+                        Box::new(f)
+                    } else {
+                        Box::new(std::io::stdout())
+                    };
+                    device.get_logs(writer)?;
                 }
             }
         }
@@ -70,44 +92,44 @@ fn main() -> Result<()> {
             match host {
                 HostCommand::Version => {
                     let version = adb_server.version()?;
-                    println!("Android Debug Bridge version {}", version);
-                    println!("Package version {}-rust", std::env!("CARGO_PKG_VERSION"));
+                    log::info!("Android Debug Bridge version {}", version);
+                    log::info!("Package version {}-rust", std::env!("CARGO_PKG_VERSION"));
                 }
                 HostCommand::Kill => {
                     adb_server.kill()?;
                 }
                 HostCommand::Devices { long } => {
                     if long {
-                        println!("List of devices attached (extended)");
+                        log::info!("List of devices attached (extended)");
                         for device in adb_server.devices_long()? {
-                            println!("{}", device);
+                            log::info!("{}", device);
                         }
                     } else {
-                        println!("List of devices attached");
+                        log::info!("List of devices attached");
                         for device in adb_server.devices()? {
-                            println!("{}", device);
+                            log::info!("{}", device);
                         }
                     }
                 }
                 HostCommand::TrackDevices => {
                     let callback = |device: DeviceShort| {
-                        println!("{}", device);
+                        log::info!("{}", device);
                         Ok(())
                     };
-                    println!("Live list of devices attached");
+                    log::info!("Live list of devices attached");
                     adb_server.track_devices(callback)?;
                 }
                 HostCommand::Pair { address, code } => {
                     adb_server.pair(address, code)?;
-                    println!("paired device {address}");
+                    log::info!("Paired device {address}");
                 }
                 HostCommand::Connect { address } => {
                     adb_server.connect_device(address)?;
-                    println!("connected to {address}");
+                    log::info!("Connected to {address}");
                 }
                 HostCommand::Disconnect { address } => {
                     adb_server.disconnect_device(address)?;
-                    println!("disconnected {address}");
+                    log::info!("Disconnected {address}");
                 }
             }
         }
@@ -123,7 +145,7 @@ fn main() -> Result<()> {
                     content,
                 } => {
                     emulator.send_sms(&phone_number, &content)?;
-                    println!("sms sent...");
+                    log::info!("SMS sent to {phone_number}");
                 }
                 EmuCommand::Rotate => emulator.rotate()?,
             }

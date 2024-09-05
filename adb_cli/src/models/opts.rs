@@ -7,6 +7,8 @@ use crate::commands::{EmuCommand, HostCommand, LocalCommand};
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 pub struct Opts {
+    #[clap(short = 'v', long = "verbose")]
+    pub verbose: bool,
     #[clap(short = 'a', long = "address", default_value = "127.0.0.1:5037")]
     pub address: SocketAddrV4,
     /// Serial id of a specific device. Every request will be sent to this device.
