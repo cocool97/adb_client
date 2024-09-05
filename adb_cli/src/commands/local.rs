@@ -23,4 +23,9 @@ pub enum LocalCommand {
     },
     /// Dump framebuffer of device
     Framebuffer { path: String },
+    /// Get logs of device
+    Logcat {
+        /// Path to output file (created if not exists)
+        path: Option<String>,
+    },
 }

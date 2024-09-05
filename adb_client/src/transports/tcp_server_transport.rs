@@ -143,6 +143,7 @@ impl ADBTransport for TCPServerTransport {
     fn disconnect(&mut self) -> Result<()> {
         if let Some(conn) = &mut self.tcp_stream {
             conn.shutdown(std::net::Shutdown::Both)?;
+            log::trace!("Disconnected from {}", conn.peer_addr()?);
         }
 
         Ok(())
@@ -154,6 +155,7 @@ impl ADBTransport for TCPServerTransport {
             let _ = previous.shutdown(std::net::Shutdown::Both);
         }
         self.tcp_stream = Some(TcpStream::connect(self.socket_addr)?);
+        log::trace!("Successfully connected to {}", self.socket_addr);
 
         Ok(())
     }
