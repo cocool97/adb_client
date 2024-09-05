@@ -14,8 +14,9 @@ chrono = { version = "0.4.38" }
 homedir = "0.3.3"
 image = { version = "0.25.2" }
 lazy_static = { version = "1.5.0" }
-log = "0.4.22"
+log = { version = "0.4.22" }
 mio = { version = "1.0.2", features = ["os-ext", "os-poll"] }
 regex = { version = "1.10.6", features = ["perf", "std", "unicode"] }
+rusb = { version = "0.9.4", features = ["vendored"] }
 termios = { version = "0.3.3" }
 thiserror = { version = "1.0.63" }

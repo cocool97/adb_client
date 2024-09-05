@@ -1,7 +1,9 @@
+#![doc = include_str!("../README.md")]
+
 mod commands;
 mod models;
 
-use adb_client::{ADBEmulatorDevice, ADBServer, DeviceShort};
+use adb_client::{ADBEmulatorDevice, ADBServer, ADBUSBDevice, DeviceShort};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use commands::{EmuCommand, HostCommand, LocalCommand};
@@ -149,6 +151,10 @@ fn main() -> Result<()> {
                 }
                 EmuCommand::Rotate => emulator.rotate()?,
             }
+        }
+        Command::Usb(usb) => {
+            let mut device = ADBUSBDevice::new(usb.vendor_id, usb.product_id)?;
+            device.send_connect()?;
         }
     }
 
