@@ -4,7 +4,7 @@ use std::net::SocketAddrV4;
 
 impl ADBServer {
     /// Pair device on a specific port with a generated 'code'
-    pub fn pair(&mut self, address: SocketAddrV4, code: u32) -> Result<()> {
+    pub fn pair(&mut self, address: SocketAddrV4, code: String) -> Result<()> {
         let response = self
             .connect()?
             .proxy_connection(AdbServerCommand::Pair(address, code), true)?;
