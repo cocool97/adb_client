@@ -19,17 +19,17 @@ adb_client = "*"
 
 ### Launch a command on device via ADB server
 
-```rust
+```rust no_run
 use adb_client::ADBServer;
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
-device.shell_command(["df", "-h"]);
+device.shell_command(["df", "-h"],std::io::stdout());
 ```
 
 ### Get available ADB devices
 
-```rust
+```rust no_run
 use adb_client::ADBServer;
 use std::net::{SocketAddrV4, Ipv4Addr};
 
@@ -43,7 +43,7 @@ server.devices();
 
 ### Push a file to the device
 
-```rust
+```rust no_run
 use adb_client::ADBServer;
 use std::net::Ipv4Addr;
 use std::fs::File;
