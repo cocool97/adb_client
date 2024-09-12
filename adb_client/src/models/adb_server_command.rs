@@ -65,6 +65,5 @@ fn test_pair_command() {
     let pair = AdbServerCommand::Pair(host.parse().unwrap(), code.into());
 
     assert_eq!(pair.to_string(), format!("host:pair:{code}:{host}"));
-    assert_ne!(pair.to_string(),format!("host:pair:{code_u32}:{host}"))
-
+    assert_ne!(pair.to_string(), format!("host:pair:{code_u32}:{host}"))
 }
