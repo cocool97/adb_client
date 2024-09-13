@@ -6,7 +6,7 @@ resolver = "2"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/cocool97/adb_client"
-version = "1.0.5"
+version = "1.0.6"
 
 # To build locally when working on a new version
 [patch.crates-io]
