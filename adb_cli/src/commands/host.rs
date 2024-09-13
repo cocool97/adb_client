@@ -16,7 +16,7 @@ pub enum HostCommand {
     /// Track new devices showing up.
     TrackDevices,
     /// Pair device with a given code
-    Pair { address: SocketAddrV4, code: u32 },
+    Pair { address: SocketAddrV4, code: String },
     /// Connect device over WI-FI
     Connect { address: SocketAddrV4 },
     /// Disconnect device over WI-FI

@@ -13,7 +13,7 @@ pub(crate) enum AdbServerCommand {
     HostFeatures,
     Connect(SocketAddrV4),
     Disconnect(SocketAddrV4),
-    Pair(SocketAddrV4, u32),
+    Pair(SocketAddrV4, String),
     TransportAny,
     TransportSerial(String),
     // Local commands
@@ -50,9 +50,20 @@ impl Display for AdbServerCommand {
             AdbServerCommand::Connect(addr) => write!(f, "host:connect:{}", addr),
             AdbServerCommand::Disconnect(addr) => write!(f, "host:disconnect:{}", addr),
             AdbServerCommand::Pair(addr, code) => {
-                write!(f, "host:pair:{code}:{}", addr)
+                write!(f, "host:pair:{code}:{addr}")
             }
             AdbServerCommand::FrameBuffer => write!(f, "framebuffer:"),
         }
     }
+}
+
+#[test]
+fn test_pair_command() {
+    let host = "192.168.0.197:34783";
+    let code = "091102";
+    let code_u32 = code.parse::<u32>().expect("cannot parse u32");
+    let pair = AdbServerCommand::Pair(host.parse().expect("cannot parse host"), code.into());
+
+    assert_eq!(pair.to_string(), format!("host:pair:{code}:{host}"));
+    assert_ne!(pair.to_string(), format!("host:pair:{code_u32}:{host}"))
 }
