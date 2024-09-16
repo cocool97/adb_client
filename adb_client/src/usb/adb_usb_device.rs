@@ -1,5 +1,6 @@
-use crate::{ADBTransport, Result, USBTransport};
 use super::ADBUsbMessageHeader;
+use crate::usb::constants::{CMD_CNXN, CONNECT_MAXDATA, CONNECT_PAYLOAD, CONNECT_VERSION};
+use crate::{ADBTransport, Result, USBTransport};
 
 /// Represent a device reached directly over USB
 #[derive(Debug)]
@@ -19,10 +20,10 @@ impl ADBUSBDevice {
         self.transport.connect()?;
 
         let message = ADBUsbMessageHeader::new(
-            0x4e584e43,
-            0x01000000,
-            1048576,
-            "host::pc-portable\0".into(),
+            CMD_CNXN,
+            CONNECT_VERSION,
+            CONNECT_MAXDATA,
+            CONNECT_PAYLOAD.into(),
         );
 
         self.transport.write(message)?;
