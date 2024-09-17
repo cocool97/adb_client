@@ -65,5 +65,8 @@ pub enum RustADBError {
     USBDeviceNotFound(u16, u16),
     /// No descriptor found
     #[error("No USB descriptor found")]
-    USBNoDescriptorFound
+    USBNoDescriptorFound,
+    /// CRC32 of the received message is invalid
+    #[error("Invalid CRC32. Expected {0} got {1}")]
+    InvalidCRC32(u32, u32),
 }
