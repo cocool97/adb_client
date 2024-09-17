@@ -13,6 +13,4 @@ pub struct UsbCommand {
 }
 
 #[derive(Parser, Debug)]
-pub enum UsbCommands {
-
-}
+pub enum UsbCommands {}

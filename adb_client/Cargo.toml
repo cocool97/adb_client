@@ -16,7 +16,10 @@ image = { version = "0.25.2" }
 lazy_static = { version = "1.5.0" }
 log = { version = "0.4.22" }
 mio = { version = "1.0.2", features = ["os-ext", "os-poll"] }
+rand = "0.8.5"
 regex = { version = "1.10.6", features = ["perf", "std", "unicode"] }
+rsa = { version = "0.9.6", features = ["sha1"] }
 rusb = { version = "0.9.4", features = ["vendored"] }
+sha1 = "0.10.6"
 termios = { version = "0.3.3" }
 thiserror = { version = "1.0.63" }
