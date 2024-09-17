@@ -1,15 +1,18 @@
 use std::time::Duration;
 
-use rusb::{constants::{LIBUSB_CLASS_VENDOR_SPEC, LIBUSB_ENDPOINT_DIR_MASK}, DeviceHandle, Direction, GlobalContext, TransferType};
+use rusb::{
+    constants::LIBUSB_CLASS_VENDOR_SPEC, DeviceHandle, Direction, GlobalContext, TransferType,
+};
 
 use super::ADBTransport;
-use crate::{usb::ADBUsbMessageHeader, Result, RustADBError};
+use crate::{
+    usb::{ADBUsbMessage, USBCommand},
+    Result, RustADBError,
+};
 
 #[derive(Debug)]
 struct Endpoint {
-    config: u8,
     iface: u8,
-    setting: u8,
     address: u8,
 }
 
@@ -41,17 +44,12 @@ impl USBTransport {
     }
 
     fn configure_endpoint(handle: &DeviceHandle<GlobalContext>, endpoint: &Endpoint) -> Result<()> {
-        // handle.reset()?;
         handle.claim_interface(endpoint.iface)?;
-        // println!("1#");
-        // handle.set_active_configuration(endpoint.config)?;
-        // println!("3");
-        // handle.set_alternate_setting(endpoint.iface, endpoint.setting)?;
         Ok(())
     }
 
     /// Write data to underlying connection
-    pub(crate) fn write(&mut self, message: ADBUsbMessageHeader) -> Result<()> {
+    pub(crate) fn write_message(&mut self, message: ADBUsbMessage) -> Result<()> {
         let endpoint = self.find_writable_endpoint()?;
         let handle = self.get_raw_connection()?;
 
@@ -70,7 +68,7 @@ impl USBTransport {
         println!("writing payload...");
 
         // TODO: loop
-        let payload = message.to_payload();
+        let payload = message.into_payload();
         let written = handle.write_bulk(endpoint.address, &payload, max_timeout)?;
 
         println!("written {written}");
@@ -79,7 +77,7 @@ impl USBTransport {
     }
 
     /// Read data from underlying connection
-    pub(crate) fn read(&mut self) -> Result<()> {
+    pub(crate) fn read_message(&mut self) -> Result<ADBUsbMessage> {
         let endpoint = self.find_readable_endpoint()?;
         let handle = self.get_raw_connection()?;
 
@@ -93,8 +91,19 @@ impl USBTransport {
         let mut data = [0; 24];
         // TODO: loop
         let read = handle.read_bulk(endpoint.address, &mut data, max_timeout)?;
-        println!("read {read}");
-        Ok(())
+
+        let mut message = ADBUsbMessage::try_from(data)?;
+
+        if message.data_length != 0 {
+            let mut msg_data = vec![0_u8; message.data_length as usize];
+            // TODO: loop
+            let read = handle.read_bulk(endpoint.address, &mut msg_data, max_timeout)?;
+            message.payload = msg_data;
+        }
+
+        println!("read {read} - {message:?}");
+
+        Ok(message)
     }
 
     fn find_readable_endpoint(&self) -> Result<Endpoint> {
@@ -120,10 +129,8 @@ impl USBTransport {
                             && interface_desc.protocol_code() == 0x01
                         {
                             return Ok(Endpoint {
-                                config: config_desc.number(),
                                 iface: interface_desc.interface_number(),
-                                setting: interface_desc.setting_number(),
-                                address: 0x86,
+                                address: endpoint_desc.address(),
                             });
                         }
                     }
@@ -157,9 +164,7 @@ impl USBTransport {
                             && interface_desc.protocol_code() == 0x01
                         {
                             return Ok(Endpoint {
-                                config: config_desc.number(),
                                 iface: interface_desc.interface_number(),
-                                setting: interface_desc.setting_number(),
                                 address: endpoint_desc.address(),
                             });
                         }
@@ -185,7 +190,7 @@ impl ADBTransport for USBTransport {
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {
-        // Nothing to do here as disconnection is made in the Drop trait implementation of DeviceHandle.
-        Ok(())
+        let message = ADBUsbMessage::new(USBCommand::Clse, 0, 0, "".into());
+        self.write_message(message)
     }
 }
