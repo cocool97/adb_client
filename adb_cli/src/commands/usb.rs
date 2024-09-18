@@ -8,11 +8,11 @@ fn parse_hex_id(id: &str) -> Result<u16, ParseIntError> {
 
 #[derive(Parser, Debug)]
 pub struct UsbCommand {
-    /// Vendor id of this USB device
-    #[clap(short = 'v', long = "vendor-id", value_parser=parse_hex_id)]
+    /// Hexadecimal vendor id of this USB device
+    #[clap(short = 'v', long = "vendor-id", value_parser=parse_hex_id, value_name="VID")]
     pub vendor_id: u16,
-    /// Product id of this USB device
-    #[clap(short = 'p', long = "product-id", value_parser=parse_hex_id)]
+    /// Hexadecimal product id of this USB device
+    #[clap(short = 'p', long = "product-id", value_parser=parse_hex_id, value_name="PID")]
     pub product_id: u16,
     // #[clap(subcommand)]
     // pub commands: UsbCommands
