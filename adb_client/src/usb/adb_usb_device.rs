@@ -1,17 +1,61 @@
-use std::{fs::File, io::Read};
-
 use super::ADBUsbMessage;
 use crate::usb::adb_usb_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
 use crate::{usb::usb_commands::USBCommand, ADBTransport, Result, RustADBError, USBTransport};
+use rsa::pkcs1::EncodeRsaPublicKey;
 use rsa::signature::SignatureEncoding;
 use rsa::signature::Signer;
-use rsa::{pkcs1v15::SigningKey, pkcs8::DecodePrivateKey, RsaPrivateKey};
+use rsa::{pkcs1v15::SigningKey, pkcs8::DecodePrivateKey, RsaPrivateKey, RsaPublicKey};
 use sha1::Sha1;
 
 /// Represent a device reached directly over USB
 #[derive(Debug)]
 pub struct ADBUSBDevice {
     transport: USBTransport,
+}
+
+fn read_adb_keypair() -> Option<(RsaPrivateKey, String)> {
+    let Ok(Some(home)) = homedir::my_home() else {
+        return None;
+    };
+    let android_dir = home.join(".android");
+    let private_key = android_dir.join("adbkey");
+    let public_key = android_dir.join("adbkey.pub");
+    let private_key = match std::fs::read_to_string(&private_key) {
+        Ok(key) => RsaPrivateKey::from_pkcs8_pem(&key).expect("cannot load private key"),
+        Err(e) => {
+            log::warn!(
+                "failed to read private key file: {}: {}",
+                private_key.display(),
+                e
+            );
+            return None;
+        }
+    };
+    let public_key = match std::fs::read_to_string(&public_key) {
+        Ok(mut key) => {
+            key.push('\0');
+            key
+        }
+        Err(e) => {
+            log::warn!(
+                "failed to read public key file: {}: {}",
+                public_key.display(),
+                e
+            );
+            return None;
+        }
+    };
+    Some((private_key, public_key))
+}
+
+fn generate_keypair() -> (RsaPrivateKey, String) {
+    let mut rng = rand::thread_rng();
+    let bits = 2048;
+    let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate private key");
+    let public_key = RsaPublicKey::from(&private_key)
+        .to_pkcs1_pem(rsa::pkcs8::LineEnding::CR)
+        .expect("could not encode generated public key into pkcs1_pem");
+    (private_key, public_key)
 }
 
 impl ADBUSBDevice {
@@ -62,35 +106,23 @@ impl ADBUSBDevice {
             }
         };
 
-        for private_key_location in ["/home/corentin/.android/adbkey"] {
-            let mut f = File::open(private_key_location)?;
-            let mut key = String::new();
-            f.read_to_string(&mut key)?;
-            let rsa_private_key =
-                RsaPrivateKey::from_pkcs8_pem(&key).expect("cannot load private key");
-            let signing_key = SigningKey::<Sha1>::new(rsa_private_key);
-            let signed_payload = signing_key.try_sign(&auth_message.payload).unwrap();
+        let (rsa_private_key, pub_key) = read_adb_keypair().unwrap_or_else(generate_keypair);
+        let signing_key = SigningKey::<Sha1>::new(rsa_private_key);
+        let signed_payload = signing_key.try_sign(&auth_message.payload).unwrap();
 
-            let b = signed_payload.to_vec();
+        let b = signed_payload.to_vec();
 
-            let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_SIGNATURE, 0, b);
+        let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_SIGNATURE, 0, b);
+        self.transport.write_message(message)?;
 
-            self.transport.write_message(message)?;
+        let received_response = self.transport.read_message()?;
 
-            let received_response = self.transport.read_message()?;
+        println!("response after auth signature: {:?}", &received_response);
 
-            println!("response after auth signature: {:?}", &received_response);
-
-            if received_response.command == USBCommand::Cnxn {
-                log::info!("Successfully authenticated on device !");
-                return Ok(());
-            }
+        if received_response.command == USBCommand::Cnxn {
+            log::info!("Successfully authenticated on device !");
+            return Ok(());
         }
-
-        let mut f = File::open("/home/corentin/.android/adbkey.pub")?;
-        let mut pub_key = String::new();
-        f.read_to_string(&mut pub_key)?;
-        pub_key.push('\0');
 
         let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_RSAPUBLICKEY, 0, pub_key.into());
 
