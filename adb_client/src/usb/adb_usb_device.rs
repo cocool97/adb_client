@@ -15,7 +15,7 @@ pub struct ADBUSBDevice {
     // String containing the PEM representation of the public key
     public_key: Vec<u8>,
     // Parsed private key object for signing messages later
-    private_key: RsaPrivateKey,
+    signing_key: SigningKey<Sha1>,
     transport: USBTransport,
 }
 
@@ -57,9 +57,10 @@ impl ADBUSBDevice {
             .to_pkcs1_pem(rsa::pkcs8::LineEnding::CR)
             .expect("could not encode generated public key into pkcs1_pem")
             .into_bytes();
+        let signing_key = SigningKey::<Sha1>::new(private_key);
         Ok(Self {
             public_key,
-            private_key,
+            signing_key,
             transport,
         })
     }
@@ -105,9 +106,7 @@ impl ADBUSBDevice {
             }
         };
 
-        let signing_key = SigningKey::<Sha1>::new(self.private_key.clone());
-        let signed_payload = signing_key.try_sign(&auth_message.payload).unwrap();
-
+        let signed_payload = self.signing_key.try_sign(&auth_message.payload).unwrap();
         let b = signed_payload.to_vec();
 
         let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_SIGNATURE, 0, b);
