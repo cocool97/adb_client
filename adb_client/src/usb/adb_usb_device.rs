@@ -13,26 +13,19 @@ use sha1::Sha1;
 #[derive(Debug)]
 pub struct ADBUSBDevice {
     // String containing the PEM representation of the public key
-    public_key: String,
+    public_key: Vec<u8>,
     // Parsed private key object for signing messages later
     private_key: RsaPrivateKey,
     transport: USBTransport,
 }
 
-fn read_adb_keypair(
-    private_key: Option<PathBuf>,
-    public_key: Option<PathBuf>,
-) -> Option<(RsaPrivateKey, String)> {
-    let (private_key, public_key) = match (private_key, public_key) {
-        (Some(private_key), Some(public_key)) => (private_key, public_key),
-        _ => {
-            let Ok(Some(home)) = homedir::my_home() else {
-                return None;
-            };
-            let android_dir = home.join(".android");
-            (android_dir.join("adbkey"), android_dir.join("adbkey.pub"))
-        }
-    };
+fn read_adb_keypair(private_key: Option<PathBuf>) -> Option<RsaPrivateKey> {
+    let private_key = private_key.or_else(|| {
+        homedir::my_home()
+            .ok()?
+            .map(|home| home.join(".android").join("adbkey"))
+    })?;
+
     let private_key = match std::fs::read_to_string(&private_key) {
         Ok(key) => RsaPrivateKey::from_pkcs8_pem(&key).expect("cannot load private key"),
         Err(e) => {
@@ -44,45 +37,26 @@ fn read_adb_keypair(
             return None;
         }
     };
-    let public_key = match std::fs::read_to_string(&public_key) {
-        Ok(mut key) => {
-            key.push('\0');
-            key
-        }
-        Err(e) => {
-            log::warn!(
-                "failed to read public key file: {}: {}",
-                public_key.display(),
-                e
-            );
-            return None;
-        }
-    };
-    Some((private_key, public_key))
+    Some(private_key)
 }
 
-fn generate_keypair() -> (RsaPrivateKey, String) {
+fn generate_keypair() -> RsaPrivateKey {
     log::info!("generating ephemeral RSA keypair");
     let mut rng = rand::thread_rng();
     let bits = 2048;
-    let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate private key");
-    let public_key = RsaPublicKey::from(&private_key)
-        .to_pkcs1_pem(rsa::pkcs8::LineEnding::CR)
-        .expect("could not encode generated public key into pkcs1_pem");
-    (private_key, public_key)
+
+    RsaPrivateKey::new(&mut rng, bits).expect("failed to generate private key")
 }
 
 impl ADBUSBDevice {
     /// Instantiate a new [ADBUSBDevice]
-    pub fn new(
-        vendor_id: u16,
-        product_id: u16,
-        private_key: Option<PathBuf>,
-        public_key: Option<PathBuf>,
-    ) -> Result<Self> {
+    pub fn new(vendor_id: u16, product_id: u16, private_key: Option<PathBuf>) -> Result<Self> {
         let transport = USBTransport::new(vendor_id, product_id);
-        let (private_key, public_key) =
-            read_adb_keypair(private_key, public_key).unwrap_or_else(generate_keypair);
+        let private_key = read_adb_keypair(private_key).unwrap_or_else(generate_keypair);
+        let public_key = RsaPublicKey::from(&private_key)
+            .to_pkcs1_pem(rsa::pkcs8::LineEnding::CR)
+            .expect("could not encode generated public key into pkcs1_pem")
+            .into_bytes();
         Ok(Self {
             public_key,
             private_key,
@@ -152,9 +126,9 @@ impl ADBUSBDevice {
             USBCommand::Auth,
             AUTH_RSAPUBLICKEY,
             0,
-            // TODO: Maybe convert the string to a Vec<u8> and make the `new`
-            // function accept a slice of u8
-            self.public_key.clone().into(),
+            // TODO: Make the function accept a slice of u8
+            // to avoid clone
+            self.public_key.clone(),
         );
 
         self.transport.write_message(message)?;

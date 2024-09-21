@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::num::ParseIntError;
+use std::path::PathBuf;
 
 use clap::Parser;
 
@@ -15,14 +15,10 @@ pub struct UsbCommand {
     /// Hexadecimal product id of this USB device
     #[clap(short = 'p', long = "product-id", value_parser=parse_hex_id, value_name="PID")]
     pub product_id: u16,
-    /// Path to a custom public key for authentication
-    #[clap(long = "public-key")]
-    pub public_key: Option<PathBuf>,
 
     /// Path to a custom private key for authentication
     #[clap(long = "private-key")]
     pub private_key: Option<PathBuf>,
-
     // #[clap(subcommand)]
     // pub commands: UsbCommands
 }
