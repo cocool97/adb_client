@@ -12,9 +12,9 @@ use sha1::Sha1;
 /// Represent a device reached directly over USB
 #[derive(Debug)]
 pub struct ADBUSBDevice {
-    // String containing the PEM representation of the public key
+    // Raw bytes from the PEM representation of the public key
     public_key: Vec<u8>,
-    // Parsed private key object for signing messages later
+    // Signing key derived from the private key for signing messages
     signing_key: SigningKey<Sha1>,
     transport: USBTransport,
 }
