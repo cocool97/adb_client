@@ -62,6 +62,7 @@ fn read_adb_keypair(
 }
 
 fn generate_keypair() -> (RsaPrivateKey, String) {
+    log::info!("generating ephemeral RSA keypair");
     let mut rng = rand::thread_rng();
     let bits = 2048;
     let private_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate private key");
