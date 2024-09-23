@@ -53,10 +53,24 @@ impl ADBUSBDevice {
     pub fn new(vendor_id: u16, product_id: u16, private_key: Option<PathBuf>) -> Result<Self> {
         let transport = USBTransport::new(vendor_id, product_id);
         let private_key = read_adb_keypair(private_key).unwrap_or_else(generate_keypair);
-        let public_key = RsaPublicKey::from(&private_key)
-            .to_pkcs1_pem(rsa::pkcs8::LineEnding::CR)
-            .expect("could not encode generated public key into pkcs1_pem")
-            .into_bytes();
+        let public_key_with_header = RsaPublicKey::from(&private_key)
+            .to_pkcs1_pem(rsa::pkcs8::LineEnding::LF)
+            .expect("could not encode generated public key into pkcs1_pem");
+
+        // Some devices seem to not like the ---BEGIN RSA PUBLIC KEY--- header
+        let mut public_key = String::with_capacity(public_key_with_header.len());
+        // ignore the header
+        let mut lines = public_key_with_header.lines().skip(1);
+        let mut prev = lines.next().unwrap();
+        // the last value in current is never used (ignore the footer)
+        while let Some(current) = lines.next() {
+            public_key.push_str(prev);
+            prev = current;
+        }
+
+        // println!("generated public key: {public_key}");
+        public_key.push('\0');
+        let public_key = public_key.into_bytes();
         let signing_key = SigningKey::<Sha1>::new(private_key);
         Ok(Self {
             public_key,
