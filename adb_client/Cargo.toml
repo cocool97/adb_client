@@ -18,4 +18,4 @@ log = "0.4.22"
 mio = { version = "1.0.2", features = ["os-ext", "os-poll"] }
 regex = { version = "1.10.6", features = ["perf", "std", "unicode"] }
 termios = { version = "0.3.3" }
-thiserror = { version = "1.0.63" }
+thiserror = { version = "1.0.64" }

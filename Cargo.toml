@@ -11,3 +11,10 @@ version = "1.0.6"
 # To build locally when working on a new version
 [patch.crates-io]
 adb_client = { path = "./adb_client" }
+
+[profile.release]
+codegen-units = 1
+debug-assertions = false
+lto = "thin"
+opt-level = 'z'
+strip = true

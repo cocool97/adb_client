@@ -154,7 +154,9 @@ impl ADBTransport for TCPServerTransport {
             // Ignoring underlying error, we will recreate a new connection
             let _ = previous.shutdown(std::net::Shutdown::Both);
         }
-        self.tcp_stream = Some(TcpStream::connect(self.socket_addr)?);
+        let tcp_stream = TcpStream::connect(self.socket_addr)?;
+        tcp_stream.set_nodelay(true)?;
+        self.tcp_stream = Some(tcp_stream);
         log::trace!("Successfully connected to {}", self.socket_addr);
 
         Ok(())

@@ -78,8 +78,6 @@ impl ADBServerDevice {
         let mut adb_termios = ADBTermios::new(std::io::stdin())?;
         adb_termios.set_adb_termios()?;
 
-        self.connect()?.get_raw_connection()?.set_nodelay(true)?;
-
         // TODO: FORWARD CTRL+C !!
 
         let supported_features = self.host_features()?;

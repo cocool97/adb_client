@@ -1,9 +1,72 @@
 use crate::{
+    constants,
     models::{AdbServerCommand, SyncCommand},
-    ADBServerDevice, Result, RustADBError,
+    ADBServerDevice, Result,
 };
-use byteorder::{ByteOrder, LittleEndian};
-use std::io::{Read, Write};
+use byteorder::{LittleEndian, ReadBytesExt};
+use std::io::{BufReader, BufWriter, Read, Write};
+
+/// Internal structure wrapping a [std::io::Read] and hiding underlying protocol logic.
+struct ADBRecvCommandReader<R: Read> {
+    inner: R,
+    remaining_data_bytes_to_read: usize,
+}
+
+impl<R: Read> ADBRecvCommandReader<R> {
+    pub fn new(inner: R) -> Self {
+        Self {
+            inner,
+            remaining_data_bytes_to_read: 0,
+        }
+    }
+}
+
+impl<R: Read> Read for ADBRecvCommandReader<R> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        // In case of a "DATA" header, we may not have enough space in `buf` to fill it with "length" bytes coming from device.
+        // `remaining_data_bytes_to_read` represents how many bytes are still left to read before receiving another header.
+        if self.remaining_data_bytes_to_read == 0 {
+            let mut header = [0_u8; 4];
+            self.inner.read_exact(&mut header)?;
+
+            match &header[..] {
+                b"DATA" => {
+                    let length = self.inner.read_u32::<LittleEndian>()? as usize;
+                    let effective_read = self.inner.read(buf)?;
+                    self.remaining_data_bytes_to_read = length - effective_read;
+
+                    Ok(effective_read)
+                }
+                b"DONE" => Ok(0),
+                b"FAIL" => {
+                    let length = self.inner.read_u32::<LittleEndian>()? as usize;
+                    let mut error_msg = vec![0; length];
+                    self.inner.read_exact(&mut error_msg)?;
+
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!(
+                            "ADB request failed: {}",
+                            String::from_utf8_lossy(&error_msg)
+                        ),
+                    ))
+                }
+                _ => Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Unknown response from device {:#?}", header),
+                )),
+            }
+        } else {
+            // Computing minimum to ensure to stop reading before next header...
+            let data_to_read = std::cmp::min(self.remaining_data_bytes_to_read, buf.len());
+            self.inner.read_exact(&mut buf[..data_to_read])?;
+
+            self.remaining_data_bytes_to_read -= self.remaining_data_bytes_to_read;
+
+            Ok(data_to_read)
+        }
+    }
+}
 
 impl ADBServerDevice {
     /// Receives [path] to [stream] from the device.
@@ -28,58 +91,21 @@ impl ADBServerDevice {
         from: S,
         output: &mut dyn Write,
     ) -> Result<()> {
-        // First send 8 byte common header
-        let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, from.as_ref().len() as u32);
-        self.get_transport_mut()
-            .get_raw_connection()?
-            .write_all(&len_buf)?;
-        self.get_transport_mut()
-            .get_raw_connection()?
-            .write_all(from.as_ref().as_bytes())?;
+        let mut raw_connection = self.get_transport().get_raw_connection()?;
 
-        // Then we receive the byte data in chunks of up to 64k
-        // Chunk looks like 'DATA' <length> <data>
-        let mut buffer = [0_u8; 64 * 1024]; // Should this be Boxed?
-        let mut data_header = [0_u8; 4]; // DATA
-        loop {
-            self.get_transport_mut()
-                .get_raw_connection()?
-                .read_exact(&mut data_header)?;
-            // Check if data_header is DATA or DONE or FAIL
-            match &data_header {
-                b"DATA" => {
-                    // Handle received data
-                    let length: usize = self
-                        .get_transport_mut()
-                        .get_body_length()?
-                        .try_into()
-                        .unwrap();
-                    self.get_transport_mut()
-                        .get_raw_connection()?
-                        .read_exact(&mut buffer[..length])?;
-                    output.write_all(&buffer[..length])?;
-                }
-                b"DONE" => break, // We're done here
-                b"FAIL" => {
-                    // Handle fail
-                    let length: usize = self
-                        .get_transport_mut()
-                        .get_body_length()?
-                        .try_into()
-                        .unwrap();
-                    self.get_transport_mut()
-                        .get_raw_connection()?
-                        .read_exact(&mut buffer[..length])?;
-                    Err(RustADBError::ADBRequestFailed(String::from_utf8(
-                        buffer[..length].to_vec(),
-                    )?))?;
-                }
-                _ => panic!("Unknown response from device {:#?}", data_header),
-            }
-        }
+        let from_as_bytes = from.as_ref().as_bytes();
+        let mut buffer = Vec::with_capacity(4 + from_as_bytes.len());
+        buffer.extend_from_slice(&(from.as_ref().len() as u32).to_le_bytes());
+        buffer.extend_from_slice(from_as_bytes);
+        raw_connection.write_all(&buffer)?;
 
-        // Connection should've left SYNC by now
+        let reader = ADBRecvCommandReader::new(raw_connection);
+        std::io::copy(
+            &mut BufReader::with_capacity(constants::BUFFER_SIZE, reader),
+            &mut BufWriter::with_capacity(constants::BUFFER_SIZE, output),
+        )?;
+
+        // Connection should've been left in SYNC mode by now
         Ok(())
     }
 }
