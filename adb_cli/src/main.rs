@@ -168,7 +168,8 @@ fn main() -> Result<()> {
             }
         }
         Command::Usb(usb) => {
-            let mut device = ADBUSBDevice::new(usb.vendor_id, usb.product_id)?;
+            let mut device =
+                ADBUSBDevice::new(usb.vendor_id, usb.product_id, usb.path_to_private_key)?;
             device.send_connect()?;
         }
     }
