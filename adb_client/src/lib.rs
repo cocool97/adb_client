@@ -4,7 +4,6 @@
 #![forbid(missing_docs)]
 #![doc = include_str!("../README.md")]
 
-mod adb_termios;
 mod constants;
 mod emulator;
 mod error;
