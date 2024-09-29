@@ -9,6 +9,7 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
+base64 = "0.22.1"
 byteorder = { version = "1.5.0" }
 chrono = { version = "0.4.38" }
 homedir = "0.3.3"

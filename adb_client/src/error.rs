@@ -69,4 +69,16 @@ pub enum RustADBError {
     /// CRC32 of the received message is invalid
     #[error("Invalid CRC32. Expected {0} got {1}")]
     InvalidCRC32(u32, u32),
+    /// An error occurred with RSA private key
+    #[error(transparent)]
+    RSAError(#[from] rsa::Error),
+    /// An error occurred with RSA PKCS#1
+    #[error(transparent)]
+    RSAPKCS1Error(#[from] rsa::pkcs1::Error),
+    /// An error occurred with RSA PKCS#8
+    #[error(transparent)]
+    RSAPKCS8Error(#[from] rsa::pkcs8::Error),
+    /// An error occurred with RSA signature
+    #[error(transparent)]
+    RSASignatureError(#[from] rsa::signature::Error),
 }
