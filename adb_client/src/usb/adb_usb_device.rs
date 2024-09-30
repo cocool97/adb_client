@@ -83,9 +83,9 @@ impl ADBUSBDevice {
         // At this point, we should have received either:
         // - an AUTH message with arg0 == 1
         // - a CNXN message
-        let auth_message = match message.command {
-            USBCommand::Auth if message.arg0 == AUTH_TOKEN => message,
-            USBCommand::Auth if message.arg0 != AUTH_TOKEN => {
+        let auth_message = match message.header.command {
+            USBCommand::Auth if message.header.arg0 == AUTH_TOKEN => message,
+            USBCommand::Auth if message.header.arg0 != AUTH_TOKEN => {
                 return Err(RustADBError::ADBRequestFailed(
                     "Received AUTH message with type != 1".into(),
                 ))
@@ -97,7 +97,7 @@ impl ADBUSBDevice {
             _ => {
                 return Err(RustADBError::ADBRequestFailed(format!(
                     "Wrong command received {}",
-                    message.command
+                    message.header.command
                 )))
             }
         };
@@ -106,11 +106,14 @@ impl ADBUSBDevice {
         let b = signed_payload.to_vec();
 
         let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_SIGNATURE, 0, b);
+
         self.transport.write_message(message)?;
 
         let received_response = self.transport.read_message()?;
 
-        if received_response.command == USBCommand::Cnxn {
+        println!("response after auth signature: {:?}", &received_response);
+
+        if received_response.header.command == USBCommand::Cnxn {
             log::info!("Successfully authenticated on device !");
             return Ok(());
         }
