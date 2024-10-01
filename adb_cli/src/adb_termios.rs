@@ -1,3 +1,5 @@
+#![cfg(any(target_os = "linux", target_os = "macos"))]
+
 use std::os::unix::prelude::{AsRawFd, RawFd};
 
 use termios::{tcsetattr, Termios, TCSANOW, VMIN, VTIME};

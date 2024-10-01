@@ -1,3 +1,5 @@
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+mod adb_termios;
 mod commands;
 mod models;
 
@@ -53,7 +55,19 @@ fn main() -> Result<()> {
                 }
                 LocalCommand::Shell { command } => {
                     if command.is_empty() {
-                        device.shell()?;
+                        // Need to duplicate some code here as ADBTermios [Drop] implementation resets terminal state.
+                        // Using a scope here would call drop() too early..
+                        #[cfg(any(target_os = "linux", target_os = "macos"))]
+                        {
+                            let mut adb_termios = adb_termios::ADBTermios::new(std::io::stdin())?;
+                            adb_termios.set_adb_termios()?;
+                            device.shell(std::io::stdin(), std::io::stdout())?;
+                        }
+
+                        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+                        {
+                            device.shell(std::io::stdin(), std::io::stdout())?;
+                        }
                     } else {
                         device.shell_command(command, std::io::stdout())?;
                     }
