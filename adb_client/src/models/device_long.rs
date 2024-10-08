@@ -68,14 +68,13 @@ impl TryFrom<Vec<u8>> for DeviceLong {
                     .as_bytes()
                     .to_vec(),
             )?)?,
-            usb: String::from_utf8(
-                groups
-                    .name("usb1")
-                    .or_else(|| groups.name("usb2"))
-                    .ok_or(RustADBError::RegexParsingError)?
-                    .as_bytes()
-                    .to_vec(),
-            )?,
+            usb: match groups.name("usb1") {
+                None => match groups.name("usb2") {
+                    None => "Unk".to_string(),
+                    Some(usb) => String::from_utf8(usb.as_bytes().to_vec())?,
+                },
+                Some(usb) => String::from_utf8(usb.as_bytes().to_vec())?,
+            },
             product: match groups.name("product") {
                 None => "Unk".to_string(),
                 Some(product) => String::from_utf8(product.as_bytes().to_vec())?,
