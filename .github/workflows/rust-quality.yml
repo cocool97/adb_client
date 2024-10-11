@@ -1,0 +1,32 @@
+name: Rust - Quality
+
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  clippy:
+    name: "clippy"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup component add clippy
+      - name: Run clippy
+        run : cargo clippy
+
+  fmt:
+    name: "fmt"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run formatter
+        run : cargo fmt
+
+  tests:
+    name: "tests"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: cargo test --verbose
