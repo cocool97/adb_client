@@ -6,7 +6,7 @@ mod adb_termios;
 mod commands;
 mod models;
 
-use adb_client::{ADBEmulatorDevice, ADBServer, ADBUSBDevice, DeviceShort};
+use adb_client::{ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBUSBDevice, DeviceShort};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use commands::{EmuCommand, HostCommand, LocalCommand};
@@ -171,6 +171,7 @@ fn main() -> Result<()> {
             let mut device =
                 ADBUSBDevice::new(usb.vendor_id, usb.product_id, usb.path_to_private_key)?;
             device.send_connect()?;
+            device.shell_command(["id"], std::io::stdout())?;
         }
     }
 

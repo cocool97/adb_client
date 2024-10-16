@@ -16,6 +16,9 @@ struct Endpoint {
     address: u8,
 }
 
+const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(2);
+const DEFAULT_WRITE_TIMEOUT: Duration = Duration::from_secs(2);
+
 /// Transport running on USB
 #[derive(Debug)]
 pub struct USBTransport {
@@ -48,8 +51,17 @@ impl USBTransport {
         Ok(())
     }
 
-    /// Write data to underlying connection
+    /// Write data to underlying connection, with default timeout
     pub(crate) fn write_message(&mut self, message: ADBUsbMessage) -> Result<()> {
+        self.write_message_with_timeout(message, DEFAULT_WRITE_TIMEOUT)
+    }
+
+    /// Write data to underlying connection
+    pub(crate) fn write_message_with_timeout(
+        &mut self,
+        message: ADBUsbMessage,
+        timeout: Duration,
+    ) -> Result<()> {
         let endpoint = self.find_writable_endpoint()?;
         let handle = self.get_raw_connection()?;
 
@@ -58,26 +70,25 @@ impl USBTransport {
         }
 
         Self::configure_endpoint(handle, &endpoint)?;
-        let max_timeout = Duration::from_secs(1);
 
         // TODO: loop
         let message_bytes = &message.to_bytes();
-        let written = handle.write_bulk(endpoint.address, message_bytes, max_timeout)?;
-        println!("written {written}");
-
-        println!("writing payload...");
+        let written = handle.write_bulk(endpoint.address, message_bytes, timeout)?;
 
         // TODO: loop
         let payload = message.into_payload();
-        let written = handle.write_bulk(endpoint.address, &payload, max_timeout)?;
-
-        println!("written {written}");
+        let written = handle.write_bulk(endpoint.address, &payload, timeout)?;
 
         Ok(())
     }
 
-    /// Read data from underlying connection
+    /// Read data from underlying connection with default timeout
     pub(crate) fn read_message(&mut self) -> Result<ADBUsbMessage> {
+        self.read_message_with_timeout(DEFAULT_READ_TIMEOUT)
+    }
+
+    /// Read data from underlying connection with given timeout
+    pub(crate) fn read_message_with_timeout(&mut self, timeout: Duration) -> Result<ADBUsbMessage> {
         let endpoint = self.find_readable_endpoint()?;
         let handle = self.get_raw_connection()?;
 
@@ -86,22 +97,21 @@ impl USBTransport {
         }
 
         Self::configure_endpoint(handle, &endpoint)?;
-        let max_timeout = Duration::from_secs(2);
 
         let mut data = [0; 24];
         // TODO: loop
-        let read = handle.read_bulk(endpoint.address, &mut data, max_timeout)?;
+        let read = handle.read_bulk(endpoint.address, &mut data, timeout)?;
 
         let mut message = ADBUsbMessage::try_from(data)?;
 
-        if message.data_length != 0 {
-            let mut msg_data = vec![0_u8; message.data_length as usize];
+        if message.data_length() != 0 {
+            let mut msg_data = vec![0_u8; message.data_length() as usize];
             // TODO: loop
-            let read = handle.read_bulk(endpoint.address, &mut msg_data, max_timeout)?;
-            message.payload = msg_data;
+            let read = handle.read_bulk(endpoint.address, &mut msg_data, timeout)?;
+            message.with_payload(msg_data);
         }
 
-        println!("read {read} - {message:?}");
+        log::trace!("read {message:?}");
 
         Ok(message)
     }
