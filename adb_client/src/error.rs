@@ -57,4 +57,25 @@ pub enum RustADBError {
     /// An error occurred while getting user's home directory
     #[error(transparent)]
     HomeError(#[from] homedir::GetHomeError),
+    /// Generic USB error
+    #[error(transparent)]
+    UsbError(#[from] rusb::Error),
+    /// USB device not found
+    #[error("USB Device not found: {0} {1}")]
+    USBDeviceNotFound(u16, u16),
+    /// No descriptor found
+    #[error("No USB descriptor found")]
+    USBNoDescriptorFound,
+    /// CRC32 of the received message is invalid
+    #[error("Invalid CRC32. Expected {0} got {1}")]
+    InvalidCRC32(u32, u32),
+    /// Error while decoding base64 data
+    #[error(transparent)]
+    Base64DecodeError(#[from] base64::DecodeError),
+    /// Error while encoding base64 data
+    #[error(transparent)]
+    Base64EncodeError(#[from] base64::EncodeSliceError),
+    /// An error occurred with RSA engine
+    #[error(transparent)]
+    RSAError(#[from] rsa::errors::Error),
 }

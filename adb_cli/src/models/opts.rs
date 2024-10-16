@@ -2,7 +2,7 @@ use std::net::SocketAddrV4;
 
 use clap::Parser;
 
-use crate::commands::{EmuCommand, HostCommand, LocalCommand};
+use crate::commands::{EmuCommand, HostCommand, LocalCommand, UsbCommand};
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -24,6 +24,9 @@ pub enum Command {
     Local(LocalCommand),
     #[clap(flatten)]
     Host(HostCommand),
-    #[clap(flatten)]
+    /// Emulator specific commands
+    #[clap(subcommand)]
     Emu(EmuCommand),
+    /// Device commands via USB, no server needed
+    Usb(UsbCommand),
 }
