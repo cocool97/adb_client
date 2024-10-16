@@ -16,9 +16,8 @@ homedir = { version = "0.3.3" }
 image = { version = "0.25.2" }
 lazy_static = { version = "1.5.0" }
 log = { version = "0.4.22" }
-rand = { version = "0.8.5" }
+num-bigint = { version = "0.6", package = "num-bigint-dig" }
 regex = { version = "1.10.6", features = ["perf", "std", "unicode"] }
-rsa = { version = "0.9.6", features = ["sha1"] }
+rsa = { version = "0.3.0" }
 rusb = { version = "0.9.4", features = ["vendored"] }
-sha1 = "0.10.6"
 thiserror = { version = "1.0.64" }

@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{ADBServerDevice, Result};
+use crate::{ADBDeviceExt, ADBServerDevice, Result};
 
 struct LogFilter<W: Write> {
     writer: W,

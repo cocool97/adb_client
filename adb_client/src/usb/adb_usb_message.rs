@@ -1,6 +1,5 @@
-use crate::RustADBError;
-
 use super::usb_commands::USBCommand;
+use crate::RustADBError;
 
 pub const AUTH_TOKEN: u32 = 1;
 pub const AUTH_SIGNATURE: u32 = 2;
@@ -8,18 +7,18 @@ pub const AUTH_RSAPUBLICKEY: u32 = 3;
 
 #[derive(Debug)]
 pub struct ADBUsbMessage {
-    pub command: USBCommand, /* command identifier constant      */
-    pub arg0: u32,           /* first argument                   */
-    pub arg1: u32,           /* second argument                  */
-    pub data_length: u32,    /* length of payload (0 is allowed) */
-    pub data_crc32: u32,     /* crc32 of data payload            */
-    pub magic: u32,          /* command ^ 0xffffffff             */
-    pub payload: Vec<u8>,
+    command: USBCommand, /* command identifier constant      */
+    arg0: u32,           /* first argument                   */
+    arg1: u32,           /* second argument                  */
+    data_length: u32,    /* length of payload (0 is allowed) */
+    data_crc32: u32,     /* crc32 of data payload            */
+    magic: u32,          /* command ^ 0xffffffff             */
+    payload: Vec<u8>,
 }
 
 impl ADBUsbMessage {
     pub fn new(command: USBCommand, arg0: u32, arg1: u32, data: Vec<u8>) -> Self {
-        let command_u32 = command.to_u32();
+        let command_u32 = command.u32_value();
         Self {
             command,
             arg0,
@@ -32,7 +31,7 @@ impl ADBUsbMessage {
     }
 
     pub fn compute_checksum(&self) -> u32 {
-        self.command.to_u32() ^ 0xFFFFFFFF
+        self.command.u32_value() ^ 0xFFFFFFFF
     }
 
     pub fn check_message_integrity(&self) -> bool {
@@ -43,7 +42,7 @@ impl ADBUsbMessage {
         let mut result = [0u8; 24];
         let mut offset = 0;
 
-        let command_bytes = self.command.to_u32().to_le_bytes();
+        let command_bytes = self.command.u32_value().to_le_bytes();
         result[offset..offset + 4].copy_from_slice(&command_bytes);
         offset += 4;
 
@@ -69,8 +68,24 @@ impl ADBUsbMessage {
         result
     }
 
+    pub fn command(&self) -> USBCommand {
+        self.command
+    }
+
+    pub fn arg0(&self) -> u32 {
+        self.arg0
+    }
+
+    pub fn data_length(&self) -> u32 {
+        self.data_length
+    }
+
     pub fn into_payload(self) -> Vec<u8> {
         self.payload
+    }
+
+    pub fn with_payload(&mut self, payload: Vec<u8>) {
+        self.payload = payload;
     }
 }
 
