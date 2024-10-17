@@ -72,8 +72,8 @@ impl USBTransport {
         Self::configure_endpoint(handle, &endpoint)?;
 
         // TODO: loop
-        let message_bytes = &message.to_bytes();
-        let written = handle.write_bulk(endpoint.address, message_bytes, timeout)?;
+        let message_bytes = message.to_bytes()?;
+        let written = handle.write_bulk(endpoint.address, &message_bytes, timeout)?;
 
         // TODO: loop
         let payload = message.into_payload();
