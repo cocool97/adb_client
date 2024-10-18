@@ -38,7 +38,7 @@ impl TCPEmulatorTransport {
     pub fn get_authentication_token(&mut self) -> Result<String> {
         let home = match my_home()? {
             Some(home) => home,
-            None => todo!(),
+            None => return Err(RustADBError::NoHomeDirectory),
         };
 
         let mut f = File::open(home.join(".emulator_console_auth_token"))?;
