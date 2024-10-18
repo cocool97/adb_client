@@ -14,7 +14,7 @@ mod transports;
 mod usb;
 mod utils;
 
-pub use adb_device_ext::ADBDeviceExt;
+pub use adb_device_ext::{ADBDeviceExt, FileStat};
 pub use error::{Result, RustADBError};
 pub use models::{AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType};
 pub use server::*;

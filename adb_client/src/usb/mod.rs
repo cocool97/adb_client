@@ -7,4 +7,4 @@ mod usb_commands;
 pub use adb_rsa_key::ADBRsaKey;
 pub use adb_usb_device::ADBUSBDevice;
 pub use adb_usb_message::ADBUsbMessage;
-pub use usb_commands::USBCommand;
+pub use usb_commands::{SubcommandWithArg, USBCommand, USBSubcommand};
