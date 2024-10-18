@@ -3,16 +3,24 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use byteorder::{LittleEndian, WriteBytesExt};
 use num_bigint::traits::ModInverse;
 use num_bigint::BigUint;
+use rand::rngs::OsRng;
 use rsa::{Hash, PaddingScheme, PublicKeyParts, RSAPrivateKey};
 use std::convert::TryInto;
 
 // From project: https://github.com/hajifkd/webadb
 #[derive(Debug)]
 pub struct ADBRsaKey {
-    pub private_key: RSAPrivateKey,
+    private_key: RSAPrivateKey,
 }
 
 impl ADBRsaKey {
+    pub fn random_with_size(size: usize) -> Result<Self> {
+        let mut rng = OsRng;
+        Ok(Self {
+            private_key: RSAPrivateKey::new(&mut rng, size)?,
+        })
+    }
+
     pub fn from_pkcs8(pkcs8_content: &str) -> Result<Self> {
         let der_encoded = pkcs8_content
             .lines()
@@ -36,25 +44,24 @@ impl ADBRsaKey {
 
         let mut result = vec![];
         result.write_u32::<LittleEndian>(RSANUMWORDS)?;
-        let r32 = set_bit(32);
+        let r32 = set_bit(32)?;
         let n = self.private_key.n();
-        let r = set_bit((32 * RSANUMWORDS) as _);
+        let r = set_bit((32 * RSANUMWORDS) as _)?;
         // Well, let rr = set_bit((64 * RSANUMWORDS) as _) % n is also fine, since r \sim n.
         let rr = r.modpow(&BigUint::from(2u32), n);
         let rem = n % &r32;
         let n0inv = rem.mod_inverse(&r32);
         if let Some(n0inv) = n0inv {
-            let n0inv = n0inv.to_biguint().unwrap();
-            let n0inv_p: u32 =
-                1 + !u32::from_le_bytes((&n0inv.to_bytes_le()[..4]).try_into().unwrap());
+            let n0inv = n0inv.to_biguint().ok_or(RustADBError::ConversionError)?;
+            let n0inv_p: u32 = 1 + !u32::from_le_bytes((&n0inv.to_bytes_le()[..4]).try_into()?);
             result.write_u32::<LittleEndian>(n0inv_p)?;
         } else {
             return Err(RustADBError::ConversionError);
         }
 
-        write_biguint(&mut result, n, RSANUMBYTES as _);
-        write_biguint(&mut result, &rr, RSANUMBYTES as _);
-        write_biguint(&mut result, self.private_key.e(), 4);
+        write_biguint(&mut result, n, RSANUMBYTES as _)?;
+        write_biguint(&mut result, &rr, RSANUMBYTES as _)?;
+        write_biguint(&mut result, self.private_key.e(), 4)?;
 
         let mut encoded = STANDARD.encode(&result);
         encoded.push(' ');
@@ -70,18 +77,20 @@ impl ADBRsaKey {
     }
 }
 
-fn write_biguint(writer: &mut Vec<u8>, data: &BigUint, n_bytes: usize) {
+fn write_biguint(writer: &mut Vec<u8>, data: &BigUint, n_bytes: usize) -> Result<()> {
     for &v in data
         .to_bytes_le()
         .iter()
         .chain(std::iter::repeat(&0))
         .take(n_bytes)
     {
-        writer.write_u8(v).unwrap();
+        writer.write_u8(v)?;
     }
+
+    Ok(())
 }
 
-fn set_bit(n: usize) -> BigUint {
+fn set_bit(n: usize) -> Result<BigUint> {
     BigUint::parse_bytes(
         &{
             let mut bits = vec![];
@@ -93,7 +102,7 @@ fn set_bit(n: usize) -> BigUint {
         }[..],
         2,
     )
-    .unwrap()
+    .ok_or(RustADBError::ConversionError)
 }
 
 #[test]
@@ -126,8 +135,11 @@ xGDK/moPvzs0CjdPlRcEN+Myy/G0FUrOaC0FcpNoJOdQSYz3F6URA4nX+zj6Ie7G
 CNkECiepaGyquQaffwR1CAi8dH6biJjlTQWQPFcCLA0hvernWo3eaSfiL7fHyym+
 ile69MHFENUePSpuRSiF3Z02
 -----END PRIVATE KEY-----";
-    let priv_key = ADBRsaKey::from_pkcs8(DEFAULT_PRIV_KEY).unwrap();
-    let pub_key = priv_key.encoded_public_key().unwrap();
+    let priv_key =
+        ADBRsaKey::from_pkcs8(DEFAULT_PRIV_KEY).expect("cannot create rsa key from data");
+    let pub_key = priv_key
+        .encoded_public_key()
+        .expect("cannot encode public key");
     let pub_key_adb = "\
 QAAAAFH/pU9PVrHRgEjMGnpvOr2QzKYCavSE1fcSwvpS1uPn9GTmuyZr7c9up\
 MBpSrrlFYpsjBQ7IfAyZIsVsffr5doEG5StKN8FwaO+sEX9YZX9Sr2m7/eVi0\

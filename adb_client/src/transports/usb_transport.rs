@@ -118,12 +118,7 @@ impl USBTransport {
 
     fn find_readable_endpoint(&self) -> Result<Endpoint> {
         let handle = self.get_raw_connection()?;
-        for n in 0..handle
-            .device()
-            .device_descriptor()
-            .unwrap()
-            .num_configurations()
-        {
+        for n in 0..handle.device().device_descriptor()?.num_configurations() {
             let config_desc = match handle.device().config_descriptor(n) {
                 Ok(c) => c,
                 Err(_) => continue,
@@ -153,12 +148,7 @@ impl USBTransport {
 
     fn find_writable_endpoint(&self) -> Result<Endpoint> {
         let handle = self.get_raw_connection()?;
-        for n in 0..handle
-            .device()
-            .device_descriptor()
-            .unwrap()
-            .num_configurations()
-        {
+        for n in 0..handle.device().device_descriptor()?.num_configurations() {
             let config_desc = match handle.device().config_descriptor(n) {
                 Ok(c) => c,
                 Err(_) => continue,

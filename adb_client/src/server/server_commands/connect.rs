@@ -8,9 +8,10 @@ impl ADBServer {
             .connect()?
             .proxy_connection(AdbServerCommand::Connect(address), true)?;
 
-        match String::from_utf8(response).unwrap() {
-            s if s.starts_with("connected to") => Ok(()),
-            s => Err(RustADBError::ADBRequestFailed(s)),
+        match String::from_utf8(response) {
+            Ok(s) if s.starts_with("connected to") => Ok(()),
+            Ok(s) => Err(RustADBError::ADBRequestFailed(s)),
+            Err(e) => Err(e.into()),
         }
     }
 }

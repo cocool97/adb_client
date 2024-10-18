@@ -20,7 +20,7 @@ adb_client = "*"
 ### Launch a command on device via ADB server
 
 ```rust no_run
-use adb_client::ADBServer;
+use adb_client::{ADBServer, ADBDeviceExt};
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
@@ -51,6 +51,6 @@ use std::path::Path;
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
-let mut input = File::open(Path::new("/tmp")).unwrap();
+let mut input = File::open(Path::new("/tmp")).expect("Cannot open file");
 device.send(&mut input, "/data/local/tmp");
 ```

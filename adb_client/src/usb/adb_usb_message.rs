@@ -95,11 +95,11 @@ impl TryFrom<[u8; 24]> for ADBUsbMessage {
     fn try_from(value: [u8; 24]) -> Result<Self, Self::Error> {
         let message = Self {
             command: USBCommand::try_from(&value[0..4])?,
-            arg0: u32::from_le_bytes(value[4..8].try_into().unwrap()),
-            arg1: u32::from_le_bytes(value[8..12].try_into().unwrap()),
-            data_length: u32::from_le_bytes(value[12..16].try_into().unwrap()),
-            data_crc32: u32::from_le_bytes(value[16..20].try_into().unwrap()),
-            magic: u32::from_le_bytes(value[20..24].try_into().unwrap()),
+            arg0: u32::from_le_bytes(value[4..8].try_into()?),
+            arg1: u32::from_le_bytes(value[8..12].try_into()?),
+            data_length: u32::from_le_bytes(value[12..16].try_into()?),
+            data_crc32: u32::from_le_bytes(value[16..20].try_into()?),
+            magic: u32::from_le_bytes(value[20..24].try_into()?),
             payload: vec![],
         };
 

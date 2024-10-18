@@ -5,7 +5,8 @@ use std::{fmt::Display, str::FromStr};
 use crate::{DeviceState, RustADBError};
 
 lazy_static! {
-    static ref DEVICES_REGEX: Regex = Regex::new("^(\\S+)\t(\\w+)\n?$").unwrap();
+    static ref DEVICES_REGEX: Regex =
+        Regex::new("^(\\S+)\t(\\w+)\n?$").expect("Cannot build devices regex");
 }
 
 /// Represents a device connected to the ADB server.

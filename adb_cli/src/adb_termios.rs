@@ -35,6 +35,8 @@ impl ADBTermios {
 impl Drop for ADBTermios {
     fn drop(&mut self) {
         // Custom drop implementation, restores previous termios structure.
-        tcsetattr(self.fd, TCSANOW, &self.old_termios).unwrap();
+        if let Err(e) = tcsetattr(self.fd, TCSANOW, &self.old_termios) {
+            log::error!("Error while droping ADBTermios: {e}")
+        }
     }
 }
