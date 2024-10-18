@@ -29,7 +29,9 @@ impl TryFrom<Vec<u8>> for DeviceShort {
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         // Optional final '\n' is used to match TrackDevices inputs
-        let groups = DEVICES_REGEX.captures(&value).unwrap();
+        let groups = DEVICES_REGEX
+            .captures(&value)
+            .ok_or(RustADBError::RegexParsingError)?;
         Ok(DeviceShort {
             identifier: String::from_utf8(
                 groups
