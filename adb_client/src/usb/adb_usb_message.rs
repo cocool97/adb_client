@@ -56,6 +56,10 @@ impl ADBUsbMessage {
         self.header.arg0
     }
 
+    pub fn arg1(&self) -> u32 {
+        self.header.arg1
+    }
+
     pub fn data_length(&self) -> u32 {
         self.header.data_length
     }
