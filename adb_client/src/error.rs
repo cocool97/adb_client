@@ -54,9 +54,15 @@ pub enum RustADBError {
     /// An error occurred when converting framebuffer content
     #[error("Cannot convert framebuffer into image")]
     FramebufferConversionError,
+    /// Unimplemented framebuffer image version
+    #[error("Unimplemented framebuffer image version: {0}")]
+    UnimplementedFramebufferImageVersion(u32),
     /// An error occurred while getting user's home directory
     #[error(transparent)]
     HomeError(#[from] homedir::GetHomeError),
+    /// Cannot get home directory
+    #[error("Cannot get home directory")]
+    NoHomeDirectory,
     /// Generic USB error
     #[error(transparent)]
     UsbError(#[from] rusb::Error),
@@ -78,4 +84,7 @@ pub enum RustADBError {
     /// An error occurred with RSA engine
     #[error(transparent)]
     RSAError(#[from] rsa::errors::Error),
+    /// Cannot convert given data from slice
+    #[error(transparent)]
+    TryFromSliceError(#[from] std::array::TryFromSliceError),
 }

@@ -13,25 +13,32 @@ pub struct ADBUSBDevice {
     pub(crate) transport: USBTransport,
 }
 
-fn read_adb_private_key(private_key_path: Option<PathBuf>) -> Option<ADBRsaKey> {
-    let private_key = private_key_path.or_else(|| {
-        homedir::my_home()
-            .ok()?
-            .map(|home| home.join(".android").join("adbkey"))
-    })?;
+fn read_adb_private_key(private_key_path: Option<PathBuf>) -> Result<Option<ADBRsaKey>> {
+    let private_key = private_key_path
+        .or_else(|| {
+            homedir::my_home()
+                .ok()?
+                .map(|home| home.join(".android").join("adbkey"))
+        })
+        .ok_or(RustADBError::NoHomeDirectory)?;
 
     read_to_string(&private_key)
         .map_err(RustADBError::from)
-        .map(|pk| ADBRsaKey::from_pkcs8(&pk).unwrap())
-        .ok()
+        .map(|pk| match ADBRsaKey::from_pkcs8(&pk) {
+            Ok(pk) => Some(pk),
+            Err(e) => {
+                log::error!("Error while create RSA private key: {e}");
+                None
+            }
+        })
 }
 
 impl ADBUSBDevice {
     /// Instantiate a new [ADBUSBDevice]
     pub fn new(vendor_id: u16, product_id: u16, private_key_path: Option<PathBuf>) -> Result<Self> {
-        let private_key = match read_adb_private_key(private_key_path) {
+        let private_key = match read_adb_private_key(private_key_path)? {
             Some(pk) => pk,
-            None => unimplemented!(),
+            None => ADBRsaKey::random_with_size(2048)?,
         };
 
         Ok(Self {
@@ -73,7 +80,7 @@ impl ADBUSBDevice {
             }
         };
 
-        let sign = self.private_key.sign(auth_message.into_payload()).unwrap();
+        let sign = self.private_key.sign(auth_message.into_payload())?;
 
         let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_SIGNATURE, 0, sign);
 
@@ -86,7 +93,7 @@ impl ADBUSBDevice {
             return Ok(());
         }
 
-        let mut pubkey = self.private_key.encoded_public_key().unwrap().into_bytes();
+        let mut pubkey = self.private_key.encoded_public_key()?.into_bytes();
         pubkey.push(b'\0');
 
         let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_RSAPUBLICKEY, 0, pubkey);
@@ -100,7 +107,7 @@ impl ADBUSBDevice {
         match response.command() {
             USBCommand::Cnxn => log::info!(
                 "Authentication OK, device info {}",
-                String::from_utf8(response.into_payload().to_vec()).unwrap()
+                String::from_utf8(response.into_payload().to_vec())?
             ),
             _ => {
                 return Err(RustADBError::ADBRequestFailed(format!(
