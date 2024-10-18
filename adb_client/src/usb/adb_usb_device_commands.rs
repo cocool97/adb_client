@@ -3,8 +3,7 @@ use std::io::{Read, Write};
 use rand::Rng;
 
 use crate::{
-    usb::{ADBUsbMessage, USBCommand},
-    ADBDeviceExt, ADBUSBDevice, RebootType, Result, RustADBError,
+    usb::{ADBUsbMessage, USBCommand, USBSubcommand}, ADBDeviceExt, ADBUSBDevice, FileStat, RebootType, Result, RustADBError
 };
 
 use super::USBShellWriter;
@@ -111,6 +110,62 @@ impl ADBDeviceExt for ADBUSBDevice {
         }
 
         Ok(())
+    }
+
+    // stat a file
+    fn stat(&mut self, remote_path: &str, local_id: u32, remote_id: u32) -> Result<FileStat> {
+        let stat_buffer = USBSubcommand::Stat.with_arg(remote_path.len() as u32);
+        let message = ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            bincode::serialize(&stat_buffer).map_err(|_e| RustADBError::ConversionError)?,
+        );
+        self.send_and_expect_okay(message)?;
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            remote_path.into(),
+        ))?;
+        let response = self.recv_and_reply_okay(local_id, remote_id)?;
+        bincode::deserialize(&response.into_payload()).map_err(|_e| RustADBError::ConversionError)
+    }
+
+    fn pull<W: Write>(&mut self, source: &str, output: W) -> Result<()> {
+        let sync_directive = "sync:.\0";
+
+        let message = ADBUsbMessage::new(USBCommand::Open, 12345, 0, sync_directive.into());
+        let message = self.send_and_expect_okay(message)?;
+        let local_id = message.arg1();
+        let remote_id = message.arg0();
+
+        let FileStat { mode, file_size } = self.stat(source, local_id, remote_id)?;
+
+        log::debug!("mode: {}, file size: {}", mode, file_size);
+        if mode == 0 {
+            return Err(RustADBError::UnknownResponseType(
+                "mode is 0: source apk does not exist".to_string(),
+            ));
+        }
+
+        let recv_buffer = USBSubcommand::Recv.with_arg(source.len() as u32);
+        let recv_buffer =
+            bincode::serialize(&recv_buffer).map_err(|_e| RustADBError::ConversionError)?;
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            recv_buffer,
+        ))?;
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            source.into(),
+        ))?;
+
+        self.recv_file(local_id, remote_id, output)
     }
 
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()> {

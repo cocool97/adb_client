@@ -1,10 +1,19 @@
+use byteorder::ReadBytesExt;
 use std::fs::read_to_string;
+use std::io::Cursor;
+use std::io::Read;
+use std::io::Seek;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use byteorder::LittleEndian;
+
 use super::{ADBRsaKey, ADBUsbMessage};
 use crate::usb::adb_usb_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
-use crate::{usb::usb_commands::USBCommand, ADBTransport, Result, RustADBError, USBTransport};
+use crate::{
+    usb::usb_commands::{USBCommand, USBSubcommand},
+    ADBTransport, Result, RustADBError, USBTransport,
+};
 
 /// Represent a device reached directly over USB
 #[derive(Debug)]
@@ -126,6 +135,86 @@ impl ADBUSBDevice {
             }
         }
 
+        Ok(())
+    }
+    /// Receive a message and acknowledge it by replying with an `OKAY` command
+    pub(crate) fn recv_and_reply_okay(
+        &mut self,
+        local_id: u32,
+        remote_id: u32,
+    ) -> Result<ADBUsbMessage> {
+        let message = self.transport.read_message()?;
+        self.transport.write_message(ADBUsbMessage::new(
+            USBCommand::Okay,
+            local_id,
+            remote_id,
+            "".into(),
+        ))?;
+        Ok(message)
+    }
+
+    /// Expect a message with an `OKAY` command after sending a message.
+    /// Return the value if it conforms to the constraint or error out.
+    pub(crate) fn send_and_expect_okay(&mut self, message: ADBUsbMessage) -> Result<ADBUsbMessage> {
+        self.transport.write_message(message)?;
+        let message = self.transport.read_message()?;
+        if message.header().command() != USBCommand::Okay {
+            return Err(RustADBError::ADBRequestFailed(format!(
+                "expected command OKAY after message, got {}",
+                message.header().command()
+            )));
+        }
+        Ok(message)
+    }
+
+    pub(crate) fn recv_file<W: std::io::Write>(
+        &mut self,
+        local_id: u32,
+        remote_id: u32,
+        mut output: W,
+    ) -> std::result::Result<(), RustADBError> {
+        let mut len: Option<u64> = None;
+        loop {
+            let payload = self
+                .recv_and_reply_okay(local_id, remote_id)?
+                .into_payload();
+            let mut rdr = Cursor::new(&payload);
+            while rdr.position() != payload.len() as u64 {
+                match len.take() {
+                    Some(0) | None => {
+                        rdr.seek_relative(4)?;
+                        len.replace(rdr.read_u32::<LittleEndian>()? as u64);
+                    }
+                    Some(length) => {
+                        log::debug!("len = {length}");
+                        let remaining_bytes = payload.len() as u64 - rdr.position();
+                        log::debug!(
+                            "payload length {} - reader_position {} = {remaining_bytes}",
+                            payload.len(),
+                            rdr.position()
+                        );
+                        if length < remaining_bytes {
+                            let read = std::io::copy(&mut rdr.by_ref().take(length), &mut output)?;
+                            log::debug!(
+                                "expected to read {length} bytes, actually read {read} bytes"
+                            );
+                        } else {
+                            let read = std::io::copy(&mut rdr.take(remaining_bytes), &mut output)?;
+                            len.replace(length - remaining_bytes as u64);
+                            log::debug!("expected to read {remaining_bytes} bytes, actually read {read} bytes");
+                            // this payload is exhausted
+                            break;
+                        }
+                    }
+                }
+            }
+            if Cursor::new(&payload[(payload.len() - 8)..(payload.len() - 4)])
+                .read_u32::<LittleEndian>()?
+                == USBSubcommand::Done as u32
+            {
+                break;
+            }
+        }
         Ok(())
     }
 }
