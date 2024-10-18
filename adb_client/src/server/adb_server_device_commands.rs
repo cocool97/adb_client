@@ -105,4 +105,17 @@ impl ADBDeviceExt for ADBServerDevice {
 
         Ok(())
     }
+
+    fn stat(
+        &mut self,
+        remote_path: &str,
+        local_id: u32,
+        remote_id: u32,
+    ) -> Result<crate::FileStat> {
+        todo!()
+    }
+
+    fn pull<W: Write>(&mut self, source: &str, output: W) -> Result<()> {
+        todo!()
+    }
 }
