@@ -12,7 +12,7 @@ use clap::Parser;
 use commands::{EmuCommand, HostCommand, LocalCommand, UsbCommands};
 use models::{Command, Opts};
 use std::fs::File;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::path::Path;
 
 fn main() -> Result<()> {
@@ -180,6 +180,11 @@ fn main() -> Result<()> {
                     } else {
                         device.shell_command(commands, std::io::stdout())?;
                     }
+                }
+                UsbCommands::Pull => {
+                    let mut pulled = Vec::with_capacity(4096);
+                    device.pull("/etc/hosts", Cursor::new(&mut pulled))?;
+                    println!("{:?}", &pulled[0..10]);
                 }
                 UsbCommands::Reboot { reboot_type } => {
                     log::info!("Reboots device in mode {:?}", reboot_type);
