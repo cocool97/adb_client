@@ -41,21 +41,27 @@ impl ADBUSBDevice {
             None => ADBRsaKey::random_with_size(2048)?,
         };
 
-        Ok(Self {
+        let mut s = Self {
             private_key,
             transport: USBTransport::new(vendor_id, product_id),
-        })
+        };
+
+        s.connect()?;
+
+        Ok(s)
     }
 
     /// Send initial connect
-    pub fn send_connect(&mut self) -> Result<()> {
+    pub fn connect(&mut self) -> Result<()> {
         self.transport.connect()?;
 
         let message = ADBUsbMessage::new(
             USBCommand::Cnxn,
             0x01000000,
             1048576,
-            "host::pc-portable\0".as_bytes().to_vec(),
+            format!("host::{}\0", env!("CARGO_PKG_NAME"))
+                .as_bytes()
+                .to_vec(),
         );
 
         self.transport.write_message(message)?;
@@ -65,9 +71,9 @@ impl ADBUSBDevice {
         // At this point, we should have received either:
         // - an AUTH message with arg0 == 1
         // - a CNXN message
-        let auth_message = match message.command() {
-            USBCommand::Auth if message.arg0() == AUTH_TOKEN => message,
-            USBCommand::Auth if message.arg0() != AUTH_TOKEN => {
+        let auth_message = match message.header().command() {
+            USBCommand::Auth if message.header().arg0() == AUTH_TOKEN => message,
+            USBCommand::Auth if message.header().arg0() != AUTH_TOKEN => {
                 return Err(RustADBError::ADBRequestFailed(
                     "Received AUTH message with type != 1".into(),
                 ))
@@ -88,8 +94,11 @@ impl ADBUSBDevice {
 
         let received_response = self.transport.read_message()?;
 
-        if received_response.command() == USBCommand::Cnxn {
-            log::info!("Successfully authenticated on device !");
+        if received_response.header().command() == USBCommand::Cnxn {
+            log::info!(
+                "Authentication OK, device info {}",
+                String::from_utf8(received_response.into_payload())?
+            );
             return Ok(());
         }
 
@@ -104,15 +113,15 @@ impl ADBUSBDevice {
             .transport
             .read_message_with_timeout(Duration::from_secs(10))?;
 
-        match response.command() {
+        match response.header().command() {
             USBCommand::Cnxn => log::info!(
                 "Authentication OK, device info {}",
-                String::from_utf8(response.into_payload().to_vec())?
+                String::from_utf8(response.into_payload())?
             ),
             _ => {
                 return Err(RustADBError::ADBRequestFailed(format!(
                     "wrong response {}",
-                    response.command()
+                    response.header().command()
                 )))
             }
         }

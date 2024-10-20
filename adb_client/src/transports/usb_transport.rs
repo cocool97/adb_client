@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use rusb::{
     constants::LIBUSB_CLASS_VENDOR_SPEC, DeviceHandle, Direction, GlobalContext, TransferType,
@@ -6,7 +6,7 @@ use rusb::{
 
 use super::ADBTransport;
 use crate::{
-    usb::{ADBUsbMessage, USBCommand},
+    usb::{ADBUsbMessage, ADBUsbMessageHeader, USBCommand},
     Result, RustADBError,
 };
 
@@ -16,15 +16,15 @@ struct Endpoint {
     address: u8,
 }
 
-const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(2);
+const MAX_READ_TIMEOUT: Duration = Duration::from_secs(u64::MAX);
 const DEFAULT_WRITE_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// Transport running on USB
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct USBTransport {
     vendor_id: u16,
     product_id: u16,
-    handle: Option<DeviceHandle<GlobalContext>>,
+    handle: Option<Arc<DeviceHandle<GlobalContext>>>,
 }
 
 impl USBTransport {
@@ -37,13 +37,14 @@ impl USBTransport {
         }
     }
 
-    pub(crate) fn get_raw_connection(&self) -> Result<&DeviceHandle<GlobalContext>> {
+    pub(crate) fn get_raw_connection(&self) -> Result<Arc<DeviceHandle<GlobalContext>>> {
         self.handle
             .as_ref()
             .ok_or(RustADBError::IOError(std::io::Error::new(
                 std::io::ErrorKind::NotConnected,
                 "not connected",
             )))
+            .cloned()
     }
 
     fn configure_endpoint(handle: &DeviceHandle<GlobalContext>, endpoint: &Endpoint) -> Result<()> {
@@ -69,25 +70,37 @@ impl USBTransport {
             handle.detach_kernel_driver(endpoint.iface)?;
         }
 
-        Self::configure_endpoint(handle, &endpoint)?;
+        Self::configure_endpoint(&handle, &endpoint)?;
 
-        // TODO: loop
-        let message_bytes = message.to_bytes()?;
-        let written = handle.write_bulk(endpoint.address, &message_bytes, timeout)?;
+        let message_bytes = message.header().as_bytes()?;
+        let mut total_written = 0;
+        loop {
+            total_written +=
+                handle.write_bulk(endpoint.address, &message_bytes[total_written..], timeout)?;
+            if total_written == message_bytes.len() {
+                break;
+            }
+        }
 
-        // TODO: loop
         let payload = message.into_payload();
-        let written = handle.write_bulk(endpoint.address, &payload, timeout)?;
+        let mut total_written = 0;
+        loop {
+            total_written +=
+                handle.write_bulk(endpoint.address, &payload[total_written..], timeout)?;
+            if total_written == payload.len() {
+                break;
+            }
+        }
 
         Ok(())
     }
 
-    /// Read data from underlying connection with default timeout
+    /// Blocking method to read data from underlying connection.
     pub(crate) fn read_message(&mut self) -> Result<ADBUsbMessage> {
-        self.read_message_with_timeout(DEFAULT_READ_TIMEOUT)
+        self.read_message_with_timeout(MAX_READ_TIMEOUT)
     }
 
-    /// Read data from underlying connection with given timeout
+    /// Read data from underlying connection with given timeout.
     pub(crate) fn read_message_with_timeout(&mut self, timeout: Duration) -> Result<ADBUsbMessage> {
         let endpoint = self.find_readable_endpoint()?;
         let handle = self.get_raw_connection()?;
@@ -96,24 +109,46 @@ impl USBTransport {
             handle.detach_kernel_driver(endpoint.iface)?;
         }
 
-        Self::configure_endpoint(handle, &endpoint)?;
+        Self::configure_endpoint(&handle, &endpoint)?;
 
         let mut data = [0; 24];
-        // TODO: loop
-        let read = handle.read_bulk(endpoint.address, &mut data, timeout)?;
-
-        let mut message = ADBUsbMessage::try_from(data)?;
-
-        if message.data_length() != 0 {
-            let mut msg_data = vec![0_u8; message.data_length() as usize];
-            // TODO: loop
-            let read = handle.read_bulk(endpoint.address, &mut msg_data, timeout)?;
-            message.with_payload(msg_data);
+        let mut total_read = 0;
+        loop {
+            total_read += handle.read_bulk(endpoint.address, &mut data[total_read..], timeout)?;
+            if total_read == data.len() {
+                break;
+            }
         }
 
-        log::trace!("read {message:?}");
+        let header = ADBUsbMessageHeader::try_from(data)?;
 
-        Ok(message)
+        log::trace!("received header {header:?}");
+
+        if header.data_length() != 0 {
+            let mut msg_data = vec![0_u8; header.data_length() as usize];
+            let mut total_read = 0;
+            loop {
+                total_read +=
+                    handle.read_bulk(endpoint.address, &mut msg_data[total_read..], timeout)?;
+                if total_read == msg_data.capacity() {
+                    break;
+                }
+            }
+
+            let message = ADBUsbMessage::from_header_and_payload(header, msg_data);
+
+            // Check message integrity
+            if !message.check_message_integrity() {
+                return Err(RustADBError::InvalidIntegrity(
+                    ADBUsbMessageHeader::compute_crc32(message.payload()),
+                    message.header().data_crc32(),
+                ));
+            }
+
+            return Ok(message);
+        }
+
+        Ok(ADBUsbMessage::from_header_and_payload(header, vec![]))
     }
 
     fn find_readable_endpoint(&self) -> Result<Endpoint> {
@@ -184,7 +219,7 @@ impl ADBTransport for USBTransport {
             RustADBError::USBDeviceNotFound(self.vendor_id, self.product_id),
         )?;
 
-        self.handle = Some(handle);
+        self.handle = Some(Arc::new(handle));
 
         Ok(())
     }
