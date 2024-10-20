@@ -27,11 +27,16 @@ pub struct UsbCommand {
 #[derive(Parser, Debug)]
 pub enum UsbCommands {
     /// Spawn an interactive shell or run a list of commands on the device
-    Shell { commands: Vec<String> },
-    Pull,
+    Shell {
+        commands: Vec<String>,
+    },
+    Pull {
+        source: String,
+        destination: String,
+    },
     /// Reboot the device
     Reboot {
         #[clap(subcommand)]
         reboot_type: RebootTypeCommand,
-    },
+    }
 }

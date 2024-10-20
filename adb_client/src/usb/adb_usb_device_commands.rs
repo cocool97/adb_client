@@ -137,8 +137,8 @@ impl ADBDeviceExt for ADBUSBDevice {
 
         let message = ADBUsbMessage::new(USBCommand::Open, 12345, 0, sync_directive.into());
         let message = self.send_and_expect_okay(message)?;
-        let local_id = message.arg1();
-        let remote_id = message.arg0();
+        let local_id = message.header().arg1();
+        let remote_id = message.header().arg0();
 
         let FileStat { mode, file_size } = self.stat(source, local_id, remote_id)?;
 
