@@ -24,73 +24,86 @@ pub struct ADBUsbMessageHeader {
     magic: u32,          /* command ^ 0xffffffff             */
 }
 
+impl ADBUsbMessageHeader {
+    pub fn new(command: USBCommand, arg0: u32, arg1: u32, data: &[u8]) -> Self {
+        Self {
+            command,
+            arg0,
+            arg1,
+            data_length: data.len() as u32,
+            data_crc32: Self::compute_crc32(data),
+            magic: Self::compute_magic(command),
+        }
+    }
+
+    pub fn command(&self) -> USBCommand {
+        self.command
+    }
+
+    pub fn arg0(&self) -> u32 {
+        self.arg0
+    }
+
+    pub fn arg1(&self) -> u32 {
+        self.arg1
+    }
+
+    pub fn data_length(&self) -> u32 {
+        self.data_length
+    }
+
+    pub fn data_crc32(&self) -> u32 {
+        self.data_crc32
+    }
+
+    pub(crate) fn compute_crc32(data: &[u8]) -> u32 {
+        data.iter().map(|&x| x as u32).sum()
+    }
+
+    fn compute_magic(command: USBCommand) -> u32 {
+        let command_u32 = command as u32;
+        command_u32 ^ 0xFFFFFFFF
+    }
+
+    pub fn as_bytes(&self) -> Result<Vec<u8>, RustADBError> {
+        bincode::serialize(&self).map_err(|_e| RustADBError::ConversionError)
+    }
+}
+
 impl ADBUsbMessage {
     pub fn new(command: USBCommand, arg0: u32, arg1: u32, data: Vec<u8>) -> Self {
-        let command_u32 = command as u32;
         Self {
-            header: ADBUsbMessageHeader {
-                command,
-                arg0,
-                arg1,
-                data_length: data.len() as u32,
-                data_crc32: data.iter().map(|&x| x as u32).sum(),
-                magic: command_u32 ^ 0xFFFFFFFF,
-            },
+            header: ADBUsbMessageHeader::new(command, arg0, arg1, &data),
             payload: data,
         }
     }
 
-    pub fn compute_checksum(&self) -> u32 {
-        self.header.command as u32 ^ 0xFFFFFFFF
+    pub fn from_header_and_payload(header: ADBUsbMessageHeader, payload: Vec<u8>) -> Self {
+        Self { header, payload }
     }
 
     pub fn check_message_integrity(&self) -> bool {
-        self.compute_checksum() == self.header.magic
+        ADBUsbMessageHeader::compute_magic(self.header.command) == self.header.magic
+            && ADBUsbMessageHeader::compute_crc32(&self.payload) == self.header.data_crc32
     }
 
-    pub fn command(&self) -> USBCommand {
-        self.header.command
+    pub fn header(&self) -> &ADBUsbMessageHeader {
+        &self.header
     }
 
-    pub fn arg0(&self) -> u32 {
-        self.header.arg0
-    }
-
-    pub fn data_length(&self) -> u32 {
-        self.header.data_length
+    pub fn payload(&self) -> &Vec<u8> {
+        &self.payload
     }
 
     pub fn into_payload(self) -> Vec<u8> {
         self.payload
     }
-
-    pub fn with_payload(&mut self, payload: Vec<u8>) {
-        self.payload = payload;
-    }
-
-    pub fn to_bytes(&self) -> Result<Vec<u8>, RustADBError> {
-        bincode::serialize(&self.header).map_err(|_e| RustADBError::ConversionError)
-    }
 }
 
-impl TryFrom<[u8; 24]> for ADBUsbMessage {
+impl TryFrom<[u8; 24]> for ADBUsbMessageHeader {
     type Error = RustADBError;
 
     fn try_from(value: [u8; 24]) -> Result<Self, Self::Error> {
-        let header = bincode::deserialize(&value).map_err(|_e| RustADBError::ConversionError)?;
-        let message = ADBUsbMessage {
-            header,
-            payload: vec![],
-        };
-
-        // Check checksum
-        if !message.check_message_integrity() {
-            return Err(RustADBError::InvalidCRC32(
-                message.compute_checksum(),
-                message.header.magic,
-            ));
-        }
-
-        Ok(message)
+        bincode::deserialize(&value).map_err(|_e| RustADBError::ConversionError)
     }
 }

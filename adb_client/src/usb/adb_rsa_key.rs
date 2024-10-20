@@ -93,11 +93,8 @@ fn write_biguint(writer: &mut Vec<u8>, data: &BigUint, n_bytes: usize) -> Result
 fn set_bit(n: usize) -> Result<BigUint> {
     BigUint::parse_bytes(
         &{
-            let mut bits = vec![];
-            bits.push(b'1');
-            for _ in 0..n {
-                bits.push(b'0');
-            }
+            let mut bits = vec![b'1'];
+            bits.append(&mut vec![b'0'; n]);
             bits
         }[..],
         2,

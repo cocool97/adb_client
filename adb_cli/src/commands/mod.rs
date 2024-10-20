@@ -6,4 +6,4 @@ mod usb;
 pub use emu::EmuCommand;
 pub use host::HostCommand;
 pub use local::LocalCommand;
-pub use usb::UsbCommand;
+pub use usb::{UsbCommand, UsbCommands};

@@ -79,7 +79,6 @@ impl ADBServer {
     }
 
     /// Tracks new devices showing up.
-    // TODO: Change with Generator when feature stabilizes
     pub fn track_devices(&mut self, callback: impl Fn(DeviceShort) -> Result<()>) -> Result<()> {
         self.connect()?
             .send_adb_request(AdbServerCommand::TrackDevices)?;
