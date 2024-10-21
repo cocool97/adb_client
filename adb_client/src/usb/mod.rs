@@ -8,5 +8,5 @@ mod usb_shell;
 pub use adb_rsa_key::ADBRsaKey;
 pub use adb_usb_device::ADBUSBDevice;
 pub use adb_usb_message::{ADBUsbMessage, ADBUsbMessageHeader};
+pub use usb_commands::{USBCommand, USBSubcommand};
 pub use usb_shell::USBShellWriter;
-pub use usb_commands::{SubcommandWithArg, USBCommand, USBSubcommand};
