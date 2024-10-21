@@ -132,8 +132,9 @@ impl ADBDeviceExt for ADBUSBDevice {
         bincode::deserialize(&response.into_payload()).map_err(|_e| RustADBError::ConversionError)
     }
 
-    fn pull<W: Write>(&mut self, source: &str, output: W) -> Result<()> {
+    fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
         let sync_directive = "sync:.\0";
+        let source = source.as_ref();
 
         let message = ADBUsbMessage::new(USBCommand::Open, 12345, 0, sync_directive.into());
         let message = self.send_and_expect_okay(message)?;

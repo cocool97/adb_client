@@ -53,6 +53,15 @@ impl ADBDeviceExt for ADBServerDevice {
         }
     }
 
+    fn stat(
+        &mut self,
+        remote_path: &str,
+        local_id: u32,
+        remote_id: u32,
+    ) -> Result<crate::FileStat> {
+        todo!()
+    }
+
     fn shell<R: Read, W: Write + Send + 'static>(
         &mut self,
         mut reader: R,
@@ -106,17 +115,8 @@ impl ADBDeviceExt for ADBServerDevice {
         Ok(())
     }
 
-    fn stat(
-        &mut self,
-        remote_path: &str,
-        local_id: u32,
-        remote_id: u32,
-    ) -> Result<crate::FileStat> {
-        todo!()
-    }
-
-    fn pull<W: Write>(&mut self, source: &str, output: W) -> Result<()> {
-        todo!()
+    fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, mut output: W) -> Result<()> {
+        self.recv(source, &mut output)
     }
 
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {

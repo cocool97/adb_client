@@ -30,7 +30,7 @@ pub trait ADBDeviceExt {
     fn stat(&mut self, remote_path: &str, local_id: u32, remote_id: u32) -> Result<FileStat>;
 
     /// Pull the remote file `source` and write its contents into [`output`]
-    fn pull<W: Write>(&mut self, source: &str, output: W) -> Result<()>;
+    fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()>;
 
     /// Reboots the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
