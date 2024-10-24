@@ -10,8 +10,6 @@ use adb_client::{ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBUSBDevice, Devic
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use commands::{EmuCommand, HostCommand, LocalCommand, UsbCommands};
-use env_logger::Builder;
-use log::LevelFilter;
 use models::{Command, Opts};
 use std::fs::File;
 use std::io::Write;
@@ -19,15 +17,7 @@ use std::path::Path;
 
 fn main() -> Result<()> {
     let opt = Opts::parse();
-
-    let max_level = if opt.verbose {
-        LevelFilter::Trace
-    } else {
-        LevelFilter::Info
-    };
-    let mut builder = Builder::default();
-    builder.filter_level(max_level);
-    builder.init();
+    env_logger::init();
 
     match opt.command {
         Command::Local(local) => {

@@ -214,14 +214,22 @@ impl USBTransport {
 
 impl ADBTransport for USBTransport {
     fn connect(&mut self) -> crate::Result<()> {
-        // Remove in production
-        let handle = rusb::open_device_with_vid_pid(self.vendor_id, self.product_id).ok_or(
-            RustADBError::USBDeviceNotFound(self.vendor_id, self.product_id),
-        )?;
+        for d in rusb::devices()?.iter() {
+            if let Ok(descriptor) = d.device_descriptor() {
+                if descriptor.vendor_id() == self.vendor_id
+                    && descriptor.product_id() == self.product_id
+                {
+                    self.handle = Some(Arc::new(d.open()?));
 
-        self.handle = Some(Arc::new(handle));
+                    return Ok(());
+                }
+            }
+        }
 
-        Ok(())
+        Err(RustADBError::DeviceNotFound(format!(
+            "Cannot find device with vendor id {} and product id {}",
+            self.vendor_id, self.product_id
+        )))
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {
