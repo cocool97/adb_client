@@ -1,6 +1,7 @@
 mod adb_emulator_device;
 mod adb_server;
 mod adb_server_device;
+mod adb_server_device_commands;
 mod device_commands;
 mod server_commands;
 

@@ -1,15 +1,13 @@
-use std::io::{ErrorKind, Read, Write};
+use std::io::{Read, Write};
 
 use crate::{
+    constants::BUFFER_SIZE,
     models::{AdbServerCommand, HostFeatures},
-    ADBServerDevice, Result, RustADBError,
+    ADBDeviceExt, ADBServerDevice, Result, RustADBError,
 };
 
-const BUFFER_SIZE: usize = 512;
-
-impl ADBServerDevice {
-    /// Runs 'command' in a shell on the device, and write its output and error streams into [`output`].
-    pub fn shell_command<S: ToString, W: Write>(
+impl ADBDeviceExt for ADBServerDevice {
+    fn shell_command<S: ToString, W: Write>(
         &mut self,
         command: impl IntoIterator<Item = S>,
         mut output: W,
@@ -55,10 +53,7 @@ impl ADBServerDevice {
         }
     }
 
-    /// Starts an interactive shell session on the device.
-    /// Input data is read from [reader] and write to [writer].
-    /// [W] has a 'static bound as it is internally used in a thread.
-    pub fn shell<R: Read, W: Write + Send + 'static>(
+    fn shell<R: Read, W: Write + Send + 'static>(
         &mut self,
         mut reader: R,
         mut writer: W,
@@ -103,7 +98,7 @@ impl ADBServerDevice {
         // Read from given reader (that could be stdin e.g), and write content to server socket
         if let Err(e) = std::io::copy(&mut reader, &mut write_stream) {
             match e.kind() {
-                ErrorKind::BrokenPipe => return Ok(()),
+                std::io::ErrorKind::BrokenPipe => return Ok(()),
                 _ => return Err(RustADBError::IOError(e)),
             }
         }

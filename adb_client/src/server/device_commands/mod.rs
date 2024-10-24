@@ -5,6 +5,5 @@ mod logcat;
 mod reboot;
 mod recv;
 mod send;
-mod shell;
 mod stat;
 mod transport;

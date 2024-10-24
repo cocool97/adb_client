@@ -170,7 +170,7 @@ impl ADBServerDevice {
                         .ok_or_else(|| RustADBError::FramebufferConversionError)?,
                 )
             }
-            v => unimplemented!("Version {} not implemented", v),
+            v => Err(RustADBError::UnimplementedFramebufferImageVersion(v)),
         }
     }
 }
