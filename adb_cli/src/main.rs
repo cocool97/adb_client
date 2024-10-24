@@ -31,7 +31,7 @@ fn main() -> Result<()> {
             match local {
                 LocalCommand::Pull { path, filename } => {
                     let mut output = File::create(Path::new(&filename))?;
-                    device.recv(&path, &mut output)?;
+                    device.pull(&path, &mut output)?;
                     log::info!("Downloaded {path} as {filename}");
                 }
                 LocalCommand::Push { filename, path } => {
@@ -180,6 +180,21 @@ fn main() -> Result<()> {
                     } else {
                         device.shell_command(commands, std::io::stdout())?;
                     }
+                }
+                UsbCommands::Pull {
+                    source,
+                    destination,
+                } => {
+                    let mut dst = std::fs::OpenOptions::new()
+                        .create(true)
+                        .write(true)
+                        .truncate(true)
+                        .open(&destination)?;
+                    device.pull(&source, &mut dst)?;
+                    log::info!("Downloaded {source} as {destination}");
+                }
+                UsbCommands::Stat { path } => {
+                    todo!()
                 }
             }
         }
