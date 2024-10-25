@@ -70,7 +70,7 @@ impl<R: Read> Read for ADBRecvCommandReader<R> {
 
 impl ADBServerDevice {
     /// Receives [path] to [stream] from the device.
-    pub fn recv<A: AsRef<str>>(&mut self, path: A, stream: &mut dyn Write) -> Result<()> {
+    pub fn pull<A: AsRef<str>>(&mut self, path: A, stream: &mut dyn Write) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;

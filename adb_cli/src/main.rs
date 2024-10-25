@@ -31,7 +31,7 @@ fn main() -> Result<()> {
             match local {
                 LocalCommand::Pull { path, filename } => {
                     let mut output = File::create(Path::new(&filename))?;
-                    device.recv(&path, &mut output)?;
+                    device.pull(&path, &mut output)?;
                     log::info!("Downloaded {path} as {filename}");
                 }
                 LocalCommand::Push { filename, path } => {
@@ -44,7 +44,7 @@ fn main() -> Result<()> {
                 }
                 LocalCommand::Stat { path } => {
                     let stat_response = device.stat(path)?;
-                    log::info!("{}", stat_response);
+                    println!("{}", stat_response);
                 }
                 LocalCommand::Shell { commands } => {
                     if commands.is_empty() {
@@ -180,6 +180,18 @@ fn main() -> Result<()> {
                     } else {
                         device.shell_command(commands, std::io::stdout())?;
                     }
+                }
+                UsbCommands::Pull {
+                    source,
+                    destination,
+                } => {
+                    let mut output = File::create(Path::new(&destination))?;
+                    device.pull(&source, &mut output)?;
+                    log::info!("Downloaded {source} as {destination}");
+                }
+                UsbCommands::Stat { path } => {
+                    let stat_response = device.stat(&path)?;
+                    println!("{}", stat_response);
                 }
                 UsbCommands::Reboot { reboot_type } => {
                     log::info!("Reboots device in mode {:?}", reboot_type);

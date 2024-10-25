@@ -1,11 +1,10 @@
-use std::io::{Read, Write};
-
-use rand::Rng;
-
 use crate::{
-    usb::{ADBUsbMessage, USBCommand},
+    models::AdbStatResponse,
+    usb::{ADBUsbMessage, USBCommand, USBSubcommand},
     ADBDeviceExt, ADBUSBDevice, RebootType, Result, RustADBError,
 };
+use rand::Rng;
+use std::io::{Read, Write};
 
 use super::USBShellWriter;
 
@@ -57,26 +56,7 @@ impl ADBDeviceExt for ADBUSBDevice {
         mut reader: R,
         mut writer: W,
     ) -> Result<()> {
-        let mut rng = rand::thread_rng();
-
-        let message = ADBUsbMessage::new(
-            USBCommand::Open,
-            rng.gen(), // Our 'local-id'
-            0,
-            "shell:\0".as_bytes().to_vec(),
-        );
-        self.transport.write_message(message)?;
-
-        let message = self.transport.read_message()?;
-
-        if message.header().command() != USBCommand::Okay {
-            return Err(RustADBError::ADBShellNotSupported);
-        }
-
-        // We get identifiers here when received from adbd
-        // As this is received frame, our remote-id is adbd local-id and our local-id is adbd remote-id
-        let remote_id = message.header().arg0();
-        let local_id = message.header().arg1();
+        let (local_id, remote_id) = self.begin_transaction()?;
 
         let mut transport = self.transport.clone();
 
@@ -110,6 +90,53 @@ impl ADBDeviceExt for ADBUSBDevice {
             }
         }
 
+        Ok(())
+    }
+
+    fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
+        let (local_id, remote_id) = self.begin_transaction()?;
+        let adb_stat_response = self.stat_with_explicit_ids(remote_path, local_id, remote_id)?;
+        self.end_transaction(local_id, remote_id)?;
+        Ok(adb_stat_response)
+    }
+
+    fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
+        let (local_id, remote_id) = self.begin_transaction()?;
+        let source = source.as_ref();
+
+        let adb_stat_response = self.stat_with_explicit_ids(source, local_id, remote_id)?;
+        self.transport.write_message(ADBUsbMessage::new(
+            USBCommand::Okay,
+            local_id,
+            remote_id,
+            "".into(),
+        ))?;
+
+        log::debug!("{:?}", adb_stat_response);
+        if adb_stat_response.file_perm == 0 {
+            return Err(RustADBError::UnknownResponseType(
+                "mode is 0: source file does not exist".to_string(),
+            ));
+        }
+
+        let recv_buffer = USBSubcommand::Recv.with_arg(source.len() as u32);
+        let recv_buffer =
+            bincode::serialize(&recv_buffer).map_err(|_e| RustADBError::ConversionError)?;
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            recv_buffer,
+        ))?;
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            source.into(),
+        ))?;
+
+        self.recv_file(local_id, remote_id, output)?;
+        self.end_transaction(local_id, remote_id)?;
         Ok(())
     }
 
