@@ -36,5 +36,5 @@ pub enum UsbCommands {
     Reboot {
         #[clap(subcommand)]
         reboot_type: RebootTypeCommand,
-    }
+    },
 }

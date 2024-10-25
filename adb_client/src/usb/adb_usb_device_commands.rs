@@ -1,8 +1,10 @@
-use std::io::{Read, Write};
-
 use crate::{
-    models::AdbStatResponse, usb::{ADBUsbMessage, USBCommand, USBSubcommand}, ADBDeviceExt, ADBUSBDevice, RebootType, Result, RustADBError
+    models::AdbStatResponse,
+    usb::{ADBUsbMessage, USBCommand, USBSubcommand},
+    ADBDeviceExt, ADBUSBDevice, RebootType, Result, RustADBError,
 };
+use rand::Rng;
+use std::io::{Read, Write};
 
 use super::USBShellWriter;
 
@@ -133,9 +135,9 @@ impl ADBDeviceExt for ADBUSBDevice {
             source.into(),
         ))?;
 
-        let received = self.recv_file(local_id, remote_id, output)?;
+        self.recv_file(local_id, remote_id, output)?;
         self.end_transaction(local_id, remote_id)?;
-        Ok(received)
+        Ok(())
     }
 
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()> {
