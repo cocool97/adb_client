@@ -17,10 +17,10 @@ pub trait ADBDeviceExt {
     /// [W] has a 'static bound as it is internally used in a thread.
     fn shell<R: Read, W: Write + Send + 'static>(&mut self, reader: R, writer: W) -> Result<()>;
 
-    /// Display the stat for a remote file
+    /// Display the stat information for a remote file
     fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse>;
 
-    /// Pull the remote file `source` and write its contents into [`output`]
+    /// Pull the remote file pointed to by [source] and write its contents into [`output`]
     fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()>;
 
     /// Reboots the device using given reboot type

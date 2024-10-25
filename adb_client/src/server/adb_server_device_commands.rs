@@ -111,7 +111,7 @@ impl ADBDeviceExt for ADBServerDevice {
     }
 
     fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, mut output: W) -> Result<()> {
-        self.recv(source, &mut output)
+        self.pull(source, &mut output)
     }
 
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {

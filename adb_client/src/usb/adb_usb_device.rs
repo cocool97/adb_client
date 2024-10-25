@@ -1,4 +1,5 @@
 use byteorder::ReadBytesExt;
+use rand::Rng;
 use std::fs::read_to_string;
 use std::io::Cursor;
 use std::io::Read;
@@ -201,7 +202,7 @@ impl ADBUSBDevice {
                             );
                         } else {
                             let read = std::io::copy(&mut rdr.take(remaining_bytes), &mut output)?;
-                            len.replace(length - remaining_bytes as u64);
+                            len.replace(length - remaining_bytes);
                             log::debug!("expected to read {remaining_bytes} bytes, actually read {read} bytes");
                             // this payload is exhausted
                             break;
@@ -222,7 +223,13 @@ impl ADBUSBDevice {
     pub(crate) fn begin_transaction(&mut self) -> Result<(u32, u32)> {
         let sync_directive = "sync:.\0";
 
-        let message = ADBUsbMessage::new(USBCommand::Open, 12345, 0, sync_directive.into());
+        let mut rng = rand::thread_rng();
+        let message = ADBUsbMessage::new(
+            USBCommand::Open,
+            rng.gen(), /* Our 'local-id' */
+            0,
+            sync_directive.into(),
+        );
         let message = self.send_and_expect_okay(message)?;
         let local_id = message.header().arg1();
         let remote_id = message.header().arg0();

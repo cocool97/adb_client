@@ -44,7 +44,7 @@ fn main() -> Result<()> {
                 }
                 LocalCommand::Stat { path } => {
                     let stat_response = device.stat(path)?;
-                    log::info!("{}", stat_response);
+                    println!("{}", stat_response);
                 }
                 LocalCommand::Shell { commands } => {
                     if commands.is_empty() {
@@ -185,16 +185,13 @@ fn main() -> Result<()> {
                     source,
                     destination,
                 } => {
-                    let mut dst = std::fs::OpenOptions::new()
-                        .create(true)
-                        .write(true)
-                        .truncate(true)
-                        .open(&destination)?;
-                    device.pull(&source, &mut dst)?;
+                    let mut output = File::create(Path::new(&destination))?;
+                    device.pull(&source, &mut output)?;
                     log::info!("Downloaded {source} as {destination}");
                 }
                 UsbCommands::Stat { path } => {
-                    todo!()
+                    let stat_response = device.stat(&path)?;
+                    println!("{}", stat_response);
                 }
                 UsbCommands::Reboot { reboot_type } => {
                     log::info!("Reboots device in mode {:?}", reboot_type);
