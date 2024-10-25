@@ -93,7 +93,9 @@ impl ADBDeviceExt for ADBUSBDevice {
 
     fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
         let (local_id, remote_id) = self.begin_transaction()?;
-        self.stat_with_explicit_ids(remote_path, local_id, remote_id)
+        let adb_stat_response = self.stat_with_explicit_ids(remote_path, local_id, remote_id)?;
+        self.end_transaction(local_id, remote_id)?;
+        Ok(adb_stat_response)
     }
 
     fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
@@ -105,6 +107,12 @@ impl ADBDeviceExt for ADBUSBDevice {
             file_size,
             mod_time: _,
         } = self.stat_with_explicit_ids(source, local_id, remote_id)?;
+        self.transport.write_message(ADBUsbMessage::new(
+            USBCommand::Okay,
+            local_id,
+            remote_id,
+            "".into(),
+        ))?;
 
         log::debug!("mode: {}, file size: {}", file_perm, file_size);
         if file_perm == 0 {
@@ -129,7 +137,9 @@ impl ADBDeviceExt for ADBUSBDevice {
             source.into(),
         ))?;
 
-        self.recv_file(local_id, remote_id, output)
+        let received = self.recv_file(local_id, remote_id, output)?;
+        self.end_transaction(local_id, remote_id)?;
+        Ok(received)
     }
 
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()> {

@@ -256,8 +256,20 @@ impl ADBUSBDevice {
             remote_id,
             remote_path.into(),
         ))?;
-        let response = self.recv_and_reply_okay(local_id, remote_id)?;
+        let response = self.transport.read_message()?;
         bincode::deserialize(&response.into_payload()).map_err(|_e| RustADBError::ConversionError)
+    }
+
+    pub(crate) fn end_transaction(&mut self, local_id: u32, remote_id: u32) -> Result<()> {
+        let quit_buffer = USBSubcommand::Quit.with_arg(0u32);
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            bincode::serialize(&quit_buffer).map_err(|_e| RustADBError::ConversionError)?,
+        ))?;
+        let _discard_close = self.transport.read_message()?;
+        Ok(())
     }
 }
 
