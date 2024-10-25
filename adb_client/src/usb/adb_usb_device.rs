@@ -9,6 +9,7 @@ use std::time::Duration;
 use byteorder::LittleEndian;
 
 use super::{ADBRsaKey, ADBUsbMessage};
+use crate::models::AdbStatResponse;
 use crate::usb::adb_usb_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
 use crate::{
     usb::usb_commands::{USBCommand, USBSubcommand},
@@ -216,6 +217,40 @@ impl ADBUSBDevice {
             }
         }
         Ok(())
+    }
+
+    pub(crate) fn begin_transaction(&mut self) -> Result<(u32, u32)> {
+        let sync_directive = "sync:.\0";
+
+        let message = ADBUsbMessage::new(USBCommand::Open, 12345, 0, sync_directive.into());
+        let message = self.send_and_expect_okay(message)?;
+        let local_id = message.header().arg1();
+        let remote_id = message.header().arg0();
+        Ok((local_id, remote_id))
+    }
+
+    pub(crate) fn stat_with_explicit_ids(
+        &mut self,
+        remote_path: &str,
+        local_id: u32,
+        remote_id: u32,
+    ) -> Result<AdbStatResponse> {
+        let stat_buffer = USBSubcommand::Stat.with_arg(remote_path.len() as u32);
+        let message = ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            bincode::serialize(&stat_buffer).map_err(|_e| RustADBError::ConversionError)?,
+        );
+        self.send_and_expect_okay(message)?;
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            remote_path.into(),
+        ))?;
+        let response = self.recv_and_reply_okay(local_id, remote_id)?;
+        bincode::deserialize(&response.into_payload()).map_err(|_e| RustADBError::ConversionError)
     }
 }
 

@@ -2,7 +2,7 @@ use std::io::{Read, Write};
 
 use crate::{
     constants::BUFFER_SIZE,
-    models::{AdbServerCommand, HostFeatures},
+    models::{AdbServerCommand, AdbStatResponse, HostFeatures},
     ADBDeviceExt, ADBServerDevice, Result, RustADBError,
 };
 
@@ -53,13 +53,8 @@ impl ADBDeviceExt for ADBServerDevice {
         }
     }
 
-    fn stat(
-        &mut self,
-        remote_path: &str,
-        local_id: u32,
-        remote_id: u32,
-    ) -> Result<crate::FileStat> {
-        todo!()
+    fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
+        self.stat(remote_path)
     }
 
     fn shell<R: Read, W: Write + Send + 'static>(
