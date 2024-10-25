@@ -4,7 +4,7 @@ use rand::Rng;
 
 use crate::{
     usb::{ADBUsbMessage, USBCommand},
-    ADBDeviceExt, ADBUSBDevice, Result, RustADBError,
+    ADBDeviceExt, ADBUSBDevice, RebootType, Result, RustADBError,
 };
 
 use super::USBShellWriter;
@@ -108,6 +108,26 @@ impl ADBDeviceExt for ADBUSBDevice {
                 std::io::ErrorKind::BrokenPipe => return Ok(()),
                 _ => return Err(RustADBError::IOError(e)),
             }
+        }
+
+        Ok(())
+    }
+
+    fn reboot(&mut self, reboot_type: RebootType) -> Result<()> {
+        let mut rng = rand::thread_rng();
+
+        let message = ADBUsbMessage::new(
+            USBCommand::Open,
+            rng.gen(), // Our 'local-id'
+            0,
+            format!("reboot:{}\0", reboot_type).as_bytes().to_vec(),
+        );
+        self.transport.write_message(message)?;
+
+        let message = self.transport.read_message()?;
+
+        if message.header().command() != USBCommand::Okay {
+            return Err(RustADBError::ADBShellNotSupported);
         }
 
         Ok(())

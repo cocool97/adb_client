@@ -74,9 +74,9 @@ fn main() -> Result<()> {
                         .ok_or(anyhow!("cannot list features"))?;
                     log::info!("Available host features: {features}");
                 }
-                LocalCommand::Reboot { sub_command } => {
-                    log::info!("Reboots device");
-                    device.reboot(sub_command.into())?
+                LocalCommand::Reboot { reboot_type } => {
+                    log::info!("Reboots device in mode {:?}", reboot_type);
+                    device.reboot(reboot_type.into())?
                 }
                 LocalCommand::Framebuffer { path } => {
                     device.framebuffer(&path)?;
@@ -180,6 +180,10 @@ fn main() -> Result<()> {
                     } else {
                         device.shell_command(commands, std::io::stdout())?;
                     }
+                }
+                UsbCommands::Reboot { reboot_type } => {
+                    log::info!("Reboots device in mode {:?}", reboot_type);
+                    device.reboot(reboot_type.into())?
                 }
             }
         }

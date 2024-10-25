@@ -105,4 +105,8 @@ impl ADBDeviceExt for ADBServerDevice {
 
         Ok(())
     }
+
+    fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
+        self.reboot(reboot_type)
+    }
 }
