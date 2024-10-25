@@ -23,6 +23,9 @@ pub trait ADBDeviceExt {
     /// Pull the remote file pointed to by [source] and write its contents into [`output`]
     fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()>;
 
+    /// Push [stream] to [path] on the device.
+    fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()>;
+
     /// Reboots the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
 }

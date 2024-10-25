@@ -117,4 +117,8 @@ impl ADBDeviceExt for ADBServerDevice {
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
         self.reboot(reboot_type)
     }
+
+    fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
+        self.push(stream, path)
+    }
 }

@@ -36,7 +36,7 @@ fn main() -> Result<()> {
                 }
                 LocalCommand::Push { filename, path } => {
                     let mut input = File::open(Path::new(&filename))?;
-                    device.send(&mut input, &path)?;
+                    device.push(&mut input, &path)?;
                     log::info!("Uploaded {filename} to {path}");
                 }
                 LocalCommand::List { path } => {
@@ -158,8 +158,12 @@ fn main() -> Result<()> {
             }
         }
         Command::Usb(usb) => {
-            let mut device =
-                ADBUSBDevice::new(usb.vendor_id, usb.product_id, usb.path_to_private_key)?;
+            let mut device = match usb.path_to_private_key {
+                Some(pk) => {
+                    ADBUSBDevice::new_with_custom_private_key(usb.vendor_id, usb.product_id, pk)?
+                }
+                None => ADBUSBDevice::new(usb.vendor_id, usb.product_id)?,
+            };
 
             match usb.commands {
                 UsbCommands::Shell { commands } => {
@@ -196,6 +200,11 @@ fn main() -> Result<()> {
                 UsbCommands::Reboot { reboot_type } => {
                     log::info!("Reboots device in mode {:?}", reboot_type);
                     device.reboot(reboot_type.into())?
+                }
+                UsbCommands::Push { filename, path } => {
+                    let mut input = File::open(Path::new(&filename))?;
+                    device.push(&mut input, &path)?;
+                    log::info!("Uploaded {filename} to {path}");
                 }
             }
         }

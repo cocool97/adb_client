@@ -30,6 +30,8 @@ pub enum UsbCommands {
     Shell { commands: Vec<String> },
     /// Pull a file from device
     Pull { source: String, destination: String },
+    /// Push a file on device
+    Push { filename: String, path: String },
     /// Stat a file on device
     Stat { path: String },
     /// Reboot the device

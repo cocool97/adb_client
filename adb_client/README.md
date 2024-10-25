@@ -17,16 +17,6 @@ adb_client = "*"
 
 ## Examples
 
-### Launch a command on device via ADB server
-
-```rust no_run
-use adb_client::{ADBServer, ADBDeviceExt};
-
-let mut server = ADBServer::default();
-let mut device = server.get_device().expect("cannot get device");
-device.shell_command(["df", "-h"],std::io::stdout());
-```
-
 ### Get available ADB devices
 
 ```rust no_run
@@ -41,7 +31,19 @@ let mut server = ADBServer::new(SocketAddrV4::new(server_ip, server_port));
 server.devices();
 ```
 
-### Push a file to the device
+### Using ADB server as proxy
+
+#### [TCP] Launch a command on device
+
+```rust no_run
+use adb_client::{ADBServer, ADBDeviceExt};
+
+let mut server = ADBServer::default();
+let mut device = server.get_device().expect("cannot get device");
+device.shell_command(["df", "-h"],std::io::stdout());
+```
+
+#### [TCP] Push a file to the device
 
 ```rust no_run
 use adb_client::ADBServer;
@@ -51,6 +53,33 @@ use std::path::Path;
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
-let mut input = File::open(Path::new("/tmp")).expect("Cannot open file");
-device.send(&mut input, "/data/local/tmp");
+let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
+device.push(&mut input, "/data/local/tmp");
+```
+
+### Interacting directly with device
+
+#### [USB] Launch a command on device
+
+```rust no_run
+use adb_client::{ADBUSBDevice, ADBDeviceExt};
+
+let vendor_id = 0x04e8;
+let product_id = 0x6860;
+let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find device");
+device.shell_command(["df", "-h"],std::io::stdout());
+```
+
+#### [USB] Push a file to the device
+
+```rust no_run
+use adb_client::{ADBUSBDevice, ADBDeviceExt};
+use std::fs::File;
+use std::path::Path;
+
+let vendor_id = 0x04e8;
+let product_id = 0x6860;
+let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find device");
+let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
+device.push(&mut input, "/data/local/tmp");
 ```

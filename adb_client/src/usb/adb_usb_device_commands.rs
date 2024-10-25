@@ -56,7 +56,18 @@ impl ADBDeviceExt for ADBUSBDevice {
         mut reader: R,
         mut writer: W,
     ) -> Result<()> {
-        let (local_id, remote_id) = self.begin_transaction()?;
+        let sync_directive = "shell:\0";
+
+        let mut rng = rand::thread_rng();
+        let message = ADBUsbMessage::new(
+            USBCommand::Open,
+            rng.gen(), /* Our 'local-id' */
+            0,
+            sync_directive.into(),
+        );
+        let message = self.send_and_expect_okay(message)?;
+        let local_id = message.header().arg1();
+        let remote_id = message.header().arg0();
 
         let mut transport = self.transport.clone();
 
@@ -94,14 +105,14 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
-        let (local_id, remote_id) = self.begin_transaction()?;
+        let (local_id, remote_id) = self.begin_synchronization()?;
         let adb_stat_response = self.stat_with_explicit_ids(remote_path, local_id, remote_id)?;
         self.end_transaction(local_id, remote_id)?;
         Ok(adb_stat_response)
     }
 
     fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
-        let (local_id, remote_id) = self.begin_transaction()?;
+        let (local_id, remote_id) = self.begin_synchronization()?;
         let source = source.as_ref();
 
         let adb_stat_response = self.stat_with_explicit_ids(source, local_id, remote_id)?;
@@ -137,6 +148,30 @@ impl ADBDeviceExt for ADBUSBDevice {
 
         self.recv_file(local_id, remote_id, output)?;
         self.end_transaction(local_id, remote_id)?;
+        Ok(())
+    }
+
+    fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
+        let (local_id, remote_id) = self.begin_synchronization()?;
+
+        let path_header = format!("{},0777", path.as_ref());
+
+        let send_buffer = USBSubcommand::Send.with_arg(path_header.len() as u32);
+        let mut send_buffer =
+            bincode::serialize(&send_buffer).map_err(|_e| RustADBError::ConversionError)?;
+        send_buffer.append(&mut path_header.as_bytes().to_vec());
+
+        self.send_and_expect_okay(ADBUsbMessage::new(
+            USBCommand::Write,
+            local_id,
+            remote_id,
+            send_buffer,
+        ))?;
+
+        self.push_file(local_id, remote_id, stream)?;
+
+        self.end_transaction(local_id, remote_id)?;
+
         Ok(())
     }
 

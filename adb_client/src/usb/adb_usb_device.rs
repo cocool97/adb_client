@@ -4,12 +4,14 @@ use std::fs::read_to_string;
 use std::io::Cursor;
 use std::io::Read;
 use std::io::Seek;
+use std::path::Path;
 use std::path::PathBuf;
 use std::time::Duration;
 
 use byteorder::LittleEndian;
 
 use super::{ADBRsaKey, ADBUsbMessage};
+use crate::constants::BUFFER_SIZE;
 use crate::models::AdbStatResponse;
 use crate::usb::adb_usb_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
 use crate::{
@@ -24,16 +26,8 @@ pub struct ADBUSBDevice {
     pub(crate) transport: USBTransport,
 }
 
-fn read_adb_private_key(private_key_path: Option<PathBuf>) -> Result<Option<ADBRsaKey>> {
-    let private_key = private_key_path
-        .or_else(|| {
-            homedir::my_home()
-                .ok()?
-                .map(|home| home.join(".android").join("adbkey"))
-        })
-        .ok_or(RustADBError::NoHomeDirectory)?;
-
-    read_to_string(&private_key)
+fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
+    read_to_string(private_key_path.as_ref())
         .map_err(RustADBError::from)
         .map(|pk| match ADBRsaKey::from_pkcs8(&pk) {
             Ok(pk) => Some(pk),
@@ -46,7 +40,34 @@ fn read_adb_private_key(private_key_path: Option<PathBuf>) -> Result<Option<ADBR
 
 impl ADBUSBDevice {
     /// Instantiate a new [ADBUSBDevice]
-    pub fn new(vendor_id: u16, product_id: u16, private_key_path: Option<PathBuf>) -> Result<Self> {
+    pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
+        let private_key_path = homedir::my_home()
+            .ok()
+            .flatten()
+            .map(|home| home.join(".android").join("adbkey"))
+            .ok_or(RustADBError::NoHomeDirectory)?;
+
+        let private_key = match read_adb_private_key(private_key_path)? {
+            Some(pk) => pk,
+            None => ADBRsaKey::random_with_size(2048)?,
+        };
+
+        let mut s = Self {
+            private_key,
+            transport: USBTransport::new(vendor_id, product_id),
+        };
+
+        s.connect()?;
+
+        Ok(s)
+    }
+
+    /// Instantiate a new [ADBUSBDevice] using a custom private key path
+    pub fn new_with_custom_private_key(
+        vendor_id: u16,
+        product_id: u16,
+        private_key_path: PathBuf,
+    ) -> Result<Self> {
         let private_key = match read_adb_private_key(private_key_path)? {
             Some(pk) => pk,
             None => ADBRsaKey::random_with_size(2048)?,
@@ -156,14 +177,14 @@ impl ADBUSBDevice {
     }
 
     /// Expect a message with an `OKAY` command after sending a message.
-    /// Return the value if it conforms to the constraint or error out.
     pub(crate) fn send_and_expect_okay(&mut self, message: ADBUsbMessage) -> Result<ADBUsbMessage> {
         self.transport.write_message(message)?;
         let message = self.transport.read_message()?;
-        if message.header().command() != USBCommand::Okay {
+        let received_command = message.header().command();
+        if received_command != USBCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
                 "expected command OKAY after message, got {}",
-                message.header().command()
+                received_command
             )));
         }
         Ok(message)
@@ -220,8 +241,82 @@ impl ADBUSBDevice {
         Ok(())
     }
 
-    pub(crate) fn begin_transaction(&mut self) -> Result<(u32, u32)> {
-        let sync_directive = "sync:.\0";
+    pub(crate) fn push_file<R: std::io::Read>(
+        &mut self,
+        local_id: u32,
+        remote_id: u32,
+        mut reader: R,
+    ) -> std::result::Result<(), RustADBError> {
+        let mut buffer = [0; BUFFER_SIZE];
+        let amount_read = reader.read(&mut buffer)?;
+        let subcommand_data = USBSubcommand::Data.with_arg(amount_read as u32);
+
+        let mut serialized_message =
+            bincode::serialize(&subcommand_data).map_err(|_e| RustADBError::ConversionError)?;
+        serialized_message.append(&mut buffer[..amount_read].to_vec());
+
+        let message =
+            ADBUsbMessage::new(USBCommand::Write, local_id, remote_id, serialized_message);
+
+        self.send_and_expect_okay(message)?;
+
+        loop {
+            let mut buffer = [0; BUFFER_SIZE];
+
+            match reader.read(&mut buffer) {
+                Ok(0) => {
+                    // Currently file mtime is not forwarded
+                    let subcommand_data = USBSubcommand::Done.with_arg(0);
+
+                    let serialized_message = bincode::serialize(&subcommand_data)
+                        .map_err(|_e| RustADBError::ConversionError)?;
+
+                    let message = ADBUsbMessage::new(
+                        USBCommand::Write,
+                        local_id,
+                        remote_id,
+                        serialized_message,
+                    );
+
+                    self.send_and_expect_okay(message)?;
+
+                    // Command should end with a Write => Okay
+                    let received = self.transport.read_message()?;
+                    match received.header().command() {
+                        USBCommand::Write => return Ok(()),
+                        c => {
+                            return Err(RustADBError::ADBRequestFailed(format!(
+                                "Wrong command received {}",
+                                c
+                            )))
+                        }
+                    }
+                }
+                Ok(size) => {
+                    let subcommand_data = USBSubcommand::Data.with_arg(size as u32);
+
+                    let mut serialized_message = bincode::serialize(&subcommand_data)
+                        .map_err(|_e| RustADBError::ConversionError)?;
+                    serialized_message.append(&mut buffer[..size].to_vec());
+
+                    let message = ADBUsbMessage::new(
+                        USBCommand::Write,
+                        local_id,
+                        remote_id,
+                        serialized_message,
+                    );
+
+                    self.send_and_expect_okay(message)?;
+                }
+                Err(e) => {
+                    return Err(RustADBError::IOError(e));
+                }
+            }
+        }
+    }
+
+    pub(crate) fn begin_synchronization(&mut self) -> Result<(u32, u32)> {
+        let sync_directive = "sync:\0";
 
         let mut rng = rand::thread_rng();
         let message = ADBUsbMessage::new(
