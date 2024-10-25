@@ -54,7 +54,37 @@ pub enum RustADBError {
     /// An error occurred when converting framebuffer content
     #[error("Cannot convert framebuffer into image")]
     FramebufferConversionError,
+    /// Unimplemented framebuffer image version
+    #[error("Unimplemented framebuffer image version: {0}")]
+    UnimplementedFramebufferImageVersion(u32),
     /// An error occurred while getting user's home directory
     #[error(transparent)]
     HomeError(#[from] homedir::GetHomeError),
+    /// Cannot get home directory
+    #[error("Cannot get home directory")]
+    NoHomeDirectory,
+    /// Generic USB error
+    #[error(transparent)]
+    UsbError(#[from] rusb::Error),
+    /// USB device not found
+    #[error("USB Device not found: {0} {1}")]
+    USBDeviceNotFound(u16, u16),
+    /// No descriptor found
+    #[error("No USB descriptor found")]
+    USBNoDescriptorFound,
+    /// Integrity of the received message cannot be validated
+    #[error("Invalid integrity. Expected CRC32 {0}, got {1}")]
+    InvalidIntegrity(u32, u32),
+    /// Error while decoding base64 data
+    #[error(transparent)]
+    Base64DecodeError(#[from] base64::DecodeError),
+    /// Error while encoding base64 data
+    #[error(transparent)]
+    Base64EncodeError(#[from] base64::EncodeSliceError),
+    /// An error occurred with RSA engine
+    #[error(transparent)]
+    RSAError(#[from] rsa::errors::Error),
+    /// Cannot convert given data from slice
+    #[error(transparent)]
+    TryFromSliceError(#[from] std::array::TryFromSliceError),
 }

@@ -1,6 +1,7 @@
 mod adb_emulator_command;
 mod adb_request_status;
 mod adb_server_command;
+mod adb_stat_response;
 mod adb_version;
 mod device_long;
 mod device_short;
@@ -12,6 +13,7 @@ mod sync_command;
 pub(crate) use adb_emulator_command::ADBEmulatorCommand;
 pub use adb_request_status::AdbRequestStatus;
 pub(crate) use adb_server_command::AdbServerCommand;
+pub use adb_stat_response::AdbStatResponse;
 pub use adb_version::AdbVersion;
 pub use device_long::DeviceLong;
 pub use device_short::DeviceShort;

@@ -17,27 +17,27 @@ mod tests {
     #[test]
     fn test_version() {
         let mut adb = new_client();
-        adb.version().unwrap();
+        adb.version().expect("cannot get adb version");
     }
 
     #[test]
-    fn test_shell() {
+    fn test_shell_commands() {
         let mut device = new_device();
 
-        device.shell_command(vec!["ls"]).unwrap();
-        device.shell_command(vec!["pwd"]).unwrap();
+        device.shell_command(["ls"]).expect("error while executing `ls` command");
+        device.shell_command(["pwd"]).expect("error while executing `pwd` command");
     }
 
     #[test]
     fn test_devices() {
         let mut adb = new_client();
-        adb.devices().unwrap();
+        adb.devices().expect("cannot list devices");
     }
 
     #[test]
     fn test_devices_long() {
         let mut adb = new_client();
-        adb.devices_long().unwrap();
+        adb.devices_long().expect("cannot list devices long");
     }
 
     #[test]

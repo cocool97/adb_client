@@ -1,7 +1,7 @@
 [package]
 description = "Rust ADB (Android Debug Bridge) CLI"
 edition.workspace = true
-keywords = ["adb", "android"]
+keywords.workspace = true
 license.workspace = true
 name = "adb_cli"
 readme = "README.md"

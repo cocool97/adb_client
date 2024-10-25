@@ -15,11 +15,11 @@ pub enum LocalCommand {
     /// Stat a file specified on device
     Stat { path: String },
     /// Spawn an interactive shell or run a list of commands on the device
-    Shell { command: Vec<String> },
+    Shell { commands: Vec<String> },
     /// Reboot the device
     Reboot {
         #[clap(subcommand)]
-        sub_command: RebootTypeCommand,
+        reboot_type: RebootTypeCommand,
     },
     /// Dump framebuffer of device
     Framebuffer { path: String },

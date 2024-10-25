@@ -9,9 +9,10 @@ impl ADBServer {
             .connect()?
             .proxy_connection(AdbServerCommand::Pair(address, code), true)?;
 
-        match String::from_utf8(response).unwrap() {
-            s if s.starts_with("Successfully paired to") => Ok(()),
-            s => Err(RustADBError::ADBRequestFailed(s)),
+        match String::from_utf8(response) {
+            Ok(s) if s.starts_with("Successfully paired to") => Ok(()),
+            Ok(s) => Err(RustADBError::ADBRequestFailed(s)),
+            Err(e) => Err(e.into()),
         }
     }
 }

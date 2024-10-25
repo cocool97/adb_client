@@ -1,14 +1,15 @@
+#![doc = include_str!("../README.md")]
+
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod adb_termios;
+
 mod commands;
 mod models;
 
-use adb_client::{ADBEmulatorDevice, ADBServer, DeviceShort};
+use adb_client::{ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBUSBDevice, DeviceShort};
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use commands::{EmuCommand, HostCommand, LocalCommand};
-use env_logger::Builder;
-use log::LevelFilter;
+use commands::{EmuCommand, HostCommand, LocalCommand, UsbCommands};
 use models::{Command, Opts};
 use std::fs::File;
 use std::io::Write;
@@ -16,15 +17,7 @@ use std::path::Path;
 
 fn main() -> Result<()> {
     let opt = Opts::parse();
-
-    let max_level = if opt.verbose {
-        LevelFilter::Trace
-    } else {
-        LevelFilter::Info
-    };
-    let mut builder = Builder::default();
-    builder.filter_level(max_level);
-    builder.init();
+    env_logger::init();
 
     match opt.command {
         Command::Local(local) => {
@@ -38,12 +31,12 @@ fn main() -> Result<()> {
             match local {
                 LocalCommand::Pull { path, filename } => {
                     let mut output = File::create(Path::new(&filename))?;
-                    device.recv(&path, &mut output)?;
+                    device.pull(&path, &mut output)?;
                     log::info!("Downloaded {path} as {filename}");
                 }
                 LocalCommand::Push { filename, path } => {
                     let mut input = File::open(Path::new(&filename))?;
-                    device.send(&mut input, &path)?;
+                    device.push(&mut input, &path)?;
                     log::info!("Uploaded {filename} to {path}");
                 }
                 LocalCommand::List { path } => {
@@ -51,10 +44,10 @@ fn main() -> Result<()> {
                 }
                 LocalCommand::Stat { path } => {
                     let stat_response = device.stat(path)?;
-                    log::info!("{}", stat_response);
+                    println!("{}", stat_response);
                 }
-                LocalCommand::Shell { command } => {
-                    if command.is_empty() {
+                LocalCommand::Shell { commands } => {
+                    if commands.is_empty() {
                         // Need to duplicate some code here as ADBTermios [Drop] implementation resets terminal state.
                         // Using a scope here would call drop() too early..
                         #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -69,7 +62,7 @@ fn main() -> Result<()> {
                             device.shell(std::io::stdin(), std::io::stdout())?;
                         }
                     } else {
-                        device.shell_command(command, std::io::stdout())?;
+                        device.shell_command(commands, std::io::stdout())?;
                     }
                 }
                 LocalCommand::HostFeatures => {
@@ -81,9 +74,9 @@ fn main() -> Result<()> {
                         .ok_or(anyhow!("cannot list features"))?;
                     log::info!("Available host features: {features}");
                 }
-                LocalCommand::Reboot { sub_command } => {
-                    log::info!("Reboots device");
-                    device.reboot(sub_command.into())?
+                LocalCommand::Reboot { reboot_type } => {
+                    log::info!("Reboots device in mode {:?}", reboot_type);
+                    device.reboot(reboot_type.into())?
                 }
                 LocalCommand::Framebuffer { path } => {
                     device.framebuffer(&path)?;
@@ -162,6 +155,57 @@ fn main() -> Result<()> {
                     log::info!("SMS sent to {phone_number}");
                 }
                 EmuCommand::Rotate => emulator.rotate()?,
+            }
+        }
+        Command::Usb(usb) => {
+            let mut device = match usb.path_to_private_key {
+                Some(pk) => {
+                    ADBUSBDevice::new_with_custom_private_key(usb.vendor_id, usb.product_id, pk)?
+                }
+                None => ADBUSBDevice::new(usb.vendor_id, usb.product_id)?,
+            };
+
+            match usb.commands {
+                UsbCommands::Shell { commands } => {
+                    if commands.is_empty() {
+                        // Need to duplicate some code here as ADBTermios [Drop] implementation resets terminal state.
+                        // Using a scope here would call drop() too early..
+                        #[cfg(any(target_os = "linux", target_os = "macos"))]
+                        {
+                            let mut adb_termios = adb_termios::ADBTermios::new(std::io::stdin())?;
+                            adb_termios.set_adb_termios()?;
+                            device.shell(std::io::stdin(), std::io::stdout())?;
+                        }
+
+                        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+                        {
+                            device.shell(std::io::stdin(), std::io::stdout())?;
+                        }
+                    } else {
+                        device.shell_command(commands, std::io::stdout())?;
+                    }
+                }
+                UsbCommands::Pull {
+                    source,
+                    destination,
+                } => {
+                    let mut output = File::create(Path::new(&destination))?;
+                    device.pull(&source, &mut output)?;
+                    log::info!("Downloaded {source} as {destination}");
+                }
+                UsbCommands::Stat { path } => {
+                    let stat_response = device.stat(&path)?;
+                    println!("{}", stat_response);
+                }
+                UsbCommands::Reboot { reboot_type } => {
+                    log::info!("Reboots device in mode {:?}", reboot_type);
+                    device.reboot(reboot_type.into())?
+                }
+                UsbCommands::Push { filename, path } => {
+                    let mut input = File::open(Path::new(&filename))?;
+                    device.push(&mut input, &path)?;
+                    log::info!("Uploaded {filename} to {path}");
+                }
             }
         }
     }
