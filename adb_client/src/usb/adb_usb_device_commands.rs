@@ -102,11 +102,7 @@ impl ADBDeviceExt for ADBUSBDevice {
         let (local_id, remote_id) = self.begin_transaction()?;
         let source = source.as_ref();
 
-        let AdbStatResponse {
-            file_perm,
-            file_size,
-            mod_time: _,
-        } = self.stat_with_explicit_ids(source, local_id, remote_id)?;
+        let adb_stat_response = self.stat_with_explicit_ids(source, local_id, remote_id)?;
         self.transport.write_message(ADBUsbMessage::new(
             USBCommand::Okay,
             local_id,
@@ -114,10 +110,10 @@ impl ADBDeviceExt for ADBUSBDevice {
             "".into(),
         ))?;
 
-        log::debug!("mode: {}, file size: {}", file_perm, file_size);
-        if file_perm == 0 {
+        log::debug!("{:?}", adb_stat_response);
+        if adb_stat_response.file_perm == 0 {
             return Err(RustADBError::UnknownResponseType(
-                "mode is 0: source apk does not exist".to_string(),
+                "mode is 0: source file does not exist".to_string(),
             ));
         }
 
