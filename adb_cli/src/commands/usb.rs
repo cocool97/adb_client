@@ -3,6 +3,8 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
+use crate::models::RebootTypeCommand;
+
 fn parse_hex_id(id: &str) -> Result<u16, ParseIntError> {
     u16::from_str_radix(id, 16)
 }
@@ -26,4 +28,9 @@ pub struct UsbCommand {
 pub enum UsbCommands {
     /// Spawn an interactive shell or run a list of commands on the device
     Shell { commands: Vec<String> },
+    /// Reboot the device
+    Reboot {
+        #[clap(subcommand)]
+        reboot_type: RebootTypeCommand,
+    },
 }

@@ -19,7 +19,7 @@ pub enum LocalCommand {
     /// Reboot the device
     Reboot {
         #[clap(subcommand)]
-        sub_command: RebootTypeCommand,
+        reboot_type: RebootTypeCommand,
     },
     /// Dump framebuffer of device
     Framebuffer { path: String },

@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use crate::Result;
+use crate::{RebootType, Result};
 
 /// Trait representing all features available on both [`ADBServerDevice`] and [`ADBUSBDevice`]
 pub trait ADBDeviceExt {
@@ -15,4 +15,7 @@ pub trait ADBDeviceExt {
     /// Input data is read from [reader] and write to [writer].
     /// [W] has a 'static bound as it is internally used in a thread.
     fn shell<R: Read, W: Write + Send + 'static>(&mut self, reader: R, writer: W) -> Result<()>;
+
+    /// Reboots the device using given reboot type
+    fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
 }
