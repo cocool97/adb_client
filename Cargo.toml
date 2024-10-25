@@ -7,7 +7,7 @@ edition = "2021"
 keywords = ["adb", "android", "tcp", "usb"]
 license = "MIT"
 repository = "https://github.com/cocool97/adb_client"
-version = "1.0.7"
+version = "2.0.0"
 
 # To build locally when working on a new release
 [patch.crates-io]
