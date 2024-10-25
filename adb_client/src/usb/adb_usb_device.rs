@@ -257,7 +257,10 @@ impl ADBUSBDevice {
             remote_path.into(),
         ))?;
         let response = self.transport.read_message()?;
-        bincode::deserialize(&response.into_payload()).map_err(|_e| RustADBError::ConversionError)
+        // Skip first 4 bytes as this is the literal "STAT".
+        // Interesting part starts right after
+        bincode::deserialize(&response.into_payload()[4..])
+            .map_err(|_e| RustADBError::ConversionError)
     }
 
     pub(crate) fn end_transaction(&mut self, local_id: u32, remote_id: u32) -> Result<()> {
