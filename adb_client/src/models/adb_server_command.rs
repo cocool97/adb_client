@@ -57,6 +57,12 @@ impl Display for AdbServerCommand {
     }
 }
 
+impl AdbServerCommand {
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.to_string().into_bytes()
+    }
+}
+
 #[test]
 fn test_pair_command() {
     let host = "192.168.0.197:34783";

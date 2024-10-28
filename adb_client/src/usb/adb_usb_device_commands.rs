@@ -1,5 +1,5 @@
 use crate::{
-    models::AdbStatResponse,
+    models::{AdbServerCommand, AdbStatResponse},
     usb::{ADBUsbMessage, USBCommand, USBSubcommand},
     ADBDeviceExt, ADBUSBDevice, RebootType, Result, RustADBError,
 };
@@ -18,16 +18,14 @@ impl ADBDeviceExt for ADBUSBDevice {
             USBCommand::Open,
             1,
             0,
-            format!(
-                "shell:{}\0",
+            AdbServerCommand::ShellCommand(
                 command
                     .into_iter()
                     .map(|v| v.to_string())
                     .collect::<Vec<_>>()
                     .join(" "),
             )
-            .as_bytes()
-            .to_vec(),
+            .into_bytes(),
         );
         self.transport.write_message(message)?;
 
@@ -56,14 +54,12 @@ impl ADBDeviceExt for ADBUSBDevice {
         mut reader: R,
         mut writer: W,
     ) -> Result<()> {
-        let sync_directive = "shell:\0";
-
         let mut rng = rand::thread_rng();
         let message = ADBUsbMessage::new(
             USBCommand::Open,
             rng.gen(), /* Our 'local-id' */
             0,
-            sync_directive.into(),
+            AdbServerCommand::Shell.into_bytes(),
         );
         let message = self.send_and_expect_okay(message)?;
         let local_id = message.header().arg1();
@@ -182,7 +178,7 @@ impl ADBDeviceExt for ADBUSBDevice {
             USBCommand::Open,
             rng.gen(), // Our 'local-id'
             0,
-            format!("reboot:{}\0", reboot_type).as_bytes().to_vec(),
+            AdbServerCommand::Reboot(reboot_type).into_bytes(),
         );
         self.transport.write_message(message)?;
 

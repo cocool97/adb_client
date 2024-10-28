@@ -12,6 +12,7 @@ use byteorder::LittleEndian;
 
 use super::{ADBRsaKey, ADBUsbMessage};
 use crate::constants::BUFFER_SIZE;
+use crate::models::AdbServerCommand;
 use crate::models::AdbStatResponse;
 use crate::usb::adb_usb_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
 use crate::{
@@ -316,14 +317,12 @@ impl ADBUSBDevice {
     }
 
     pub(crate) fn begin_synchronization(&mut self) -> Result<(u32, u32)> {
-        let sync_directive = "sync:\0";
-
         let mut rng = rand::thread_rng();
         let message = ADBUsbMessage::new(
             USBCommand::Open,
             rng.gen(), /* Our 'local-id' */
             0,
-            sync_directive.into(),
+            AdbServerCommand::Sync.into_bytes(),
         );
         let message = self.send_and_expect_okay(message)?;
         let local_id = message.header().arg1();
