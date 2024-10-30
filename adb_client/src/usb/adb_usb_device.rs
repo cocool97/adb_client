@@ -1,5 +1,9 @@
 use byteorder::ReadBytesExt;
 use rand::Rng;
+use retry::{delay::Fixed, retry};
+use rusb::Device;
+use rusb::DeviceDescriptor;
+use rusb::UsbContext;
 use std::fs::read_to_string;
 use std::io::Cursor;
 use std::io::Read;
@@ -37,6 +41,38 @@ fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<AD
             }
         })
 }
+/// Search for adb devices with known interface class and subclass values
+fn search_adb_devices() -> Option<(u16, u16)> {
+    for device in rusb::devices().unwrap().iter() {
+        let Ok(des) = device.device_descriptor() else {
+            continue;
+        };
+        if is_adb_device(&device, &des) {
+            return Some((des.vendor_id(), des.product_id()));
+        }
+    }
+    None
+}
+
+fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> bool {
+    for n in 0..des.num_configurations() {
+        let Ok(config_des) = device.config_descriptor(n) else {
+            continue;
+        };
+        for interface in config_des.interfaces() {
+            for interface_des in interface.descriptors() {
+                let proto = interface_des.protocol_code();
+                let class = interface_des.class_code();
+                let subcl = interface_des.sub_class_code();
+                if proto == 1 && ((class == 0xff && subcl == 0x42) || (class == 0xdc && subcl == 2))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
 
 impl ADBUSBDevice {
     /// Instantiate a new [ADBUSBDevice]
@@ -60,6 +96,40 @@ impl ADBUSBDevice {
         s.connect()?;
 
         Ok(s)
+    }
+
+    /// autodetect connected ADB devices and establish a connection with the
+    /// first device found
+    pub fn autodetect() -> Result<Self> {
+        retry(Fixed::from_millis(3000).take(5), || {
+            let Some((vid, pid)) = search_adb_devices() else {
+                return Err(RustADBError::ADBRequestFailed(format!(
+                    "no USB devices found that match the signature of an ADB device"
+                )));
+            };
+            log::trace!("Trying to connect to ({vid}, {pid})");
+            ADBUSBDevice::new(vid, pid)
+        })
+        .map_err(|e| {
+            RustADBError::ADBRequestFailed(format!("the device took too long to respond: {e}"))
+        })
+    }
+
+    /// autodetect connected ADB devices and establish a connection with the
+    /// first device found using a custom private key path
+    pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
+        retry(Fixed::from_millis(3000).take(5), || {
+            let Some((vid, pid)) = search_adb_devices() else {
+                return Err(RustADBError::ADBRequestFailed(format!(
+                    "no USB devices found that match the signature of an ADB device"
+                )));
+            };
+            log::trace!("Trying to connect to ({vid}, {pid})");
+            ADBUSBDevice::new_with_custom_private_key(vid, pid, private_key_path.clone())
+        })
+        .map_err(|e| {
+            RustADBError::ADBRequestFailed(format!("the device took too long to respond: {e}"))
+        })
     }
 
     /// Instantiate a new [ADBUSBDevice] using a custom private key path

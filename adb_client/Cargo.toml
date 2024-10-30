@@ -20,6 +20,7 @@ log = { version = "0.4.22" }
 num-bigint = { version = "0.6", package = "num-bigint-dig" }
 rand = { version = "0.7.0" }
 regex = { version = "1.11.0", features = ["perf", "std", "unicode"] }
+retry = "2.0.0"
 rsa = { version = "0.3.0" }
 rusb = { version = "0.9.4", features = ["vendored"] }
 serde = { version = "1.0.210", features = ["derive"] }
