@@ -163,10 +163,15 @@ fn main() -> Result<()> {
                     Some(pk) => ADBUSBDevice::new_with_custom_private_key(vid, pid, pk)?,
                     None => ADBUSBDevice::new(vid, pid)?,
                 },
-                _ => match usb.path_to_private_key {
+
+                (None, None) => match usb.path_to_private_key {
                     Some(pk) => ADBUSBDevice::autodetect_with_custom_private_key(pk)?,
                     None => ADBUSBDevice::autodetect()?,
                 },
+
+                _ => {
+                    anyhow::bail!("please either supply values for both the --vendor-id and --product-id flags or none.");
+                }
             };
 
             match usb.commands {
