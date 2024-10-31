@@ -158,11 +158,20 @@ fn main() -> Result<()> {
             }
         }
         Command::Usb(usb) => {
-            let mut device = match usb.path_to_private_key {
-                Some(pk) => {
-                    ADBUSBDevice::new_with_custom_private_key(usb.vendor_id, usb.product_id, pk)?
+            let mut device = match (usb.vendor_id, usb.product_id) {
+                (Some(vid), Some(pid)) => match usb.path_to_private_key {
+                    Some(pk) => ADBUSBDevice::new_with_custom_private_key(vid, pid, pk)?,
+                    None => ADBUSBDevice::new(vid, pid)?,
+                },
+
+                (None, None) => match usb.path_to_private_key {
+                    Some(pk) => ADBUSBDevice::autodetect_with_custom_private_key(pk)?,
+                    None => ADBUSBDevice::autodetect()?,
+                },
+
+                _ => {
+                    anyhow::bail!("please either supply values for both the --vendor-id and --product-id flags or none.");
                 }
-                None => ADBUSBDevice::new(usb.vendor_id, usb.product_id)?,
             };
 
             match usb.commands {
