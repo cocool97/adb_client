@@ -42,15 +42,29 @@ fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<AD
 }
 /// Search for adb devices with known interface class and subclass values
 fn search_adb_devices() -> Result<Option<(u16, u16)>> {
+    let mut found_devices = vec![];
     for device in rusb::devices()?.iter() {
         let Ok(des) = device.device_descriptor() else {
             continue;
         };
         if is_adb_device(&device, &des) {
-            return Ok(Some((des.vendor_id(), des.product_id())));
+            log::debug!(
+                "Autodetect device {:04x}:{:04x}",
+                des.vendor_id(),
+                des.product_id()
+            );
+            found_devices.push((des.vendor_id(), des.product_id()));
         }
     }
-    Ok(None)
+
+    match (found_devices.get(0), found_devices.get(1)) {
+        (None, _) => Ok(None),
+        (Some(identifiers), None) => Ok(Some(*identifiers)),
+        (Some((vid1, pid1)), Some((vid2, pid2))) => Err(RustADBError::DeviceNotFound(format!(
+            "Found two Android devices {:04x}:{:04x} and {:04x}:{:04x}",
+            vid1, pid1, vid2, pid2
+        ))),
+    }
 }
 
 fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> bool {
@@ -85,64 +99,18 @@ fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> b
     false
 }
 
+fn get_default_adb_key_path() -> Result<PathBuf> {
+    homedir::my_home()
+        .ok()
+        .flatten()
+        .map(|home| home.join(".android").join("adbkey"))
+        .ok_or(RustADBError::NoHomeDirectory)
+}
+
 impl ADBUSBDevice {
     /// Instantiate a new [ADBUSBDevice]
     pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
-        let private_key_path = homedir::my_home()
-            .ok()
-            .flatten()
-            .map(|home| home.join(".android").join("adbkey"))
-            .ok_or(RustADBError::NoHomeDirectory)?;
-
-        let private_key = match read_adb_private_key(private_key_path)? {
-            Some(pk) => pk,
-            None => ADBRsaKey::random_with_size(2048)?,
-        };
-
-        let mut s = Self {
-            private_key,
-            transport: USBTransport::new(vendor_id, product_id),
-        };
-
-        s.connect()?;
-
-        Ok(s)
-    }
-
-    /// autodetect connected ADB devices and establish a connection with the
-    /// first device found
-    pub fn autodetect() -> Result<Self> {
-        std::thread::spawn(move || -> Result<Self> {
-            loop {
-                let Some((vid, pid)) = search_adb_devices()? else {
-                    log::warn!("no USB devices found that match the signature of an ADB device");
-                    std::thread::sleep(Duration::from_secs(3));
-                    continue;
-                };
-                log::trace!("Trying to connect to ({vid}, {pid})");
-                break ADBUSBDevice::new(vid, pid);
-            }
-        })
-        .join()
-        .map_err(|_e| RustADBError::ThreadJoinError("device scanning".into()))?
-    }
-
-    /// autodetect connected ADB devices and establish a connection with the
-    /// first device found using a custom private key path
-    pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
-        std::thread::spawn(move || -> Result<Self> {
-            loop {
-                let Some((vid, pid)) = search_adb_devices()? else {
-                    log::warn!("no USB devices found that match the signature of an ADB device");
-                    std::thread::sleep(Duration::from_secs(3));
-                    continue;
-                };
-                log::trace!("Trying to connect to ({vid}, {pid})");
-                break ADBUSBDevice::new_with_custom_private_key(vid, pid, private_key_path);
-            }
-        })
-        .join()
-        .map_err(|_e| RustADBError::ThreadJoinError("device scanning".into()))?
+        Self::new_with_custom_private_key(vendor_id, product_id, get_default_adb_key_path()?)
     }
 
     /// Instantiate a new [ADBUSBDevice] using a custom private key path
@@ -164,6 +132,23 @@ impl ADBUSBDevice {
         s.connect()?;
 
         Ok(s)
+    }
+
+    /// autodetect connected ADB devices and establish a connection with the first device found
+    pub fn autodetect() -> Result<Self> {
+        Self::autodetect_with_custom_private_key(get_default_adb_key_path()?)
+    }
+
+    /// autodetect connected ADB devices and establish a connection with the first device found using a custom private key path
+    pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
+        match search_adb_devices()? {
+            Some((vendor_id, product_id)) => {
+                ADBUSBDevice::new_with_custom_private_key(vendor_id, product_id, private_key_path)
+            }
+            _ => Err(RustADBError::DeviceNotFound(
+                "cannot find USB devices matching the signature of an ADB device".into(),
+            )),
+        }
     }
 
     /// Send initial connect
