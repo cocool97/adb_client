@@ -86,5 +86,5 @@ pub enum RustADBError {
     RSAError(#[from] rsa::errors::Error),
     /// Cannot convert given data from slice
     #[error(transparent)]
-    TryFromSliceError(#[from] std::array::TryFromSliceError)
+    TryFromSliceError(#[from] std::array::TryFromSliceError),
 }
