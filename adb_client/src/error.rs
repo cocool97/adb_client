@@ -87,4 +87,8 @@ pub enum RustADBError {
     /// Cannot convert given data from slice
     #[error(transparent)]
     TryFromSliceError(#[from] std::array::TryFromSliceError),
+
+    /// Join errors when joining spwaned threads via their handles
+    #[error("Failed to join handle to thread, context: {0}")]
+    ThreadJoinError(String),
 }

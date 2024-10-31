@@ -1,6 +1,5 @@
 use byteorder::ReadBytesExt;
 use rand::Rng;
-use retry::{delay::Fixed, retry};
 use rusb::Device;
 use rusb::DeviceDescriptor;
 use rusb::UsbContext;
@@ -42,19 +41,29 @@ fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<AD
         })
 }
 /// Search for adb devices with known interface class and subclass values
-fn search_adb_devices() -> Option<(u16, u16)> {
-    for device in rusb::devices().unwrap().iter() {
+fn search_adb_devices() -> Result<Option<(u16, u16)>> {
+    for device in rusb::devices()?.iter() {
         let Ok(des) = device.device_descriptor() else {
             continue;
         };
         if is_adb_device(&device, &des) {
-            return Some((des.vendor_id(), des.product_id()));
+            return Ok(Some((des.vendor_id(), des.product_id())));
         }
     }
-    None
+    Ok(None)
 }
 
 fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> bool {
+    const ADB_CLASS: u8 = 0xff;
+
+    const ADB_SUBCLASS: u8 = 0x42;
+    const ADB_PROTOCOL: u8 = 0x1;
+
+    // Some devices require choosing the file transfer mode
+    // for usb debugging to take effect.
+    const BULK_CLASS: u8 = 0xdc;
+    const BULK_ADB_SUBCLASS: u8 = 2;
+
     for n in 0..des.num_configurations() {
         let Ok(config_des) = device.config_descriptor(n) else {
             continue;
@@ -64,7 +73,9 @@ fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> b
                 let proto = interface_des.protocol_code();
                 let class = interface_des.class_code();
                 let subcl = interface_des.sub_class_code();
-                if proto == 1 && ((class == 0xff && subcl == 0x42) || (class == 0xdc && subcl == 2))
+                if proto == ADB_PROTOCOL
+                    && ((class == ADB_CLASS && subcl == ADB_SUBCLASS)
+                        || (class == BULK_CLASS && subcl == BULK_ADB_SUBCLASS))
                 {
                     return true;
                 }
@@ -101,35 +112,37 @@ impl ADBUSBDevice {
     /// autodetect connected ADB devices and establish a connection with the
     /// first device found
     pub fn autodetect() -> Result<Self> {
-        retry(Fixed::from_millis(3000).take(5), || {
-            let Some((vid, pid)) = search_adb_devices() else {
-                return Err(RustADBError::ADBRequestFailed(format!(
-                    "no USB devices found that match the signature of an ADB device"
-                )));
-            };
-            log::trace!("Trying to connect to ({vid}, {pid})");
-            ADBUSBDevice::new(vid, pid)
+        std::thread::spawn(move || -> Result<Self> {
+            loop {
+                let Some((vid, pid)) = search_adb_devices()? else {
+                    log::warn!("no USB devices found that match the signature of an ADB device");
+                    std::thread::sleep(Duration::from_secs(3));
+                    continue;
+                };
+                log::trace!("Trying to connect to ({vid}, {pid})");
+                break ADBUSBDevice::new(vid, pid);
+            }
         })
-        .map_err(|e| {
-            RustADBError::ADBRequestFailed(format!("the device took too long to respond: {e}"))
-        })
+        .join()
+        .map_err(|_e| RustADBError::ThreadJoinError("device scanning".into()))?
     }
 
     /// autodetect connected ADB devices and establish a connection with the
     /// first device found using a custom private key path
     pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
-        retry(Fixed::from_millis(3000).take(5), || {
-            let Some((vid, pid)) = search_adb_devices() else {
-                return Err(RustADBError::ADBRequestFailed(format!(
-                    "no USB devices found that match the signature of an ADB device"
-                )));
-            };
-            log::trace!("Trying to connect to ({vid}, {pid})");
-            ADBUSBDevice::new_with_custom_private_key(vid, pid, private_key_path.clone())
+        std::thread::spawn(move || -> Result<Self> {
+            loop {
+                let Some((vid, pid)) = search_adb_devices()? else {
+                    log::warn!("no USB devices found that match the signature of an ADB device");
+                    std::thread::sleep(Duration::from_secs(3));
+                    continue;
+                };
+                log::trace!("Trying to connect to ({vid}, {pid})");
+                break ADBUSBDevice::new_with_custom_private_key(vid, pid, private_key_path);
+            }
         })
-        .map_err(|e| {
-            RustADBError::ADBRequestFailed(format!("the device took too long to respond: {e}"))
-        })
+        .join()
+        .map_err(|_e| RustADBError::ThreadJoinError("device scanning".into()))?
     }
 
     /// Instantiate a new [ADBUSBDevice] using a custom private key path
