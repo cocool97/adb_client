@@ -1,0 +1,43 @@
+name: Rust - Release creation
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Set up Rust"
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: "Install dependencies"
+        run: |
+          sudo apt update
+          sudo apt install -y rpm
+          cargo install cargo-deb
+          cargo install cargo-generate-rpm
+
+      - name: "build-release"
+        run: cargo build --release
+
+      - name: "Build DEB package"
+        run: cargo deb -p adb_cli
+
+      - name: "Build RPM package"
+        run: cargo generate-rpm -p adb_cli
+
+      - name: "Publish deb package"
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/debian/*.deb
+            target/generate-rpm/*.rpm
+            target/release/adb_cli

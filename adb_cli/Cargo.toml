@@ -1,4 +1,5 @@
 [package]
+authors.workspace = true
 description = "Rust ADB (Android Debug Bridge) CLI"
 edition.workspace = true
 keywords.workspace = true
@@ -17,3 +18,22 @@ log = { version = "0.4.22" }
 
 [target.'cfg(unix)'.dependencies]
 termios = { version = "0.3.3" }
+
+#####################################
+# Debian package build instructions #
+#####################################
+[package.metadata.deb]
+assets = [
+    { source = "target/release/adb_cli", dest = "usr/bin/", mode = "755" },
+]
+priority = "optional"
+section = "utility"
+
+##################################
+# RPM package build instructions #
+##################################
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/adb_cli", dest = "/usr/bin/adb_cli", mode = "755" },
+]
+license = "MIT"

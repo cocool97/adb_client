@@ -3,11 +3,13 @@ members = ["adb_cli", "adb_client"]
 resolver = "2"
 
 [workspace.package]
+authors = ["Corentin LIAUD"]
 edition = "2021"
+homepage = "https://github.com/cocool97/adb_client"
 keywords = ["adb", "android", "tcp", "usb"]
 license-file = "LICENSE"
 repository = "https://github.com/cocool97/adb_client"
-version = "2.0.1"
+version = "2.0.2"
 
 # To build locally when working on a new release
 [patch.crates-io]
@@ -19,14 +21,3 @@ debug-assertions = false
 lto = "thin"
 opt-level = 'z'
 strip = true
-
-[workspace.metadata.deb]
-extended-description = """\
-Interact with ADB server with or without using ADB server.
-"""
-depends = "$auto"
-section = "utility"
-priority = "optional"
-assets = [
-    { source = "target/release/adb_cli", dest = "usr/bin/", mode = "755"},
-]
