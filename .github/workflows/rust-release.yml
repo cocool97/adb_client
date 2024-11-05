@@ -34,10 +34,17 @@ jobs:
       - name: "Build RPM package"
         run: cargo generate-rpm -p adb_cli
 
-      - name: "Publish deb package"
+      - name: "Publish GitHub artefacts"
         uses: softprops/action-gh-release@v2
         with:
           files: |
             target/debian/*.deb
             target/generate-rpm/*.rpm
             target/release/adb_cli
+
+      - name: "Publish crates"
+        run: |
+          cargo publish -p adb_client --token ${CRATES_IO_TOKEN}
+          cargo publish -p adb_cli --token ${CRATES_IO_TOKEN}
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
