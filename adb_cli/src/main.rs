@@ -65,6 +65,9 @@ fn main() -> Result<()> {
                         device.shell_command(commands, std::io::stdout())?;
                     }
                 }
+                LocalCommand::Run { intent } => {
+                    device.shell_command(["am", "start", &intent], std::io::stdout())?;
+                }
                 LocalCommand::HostFeatures => {
                     let features = device
                         .host_features()?
@@ -214,6 +217,9 @@ fn main() -> Result<()> {
                     let mut input = File::open(Path::new(&filename))?;
                     device.push(&mut input, &path)?;
                     log::info!("Uploaded {filename} to {path}");
+                }
+                UsbCommands::Run { intent } => {
+                    device.shell_command(["am", "start", &intent], std::io::stdout())?;
                 }
             }
         }
