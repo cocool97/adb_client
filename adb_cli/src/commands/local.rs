@@ -16,6 +16,11 @@ pub enum LocalCommand {
     Stat { path: String },
     /// Spawn an interactive shell or run a list of commands on the device
     Shell { commands: Vec<String> },
+    /// Run an activity on device specified by the intent
+    Run {
+        /// The activity intent to be invoked, it is most commonly packagename/packagename.MainActivity
+        intent: String,
+    },
     /// Reboot the device
     Reboot {
         #[clap(subcommand)]

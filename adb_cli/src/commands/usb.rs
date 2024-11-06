@@ -34,6 +34,11 @@ pub enum UsbCommands {
     Push { filename: String, path: String },
     /// Stat a file on device
     Stat { path: String },
+    /// Run an activity on device specified by the intent
+    Run {
+        /// The activity intent to be invoked, it is most commonly packagename/packagename.MainActivity
+        intent: String,
+    },
     /// Reboot the device
     Reboot {
         #[clap(subcommand)]
