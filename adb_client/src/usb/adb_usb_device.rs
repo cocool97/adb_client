@@ -57,7 +57,7 @@ fn search_adb_devices() -> Result<Option<(u16, u16)>> {
         }
     }
 
-    match (found_devices.get(0), found_devices.get(1)) {
+    match (found_devices.first(), found_devices.get(1)) {
         (None, _) => Ok(None),
         (Some(identifiers), None) => Ok(Some(*identifiers)),
         (Some((vid1, pid1)), Some((vid2, pid2))) => Err(RustADBError::DeviceNotFound(format!(
