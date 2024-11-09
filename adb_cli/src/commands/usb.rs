@@ -37,8 +37,10 @@ pub enum UsbCommands {
     /// Run an activity on device specified by the intent
     Run {
         /// The package whose activity is to be invoked
+        #[clap(short = 'p', long = "package")]
         package: String,
         /// The activity to be invoked itself, Usually it is MainActivity
+        #[clap(short = 'a', long = "activity")]
         activity: String,
     },
     /// Reboot the device

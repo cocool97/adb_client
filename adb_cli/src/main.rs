@@ -66,7 +66,8 @@ fn main() -> Result<()> {
                     }
                 }
                 LocalCommand::Run { package, activity } => {
-                    device.run_activity(&package, &activity)?;
+                    let output = device.run_activity(&package, &activity)?;
+                    std::io::stdout().write_all(&output)?;
                 }
                 LocalCommand::HostFeatures => {
                     let features = device
@@ -219,7 +220,8 @@ fn main() -> Result<()> {
                     log::info!("Uploaded {filename} to {path}");
                 }
                 UsbCommands::Run { package, activity } => {
-                    device.run_activity(&package, &activity)?;
+                    let output = device.run_activity(&package, &activity)?;
+                    std::io::stdout().write_all(&output)?;
                 }
             }
         }

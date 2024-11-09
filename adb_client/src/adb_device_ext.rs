@@ -29,11 +29,14 @@ pub trait ADBDeviceExt {
     /// Reboots the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
 
-    /// Run an `activity` from a given `package` on device
-    fn run_activity(&mut self, package: &str, activity: &str) -> Result<()> {
+    /// Run `activity` from `package` on device. Return the command output.
+    fn run_activity(&mut self, package: &str, activity: &str) -> Result<Vec<u8>> {
+        let mut output = Vec::new();
         self.shell_command(
             ["am", "start", &format!("{package}/{package}.{activity}")],
-            std::io::stdout(),
-        )
+            &mut output,
+        )?;
+
+        Ok(output)
     }
 }
