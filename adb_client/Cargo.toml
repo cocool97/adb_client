@@ -3,7 +3,7 @@ authors.workspace = true
 description = "Rust ADB (Android Debug Bridge) client library"
 edition.workspace = true
 keywords.workspace = true
-license-file.workspace = true
+license.workspace = true
 name = "adb_client"
 readme = "README.md"
 repository.workspace = true
@@ -25,4 +25,4 @@ rsa = { version = "0.3.0" }
 rusb = { version = "0.9.4", features = ["vendored"] }
 serde = { version = "1.0.210", features = ["derive"] }
 serde_repr = "0.1.19"
-thiserror = { version = "1.0.64" }
+thiserror = { version = "2.0.1" }
