@@ -87,4 +87,12 @@ pub enum RustADBError {
     /// Cannot convert given data from slice
     #[error(transparent)]
     TryFromSliceError(#[from] std::array::TryFromSliceError),
+    /// An error occurred while getting mdns devices
+    #[cfg(feature = "mdns")]
+    #[error(transparent)]
+    MDNSError(#[from] mdns_sd::Error),
+    /// An error occurred while sending data to channel
+    #[cfg(feature = "mdns")]
+    #[error(transparent)]
+    SendError(#[from] std::sync::mpsc::SendError<crate::MDNSDevice>),
 }

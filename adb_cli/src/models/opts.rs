@@ -27,4 +27,6 @@ pub enum Command {
     Emu(EmuCommand),
     /// Device commands via USB, no server needed
     Usb(UsbCommand),
+    /// Discover devices over MDNS
+    Mdns,
 }
