@@ -143,9 +143,7 @@ fn main() -> Result<()> {
                     log::info!("Disconnected {address}");
                 }
                 HostCommand::ServerStatus => {
-                    for (status_k, status_v) in adb_server.server_status()? {
-                        log::info!("{}: {}", status_k, status_v);
-                    }
+                    log::info!("{}", adb_server.server_status()?);
                 }
             }
         }

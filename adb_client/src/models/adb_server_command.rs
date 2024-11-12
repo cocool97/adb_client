@@ -73,7 +73,7 @@ impl Display for AdbServerCommand {
             AdbServerCommand::ServerStatus => {
                 write!(f, "host:server-status")
             }
-            // TODO: reconnect host:reconnect-offline/tcpip tcpip:%d/usb usb:/server-status
+            // TODO: reconnect host:reconnect-offline/tcpip tcpip:%d/usb usb:
         }
     }
 }
