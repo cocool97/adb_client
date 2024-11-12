@@ -22,8 +22,8 @@ impl Display for UsbBackend {
 impl From<i32> for UsbBackend {
     fn from(value: i32) -> UsbBackend {
         match value {
-            1 => UsbBackend::LIBUSB,
-            2 => UsbBackend::NATIVE,
+            1 => UsbBackend::NATIVE,
+            2 => UsbBackend::LIBUSB,
             _ => UsbBackend::UNKNOWN,
         }
     }
@@ -89,11 +89,11 @@ impl Display for ServerStatus {
         if self.mdns_backend_forced {
             write!(f, "mdns_backend_forced: {}\n", self.mdns_backend_forced)?;
         }
-        write!(f, "version: {}\n", self.version)?;
-        write!(f, "build: {}\n", self.build)?;
-        write!(f, "executable_absolute_path: {}\n", self.executable_absolute_path)?;
-        write!(f, "log_absolute_path: {}\n", self.log_absolute_path)?;
-        write!(f, "os: {}\n", self.os)
+        write!(f, "version: \"{}\"\n", self.version)?;
+        write!(f, "build: \"{}\"\n", self.build)?;
+        write!(f, "executable_absolute_path: \"{}\"\n", self.executable_absolute_path)?;
+        write!(f, "log_absolute_path: \"{}\"\n", self.log_absolute_path)?;
+        write!(f, "os: \"{}\"\n", self.os)
     }
 }
 
