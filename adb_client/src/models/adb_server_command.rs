@@ -24,6 +24,9 @@ pub(crate) enum AdbServerCommand {
     Reboot(RebootType),
     Forward(String, String, String),
     Reverse(String, String),
+    MDNSCheck,
+    MDNSServices,
+    ServerStatus,
 }
 
 impl Display for AdbServerCommand {
@@ -61,6 +64,16 @@ impl Display for AdbServerCommand {
             AdbServerCommand::Reverse(remote, local) => {
                 write!(f, "reverse:forward:{remote};{local}")
             }
+            AdbServerCommand::MDNSCheck => {
+                write!(f, "host:mdns:check")
+            }
+            AdbServerCommand::MDNSServices => {
+                write!(f, "host:mdns:services")
+            }
+            AdbServerCommand::ServerStatus => {
+                write!(f, "host:server-status")
+            }
+            // TODO: reconnect host:reconnect-offline/tcpip tcpip:%d/usb usb:/server-status
         }
     }
 }

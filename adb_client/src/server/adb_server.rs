@@ -2,6 +2,7 @@ use crate::ADBTransport;
 use crate::Result;
 use crate::RustADBError;
 use crate::TCPServerTransport;
+use std::collections::HashMap;
 use std::net::SocketAddrV4;
 use std::process::Command;
 
@@ -35,6 +36,10 @@ impl ADBServer {
 
     /// Connect to underlying transport
     pub(crate) fn connect(&mut self) -> Result<&mut TCPServerTransport> {
+        self.connect_with_envs(None)
+    }
+
+    pub(crate) fn connect_with_envs(&mut self, envs: Option<HashMap<String, String>>) -> Result<&mut TCPServerTransport> {
         let mut is_local_ip = false;
         let mut transport = if let Some(addr) = &self.socket_addr {
             let ip = addr.ip();
@@ -49,7 +54,14 @@ impl ADBServer {
 
         if is_local_ip {
             // ADB Server is local, we start it if not already running
-            let child = Command::new("adb").arg("start-server").spawn();
+            let mut command = Command::new("adb");
+            command.arg("start-server");
+            if let Some(envs) = envs {
+                for (env_k, env_v) in envs {
+                    command.env(env_k, env_v);
+                }
+            }
+            let child = command.spawn();
             match child {
                 Ok(mut child) => {
                     if let Err(e) = child.wait() {

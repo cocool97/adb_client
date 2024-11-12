@@ -142,6 +142,11 @@ fn main() -> Result<()> {
                     adb_server.disconnect_device(address)?;
                     log::info!("Disconnected {address}");
                 }
+                HostCommand::ServerStatus => {
+                    for (status_k, status_v) in adb_server.server_status()? {
+                        log::info!("{}: {}", status_k, status_v);
+                    }
+                }
             }
         }
         Command::Emu(emu) => {

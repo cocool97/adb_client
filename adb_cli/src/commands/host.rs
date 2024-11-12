@@ -21,4 +21,6 @@ pub enum HostCommand {
     Connect { address: SocketAddrV4 },
     /// Disconnect device over WI-FI
     Disconnect { address: SocketAddrV4 },
+    // Server status
+    ServerStatus,
 }
