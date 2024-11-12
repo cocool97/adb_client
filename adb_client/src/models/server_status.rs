@@ -91,7 +91,11 @@ impl Display for ServerStatus {
         }
         write!(f, "version: \"{}\"\n", self.version)?;
         write!(f, "build: \"{}\"\n", self.build)?;
-        write!(f, "executable_absolute_path: \"{}\"\n", self.executable_absolute_path)?;
+        write!(
+            f,
+            "executable_absolute_path: \"{}\"\n",
+            self.executable_absolute_path
+        )?;
         write!(f, "log_absolute_path: \"{}\"\n", self.log_absolute_path)?;
         write!(f, "os: \"{}\"\n", self.os)
     }
@@ -156,55 +160,64 @@ impl TryFrom<Vec<u8>> for ServerStatus {
             let (field_number, wire_type) = parse_tag(&mut cursor);
             match field_number {
                 1 => {
-                    if wire_type == 0 { // varint
+                    if wire_type == 0 {
+                        // varint
                         let value = parse_varint(&mut cursor);
                         server_status.usb_backend = UsbBackend::from(value);
                     }
                 }
                 2 => {
-                    if wire_type == 0 { // varint
+                    if wire_type == 0 {
+                        // varint
                         let value = parse_bool(&mut cursor);
                         server_status.usb_backend_forced = value;
                     }
                 }
                 3 => {
-                    if wire_type == 0 { // varint
+                    if wire_type == 0 {
+                        // varint
                         let value = parse_varint(&mut cursor);
                         server_status.mdns_backend = MDNSBackend::from(value);
                     }
                 }
                 4 => {
-                    if wire_type == 0 { // varint
+                    if wire_type == 0 {
+                        // varint
                         let value = parse_bool(&mut cursor);
                         server_status.mdns_backend_forced = value;
                     }
                 }
                 5 => {
-                    if wire_type == 2 { // length-delimited
+                    if wire_type == 2 {
+                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.version = value;
                     }
                 }
                 6 => {
-                    if wire_type == 2 { // length-delimited
+                    if wire_type == 2 {
+                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.build = value;
                     }
                 }
                 7 => {
-                    if wire_type == 2 { // length-delimited
+                    if wire_type == 2 {
+                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.executable_absolute_path = value;
                     }
                 }
                 8 => {
-                    if wire_type == 2 { // length-delimited
+                    if wire_type == 2 {
+                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.log_absolute_path = value;
                     }
                 }
                 9 => {
-                    if wire_type == 2 { // length-delimited
+                    if wire_type == 2 {
+                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.os = value;
                     }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     models::{AdbServerCommand, MDNSBackend, MDNSServices},
-    ADBServer, Result
+    ADBServer, Result,
 };
 
 impl ADBServer {
@@ -18,12 +18,12 @@ impl ADBServer {
             Err(e) => Err(e.into()),
         }
     }
-    
+
     /// List all discovered services
     pub fn mdns_services(&mut self) -> Result<Vec<MDNSServices>> {
         let services = self
-        .connect()?
-        .proxy_connection(AdbServerCommand::MDNSServices, true)?;
+            .connect()?
+            .proxy_connection(AdbServerCommand::MDNSServices, true)?;
 
         let mut vec_services: Vec<MDNSServices> = vec![];
         for service in services.split(|x| x.eq(&b'\n')) {
@@ -36,13 +36,16 @@ impl ADBServer {
 
         Ok(vec_services)
     }
-    
+
     /// Check if openscreen mdns service is used, otherwise restart adb server with envs
     pub fn mdns_force_openscreen_backend(&mut self) -> Result<()> {
         let status = self.server_status()?;
         if status.mdns_backend != MDNSBackend::OPENSCREEN {
             self.kill()?;
-            self.connect_with_envs(Some(HashMap::from([("ADB_MDNS_OPENSCREEN".to_string(), "1".to_string())])))?;
+            self.connect_with_envs(Some(HashMap::from([(
+                "ADB_MDNS_OPENSCREEN".to_string(),
+                "1".to_string(),
+            )])))?;
         }
 
         Ok(())

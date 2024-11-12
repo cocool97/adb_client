@@ -39,7 +39,10 @@ impl ADBServer {
         self.connect_with_envs(None)
     }
 
-    pub(crate) fn connect_with_envs(&mut self, envs: Option<HashMap<String, String>>) -> Result<&mut TCPServerTransport> {
+    pub(crate) fn connect_with_envs(
+        &mut self,
+        envs: Option<HashMap<String, String>>,
+    ) -> Result<&mut TCPServerTransport> {
         let mut is_local_ip = false;
         let mut transport = if let Some(addr) = &self.socket_addr {
             let ip = addr.ip();
