@@ -6,3 +6,4 @@ mod mdns;
 mod pair;
 mod server_status;
 mod version;
+mod reconnect;

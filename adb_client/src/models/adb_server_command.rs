@@ -27,6 +27,7 @@ pub(crate) enum AdbServerCommand {
     MDNSCheck,
     MDNSServices,
     ServerStatus,
+    ReconnectOffline,
 }
 
 impl Display for AdbServerCommand {
@@ -73,7 +74,10 @@ impl Display for AdbServerCommand {
             AdbServerCommand::ServerStatus => {
                 write!(f, "host:server-status")
             }
-            // TODO: reconnect host:reconnect-offline/tcpip tcpip:%d/usb usb:
+            AdbServerCommand::ReconnectOffline => {
+                write!(f, "host:reconnect-offline")
+            }
+            // TODO: tcpip tcpip:%d/usb usb:
         }
     }
 }
