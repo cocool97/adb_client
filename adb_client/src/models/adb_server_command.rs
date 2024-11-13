@@ -22,9 +22,10 @@ pub(crate) enum AdbServerCommand {
     FrameBuffer,
     Sync,
     Reboot(RebootType),
-    Forward(String, String, String),
+    Forward(String, String),
     ForwardRemoveAll,
     Reverse(String, String),
+    ReverseRemoveAll,
     MDNSCheck,
     MDNSServices,
     ServerStatus,
@@ -63,13 +64,14 @@ impl Display for AdbServerCommand {
                 write!(f, "host:pair:{code}:{addr}")
             }
             AdbServerCommand::FrameBuffer => write!(f, "framebuffer:"),
-            AdbServerCommand::ForwardRemoveAll => write!(f, "host:killforward-all"),
-            AdbServerCommand::Forward(serial, remote, local) => {
-                write!(f, "host-serial:{serial}:forward:{local};{remote}")
+            AdbServerCommand::Forward(remote, local) => {
+                write!(f, "host:forward:{local};{remote}")
             }
+            AdbServerCommand::ForwardRemoveAll => write!(f, "host:killforward-all"),
             AdbServerCommand::Reverse(remote, local) => {
                 write!(f, "reverse:forward:{remote};{local}")
             }
+            AdbServerCommand::ReverseRemoveAll => write!(f, "reverse:killforward-all"),
             AdbServerCommand::MDNSCheck => write!(f, "host:mdns:check"),
             AdbServerCommand::MDNSServices => write!(f, "host:mdns:services"),
             AdbServerCommand::ServerStatus => write!(f, "host:server-status"),
