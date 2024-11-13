@@ -31,7 +31,6 @@ impl TryFrom<Vec<u8>> for MDNSServices {
     type Error = RustADBError;
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        // Optional final '\n' is used to match TrackDevices inputs
         let groups = MDNS_SERVICES_REGEX
             .captures(&value)
             .ok_or(RustADBError::RegexParsingError)?;

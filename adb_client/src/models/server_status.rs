@@ -101,19 +101,26 @@ impl Display for ServerStatus {
     }
 }
 
-fn parse_tag(cursor: &mut &[u8]) -> (u8, u8) {
+fn parse_tag(cursor: &mut &[u8]) -> Result<(u8, u8), RustADBError>{
+    if cursor.is_empty() {
+        return Err(RustADBError::ConversionError);
+    }
     let tag = cursor[0];
     *cursor = &cursor[1..];
     let field_number = (tag >> 3) & 0x1F;
     let wire_type = tag & 0x07;
-    (field_number, wire_type)
+    Ok((field_number, wire_type))
 }
 
-fn parse_varint(cursor: &mut &[u8]) -> i32 {
+fn parse_varint(cursor: &mut &[u8]) -> Result<i32, RustADBError> {
     let mut value = 0;
     let mut shift = 0;
 
     loop {
+        if cursor.is_empty() {
+            return Err(RustADBError::ConversionError);
+        }
+
         let byte = cursor[0];
         *cursor = &cursor[1..];
 
@@ -126,15 +133,15 @@ fn parse_varint(cursor: &mut &[u8]) -> i32 {
         shift += 7;
     }
 
-    value
+    Ok(value)
 }
 
-fn parse_bool(cursor: &mut &[u8]) -> bool {
-    parse_varint(cursor) != 0
+fn parse_bool(cursor: &mut &[u8]) -> Result<bool, RustADBError> {
+    Ok(parse_varint(cursor)? != 0)
 }
 
 fn parse_string(cursor: &mut &[u8]) -> Result<String, RustADBError> {
-    let length = parse_varint(cursor) as usize;
+    let length = parse_varint(cursor)? as usize;
     let str_bytes = &cursor[..length];
     *cursor = &cursor[length..];
     Ok(String::from_utf8(str_bytes.to_vec())?)
@@ -157,67 +164,58 @@ impl TryFrom<Vec<u8>> for ServerStatus {
         };
         let mut cursor = &value[..];
         while !cursor.is_empty() {
-            let (field_number, wire_type) = parse_tag(&mut cursor);
+            let (field_number, wire_type) = parse_tag(&mut cursor)?;
             match field_number {
                 1 => {
                     if wire_type == 0 {
-                        // varint
-                        let value = parse_varint(&mut cursor);
+                        let value = parse_varint(&mut cursor)?;
                         server_status.usb_backend = UsbBackend::from(value);
                     }
                 }
                 2 => {
                     if wire_type == 0 {
-                        // varint
-                        let value = parse_bool(&mut cursor);
+                        let value = parse_bool(&mut cursor)?;
                         server_status.usb_backend_forced = value;
                     }
                 }
                 3 => {
                     if wire_type == 0 {
-                        // varint
-                        let value = parse_varint(&mut cursor);
+                        let value = parse_varint(&mut cursor)?;
                         server_status.mdns_backend = MDNSBackend::from(value);
                     }
                 }
                 4 => {
                     if wire_type == 0 {
-                        // varint
-                        let value = parse_bool(&mut cursor);
+                        let value = parse_bool(&mut cursor)?;
                         server_status.mdns_backend_forced = value;
                     }
                 }
                 5 => {
                     if wire_type == 2 {
-                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.version = value;
                     }
                 }
                 6 => {
                     if wire_type == 2 {
-                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.build = value;
                     }
                 }
                 7 => {
                     if wire_type == 2 {
-                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.executable_absolute_path = value;
                     }
                 }
                 8 => {
                     if wire_type == 2 {
-                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.log_absolute_path = value;
                     }
                 }
                 9 => {
                     if wire_type == 2 {
-                        // length-delimited
                         let value = parse_string(&mut cursor)?;
                         server_status.os = value;
                     }
