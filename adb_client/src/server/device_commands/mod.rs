@@ -9,3 +9,5 @@ mod reverse;
 mod send;
 mod stat;
 mod transport;
+mod tcpip;
+mod usb;
