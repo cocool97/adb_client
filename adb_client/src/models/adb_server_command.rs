@@ -78,6 +78,7 @@ impl Display for AdbServerCommand {
                 write!(f, "host:reconnect-offline")
             }
             // TODO: tcpip tcpip:%d/usb usb:
+            // killforward-all
         }
     }
 }

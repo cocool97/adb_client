@@ -15,6 +15,22 @@ pub enum DeviceState {
     Authorizing,
     /// The device is unauthorized.
     Unauthorized,
+    /// Haven't received a response from the device yet.
+    Connecting,
+    /// Insufficient permissions to communicate with the device.
+    NoPerm,
+    /// USB device detached from the adb server (known but not opened/claimed).
+    Detached,
+    /// Device running fastboot OS (fastboot) or userspace fastboot (fastbootd).
+    Bootloader,
+    /// What a device sees from its end of a Transport (adb host).
+    Host,
+    /// Device with bootloader loaded but no ROM OS loaded (adbd).
+    Recovery,
+    /// Device running Android OS Sideload mode (minadbd sideload mode).
+    Sideload,
+    /// Device running Android OS Rescue mode (minadbd rescue mode).
+    Rescue,
 }
 
 impl Display for DeviceState {
@@ -25,6 +41,14 @@ impl Display for DeviceState {
             DeviceState::NoDevice => write!(f, "no device"),
             DeviceState::Authorizing => write!(f, "authorizing"),
             DeviceState::Unauthorized => write!(f, "unauthorized"),
+            DeviceState::Connecting => write!(f, "connecting"),
+            DeviceState::NoPerm => write!(f, "noperm"),
+            DeviceState::Detached => write!(f, "detached"),
+            DeviceState::Bootloader => write!(f, "bootloader"),
+            DeviceState::Host => write!(f, "host"),
+            DeviceState::Recovery => write!(f, "recovery"),
+            DeviceState::Sideload => write!(f, "sideload"),
+            DeviceState::Rescue => write!(f, "rescue"),
         }
     }
 }
@@ -40,6 +64,14 @@ impl FromStr for DeviceState {
             "no device" => Ok(Self::NoDevice),
             "authorizing" => Ok(Self::Authorizing),
             "unauthorized" => Ok(Self::Unauthorized),
+            "connecting" => Ok(Self::Connecting),
+            "noperm" => Ok(Self::NoPerm),
+            "detached" => Ok(Self::Detached),
+            "bootloader" => Ok(Self::Bootloader),
+            "host" => Ok(Self::Host),
+            "recovery" => Ok(Self::Recovery),
+            "sideload" => Ok(Self::Sideload),
+            "rescue" => Ok(Self::Rescue),
             _ => Err(RustADBError::UnknownDeviceState(lowercased)),
         }
     }
