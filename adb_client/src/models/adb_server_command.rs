@@ -16,6 +16,10 @@ pub(crate) enum AdbServerCommand {
     Pair(SocketAddrV4, String),
     TransportAny,
     TransportSerial(String),
+    MDNSCheck,
+    MDNSServices,
+    ServerStatus,
+    ReconnectOffline,
     // Local commands
     ShellCommand(String),
     Shell,
@@ -26,12 +30,8 @@ pub(crate) enum AdbServerCommand {
     ForwardRemoveAll,
     Reverse(String, String),
     ReverseRemoveAll,
-    MDNSCheck,
-    MDNSServices,
-    ServerStatus,
     Reconnect,
-    ReconnectOffline,
-    TcpIP(u16),
+    TcpIp(u16),
     USB,
 }
 
@@ -77,7 +77,7 @@ impl Display for AdbServerCommand {
             AdbServerCommand::ServerStatus => write!(f, "host:server-status"),
             AdbServerCommand::Reconnect => write!(f, "reconnect"),
             AdbServerCommand::ReconnectOffline => write!(f, "host:reconnect-offline"),
-            AdbServerCommand::TcpIP(port) => {
+            AdbServerCommand::TcpIp(port) => {
                 write!(f, "tcpip:{port}")
             }
             AdbServerCommand::USB => write!(f, "usb:"),

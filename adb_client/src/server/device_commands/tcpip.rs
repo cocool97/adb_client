@@ -11,7 +11,7 @@ impl ADBServerDevice {
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
         self.get_transport_mut()
-            .proxy_connection(AdbServerCommand::TcpIP(port), false)
+            .proxy_connection(AdbServerCommand::TcpIp(port), false)
             .map(|_| ())
     }
 }
