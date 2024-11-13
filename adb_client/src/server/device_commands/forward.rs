@@ -11,4 +11,15 @@ impl ADBServerDevice {
             .proxy_connection(AdbServerCommand::Forward(serial, remote, local), false)
             .map(|_| ())
     }
+
+    /// remove all forward rules
+    pub fn forward_remove_all(&mut self) -> Result<()> {
+        let serial = self.identifier.clone();
+        self.connect()?
+            .send_adb_request(AdbServerCommand::TransportSerial(serial.clone()))?;
+
+        self.get_transport_mut()
+            .proxy_connection(AdbServerCommand::ForwardRemoveAll, false)
+            .map(|_| ())
+    }
 }

@@ -11,3 +11,4 @@ mod stat;
 mod transport;
 mod tcpip;
 mod usb;
+mod reconnect;

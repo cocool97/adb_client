@@ -23,10 +23,12 @@ pub(crate) enum AdbServerCommand {
     Sync,
     Reboot(RebootType),
     Forward(String, String, String),
+    ForwardRemoveAll,
     Reverse(String, String),
     MDNSCheck,
     MDNSServices,
     ServerStatus,
+    Reconnect,
     ReconnectOffline,
     TcpIP(u16),
     USB,
@@ -61,30 +63,22 @@ impl Display for AdbServerCommand {
                 write!(f, "host:pair:{code}:{addr}")
             }
             AdbServerCommand::FrameBuffer => write!(f, "framebuffer:"),
+            AdbServerCommand::ForwardRemoveAll => write!(f, "host:killforward-all"),
             AdbServerCommand::Forward(serial, remote, local) => {
                 write!(f, "host-serial:{serial}:forward:{local};{remote}")
             }
             AdbServerCommand::Reverse(remote, local) => {
                 write!(f, "reverse:forward:{remote};{local}")
             }
-            AdbServerCommand::MDNSCheck => {
-                write!(f, "host:mdns:check")
-            }
-            AdbServerCommand::MDNSServices => {
-                write!(f, "host:mdns:services")
-            }
-            AdbServerCommand::ServerStatus => {
-                write!(f, "host:server-status")
-            }
-            AdbServerCommand::ReconnectOffline => {
-                write!(f, "host:reconnect-offline")
-            }
+            AdbServerCommand::MDNSCheck => write!(f, "host:mdns:check"),
+            AdbServerCommand::MDNSServices => write!(f, "host:mdns:services"),
+            AdbServerCommand::ServerStatus => write!(f, "host:server-status"),
+            AdbServerCommand::Reconnect => write!(f, "reconnect"),
+            AdbServerCommand::ReconnectOffline => write!(f, "host:reconnect-offline"),
             AdbServerCommand::TcpIP(port) => {
                 write!(f, "tcpip:{port}")
             }
-            AdbServerCommand::USB => {
-                write!(f, "usb:")
-            }
+            AdbServerCommand::USB => write!(f, "usb:"),
         }
     }
 }
