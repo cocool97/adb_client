@@ -1,4 +1,5 @@
 use std::io::{Read, Write};
+use std::path::Path;
 
 use crate::models::AdbStatResponse;
 use crate::{RebootType, Result};
@@ -39,4 +40,7 @@ pub trait ADBDeviceExt {
 
         Ok(output)
     }
+
+    /// Install an APK pointed to by `apk_path` on device.
+    fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()>;
 }

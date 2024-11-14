@@ -48,4 +48,9 @@ pub enum UsbCommands {
         #[clap(subcommand)]
         reboot_type: RebootTypeCommand,
     },
+    /// Install an APK on device
+    Install {
+        /// Path to APK file. Extension must be ".apk"
+        path: PathBuf,
+    },
 }

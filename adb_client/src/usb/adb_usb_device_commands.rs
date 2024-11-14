@@ -1,12 +1,16 @@
 use crate::{
     models::AdbStatResponse,
     usb::{ADBUsbMessage, USBCommand, USBSubcommand},
+    utils::check_extension_is_apk,
     ADBDeviceExt, ADBUSBDevice, RebootType, Result, RustADBError,
 };
 use rand::Rng;
-use std::io::{Read, Write};
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 
-use super::USBShellWriter;
+use super::{USBShellWriter, USBWriter};
 
 impl ADBDeviceExt for ADBUSBDevice {
     fn shell_command<S: ToString, W: Write>(
@@ -193,5 +197,49 @@ impl ADBDeviceExt for ADBUSBDevice {
         }
 
         Ok(())
+    }
+
+    fn install<P: AsRef<std::path::Path>>(&mut self, apk_path: P) -> Result<()> {
+        let mut apk_file = File::open(&apk_path)?;
+
+        check_extension_is_apk(&apk_path)?;
+
+        let file_size = apk_file.metadata()?.len();
+
+        let mut rng = rand::thread_rng();
+
+        let local_id = rng.gen();
+
+        let message = ADBUsbMessage::new(
+            USBCommand::Open,
+            local_id,
+            0,
+            format!("exec:cmd package 'install' -S {}\0", file_size)
+                .as_bytes()
+                .to_vec(),
+        );
+        self.transport.write_message(message)?;
+
+        let response = self.transport.read_message()?;
+        let remote_id = response.header().arg0();
+
+        let mut writer = USBWriter::new(self.transport.clone(), local_id, remote_id);
+
+        std::io::copy(&mut apk_file, &mut writer)?;
+
+        let final_status = self.transport.read_message()?;
+
+        match final_status.into_payload().as_slice() {
+            b"Success\n" => {
+                log::info!(
+                    "APK file {} successfully installed",
+                    apk_path.as_ref().display()
+                );
+                Ok(())
+            }
+            d => Err(crate::RustADBError::ADBRequestFailed(String::from_utf8(
+                d.to_vec(),
+            )?)),
+        }
     }
 }

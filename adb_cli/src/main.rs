@@ -95,6 +95,10 @@ fn main() -> Result<()> {
                     };
                     device.get_logs(writer)?;
                 }
+                LocalCommand::Install { path } => {
+                    log::info!("Starting installation of APK {}...", path.display());
+                    device.install(path)?;
+                }
             }
         }
         Command::Host(host) => {
@@ -222,6 +226,10 @@ fn main() -> Result<()> {
                 UsbCommands::Run { package, activity } => {
                     let output = device.run_activity(&package, &activity)?;
                     std::io::stdout().write_all(&output)?;
+                }
+                UsbCommands::Install { path } => {
+                    log::info!("Starting installation of APK {}...", path.display());
+                    device.install(path)?;
                 }
             }
         }
