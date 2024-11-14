@@ -87,4 +87,7 @@ pub enum RustADBError {
     /// Cannot convert given data from slice
     #[error(transparent)]
     TryFromSliceError(#[from] std::array::TryFromSliceError),
+    /// Given path does not represent an APK
+    #[error("wrong file extension: {0}")]
+    WrongFileExtension(String),
 }

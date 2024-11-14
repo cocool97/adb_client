@@ -16,6 +16,7 @@ pub(crate) enum AdbServerCommand {
     Pair(SocketAddrV4, String),
     TransportAny,
     TransportSerial(String),
+    Install(u64),
     // Local commands
     ShellCommand(String),
     Shell,
@@ -61,6 +62,7 @@ impl Display for AdbServerCommand {
             AdbServerCommand::Reverse(remote, local) => {
                 write!(f, "reverse:forward:{remote};{local}")
             }
+            AdbServerCommand::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
         }
     }
 }
