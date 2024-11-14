@@ -1,9 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, io::BufRead};
 
 use crate::{
     models::{AdbServerCommand, MDNSBackend, MDNSServices},
     ADBServer, Result,
 };
+
+const OPENSCREEN_MDNS_BACKEND: &str = "ADB_MDNS_OPENSCREEN";
 
 impl ADBServer {
     /// Check if mdns discovery is available
@@ -19,19 +21,20 @@ impl ADBServer {
         }
     }
 
-    /// List all discovered services
+    /// List all discovered mdns services
     pub fn mdns_services(&mut self) -> Result<Vec<MDNSServices>> {
         let services = self
             .connect()?
             .proxy_connection(AdbServerCommand::MDNSServices, true)?;
 
         let mut vec_services: Vec<MDNSServices> = vec![];
-        for service in services.split(|x| x.eq(&b'\n')) {
-            if service.is_empty() {
-                break;
+        for service in services.lines() {
+            match service {
+                Ok(service) => {
+                    vec_services.push(MDNSServices::try_from(service.as_bytes())?);
+                }
+                Err(e) => log::error!("{}", e),
             }
-
-            vec_services.push(MDNSServices::try_from(service.to_vec())?);
         }
 
         Ok(vec_services)
@@ -39,13 +42,14 @@ impl ADBServer {
 
     /// Check if openscreen mdns service is used, otherwise restart adb server with envs
     pub fn mdns_force_openscreen_backend(&mut self) -> Result<()> {
-        let status = self.server_status()?;
-        if status.mdns_backend != MDNSBackend::OPENSCREEN {
+        let server_status = self.server_status()?;
+        if server_status.mdns_backend != MDNSBackend::OpenScreen {
             self.kill()?;
-            self.connect_with_envs(Some(HashMap::from([(
-                "ADB_MDNS_OPENSCREEN".to_string(),
+            self.start_server(HashMap::from([(
+                OPENSCREEN_MDNS_BACKEND.to_string(),
                 "1".to_string(),
-            )])))?;
+            )]))?;
+            self.connect()?;
         }
 
         Ok(())

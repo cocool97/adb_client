@@ -12,7 +12,7 @@ impl ADBServerDevice {
             .map(|_| ())
     }
 
-    /// remove all reverse rules
+    /// Remove all reverse rules
     pub fn reverse_remove_all(&mut self) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?

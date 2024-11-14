@@ -1,13 +1,13 @@
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
-use std::{fmt::Display, str::FromStr};
 use std::net::SocketAddrV4;
+use std::{fmt::Display, str::FromStr};
 
 use crate::RustADBError;
 
 lazy_static! {
-    static ref MDNS_SERVICES_REGEX: Regex =
-        Regex::new("^(\\S+)\t(\\S+)\t([\\d\\.]+:\\d+)\n?$").expect("Cannot build mdns services regex");
+    static ref MDNS_SERVICES_REGEX: Regex = Regex::new("^(\\S+)\t(\\S+)\t([\\d\\.]+:\\d+)\n?$")
+        .expect("Cannot build mdns services regex");
 }
 
 /// Represents MDNS Services
@@ -23,16 +23,20 @@ pub struct MDNSServices {
 
 impl Display for MDNSServices {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}\t{}\t{}", self.service_name, self.reg_type, self.socket_v4)
+        write!(
+            f,
+            "{}\t{}\t{}",
+            self.service_name, self.reg_type, self.socket_v4
+        )
     }
 }
 
-impl TryFrom<Vec<u8>> for MDNSServices {
+impl TryFrom<&[u8]> for MDNSServices {
     type Error = RustADBError;
 
-    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let groups = MDNS_SERVICES_REGEX
-            .captures(&value)
+            .captures(value)
             .ok_or(RustADBError::RegexParsingError)?;
         Ok(MDNSServices {
             service_name: String::from_utf8(

@@ -1,10 +1,7 @@
-use crate::{
-    models::AdbServerCommand,
-    ADBServerDevice, Result,
-};
+use crate::{models::AdbServerCommand, ADBServerDevice, Result};
 
 impl ADBServerDevice {
-    /// reconnect device
+    /// Reconnect device
     pub fn reconnect(&mut self) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?

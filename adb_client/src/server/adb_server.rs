@@ -36,13 +36,6 @@ impl ADBServer {
 
     /// Connect to underlying transport
     pub(crate) fn connect(&mut self) -> Result<&mut TCPServerTransport> {
-        self.connect_with_envs(None)
-    }
-
-    pub(crate) fn connect_with_envs(
-        &mut self,
-        envs: Option<HashMap<String, String>>,
-    ) -> Result<&mut TCPServerTransport> {
         let mut is_local_ip = false;
         let mut transport = if let Some(addr) = &self.socket_addr {
             let ip = addr.ip();
@@ -57,28 +50,34 @@ impl ADBServer {
 
         if is_local_ip {
             // ADB Server is local, we start it if not already running
-            let mut command = Command::new("adb");
-            command.arg("start-server");
-            if let Some(envs) = envs {
-                for (env_k, env_v) in envs {
-                    command.env(env_k, env_v);
-                }
-            }
-            let child = command.spawn();
-            match child {
-                Ok(mut child) => {
-                    if let Err(e) = child.wait() {
-                        log::error!("error while starting adb server: {e}")
-                    }
-                }
-                Err(e) => log::error!("error while starting adb server: {e}"),
-            }
+            self.start_server(HashMap::default())?;
         }
 
         transport.connect()?;
         self.transport = Some(transport);
 
         self.get_transport()
+    }
+
+    /// Start a new instance of adb-server using given environment variables
+    pub fn start_server(&self, envs: HashMap<String, String>) -> Result<()> {
+        let mut command = Command::new("adb");
+        command.arg("start-server");
+        for (env_k, env_v) in envs {
+            command.env(env_k, env_v);
+        }
+
+        let child = command.spawn();
+        match child {
+            Ok(mut child) => {
+                if let Err(e) = child.wait() {
+                    log::error!("error while starting adb server: {e}")
+                }
+            }
+            Err(e) => log::error!("error while starting adb server: {e}"),
+        }
+
+        Ok(())
     }
 }
 

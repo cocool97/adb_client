@@ -1,7 +1,4 @@
-use crate::{
-    models::AdbServerCommand,
-    ADBServerDevice, Result,
-};
+use crate::{models::AdbServerCommand, ADBServerDevice, Result};
 
 impl ADBServerDevice {
     /// Set adb daemon to usb mode
@@ -11,7 +8,7 @@ impl ADBServerDevice {
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
         self.get_transport_mut()
-            .proxy_connection(AdbServerCommand::USB, false)
+            .proxy_connection(AdbServerCommand::Usb, false)
             .map(|_| ())
     }
 }

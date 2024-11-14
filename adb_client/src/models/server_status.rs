@@ -2,19 +2,20 @@ use std::fmt::Display;
 
 use crate::RustADBError;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum UsbBackend {
-    UNKNOWN,
-    NATIVE,
-    LIBUSB,
+    #[default]
+    Unknown,
+    Native,
+    LibUSB,
 }
 
 impl Display for UsbBackend {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UsbBackend::UNKNOWN => write!(f, "UNKNOWN"),
-            UsbBackend::NATIVE => write!(f, "NATIVE"),
-            UsbBackend::LIBUSB => write!(f, "LIBUSB"),
+            UsbBackend::Unknown => write!(f, "UNKNOWN"),
+            UsbBackend::Native => write!(f, "NATIVE"),
+            UsbBackend::LibUSB => write!(f, "LIBUSB"),
         }
     }
 }
@@ -22,26 +23,27 @@ impl Display for UsbBackend {
 impl From<i32> for UsbBackend {
     fn from(value: i32) -> UsbBackend {
         match value {
-            1 => UsbBackend::NATIVE,
-            2 => UsbBackend::LIBUSB,
-            _ => UsbBackend::UNKNOWN,
+            1 => UsbBackend::Native,
+            2 => UsbBackend::LibUSB,
+            _ => UsbBackend::Unknown,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum MDNSBackend {
-    UNKNOWN,
-    BONJOUR,
-    OPENSCREEN,
+    #[default]
+    Unknown,
+    Bonjour,
+    OpenScreen,
 }
 
 impl Display for MDNSBackend {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MDNSBackend::UNKNOWN => write!(f, "UNKNOWN"),
-            MDNSBackend::BONJOUR => write!(f, "BONJOUR"),
-            MDNSBackend::OPENSCREEN => write!(f, "OPENSCREEN"),
+            MDNSBackend::Unknown => write!(f, "UNKNOWN"),
+            MDNSBackend::Bonjour => write!(f, "BONJOUR"),
+            MDNSBackend::OpenScreen => write!(f, "OPENSCREEN"),
         }
     }
 }
@@ -49,59 +51,46 @@ impl Display for MDNSBackend {
 impl From<i32> for MDNSBackend {
     fn from(value: i32) -> MDNSBackend {
         match value {
-            1 => MDNSBackend::BONJOUR,
-            2 => MDNSBackend::OPENSCREEN,
-            _ => MDNSBackend::UNKNOWN,
+            1 => MDNSBackend::Bonjour,
+            2 => MDNSBackend::OpenScreen,
+            _ => MDNSBackend::Unknown,
         }
     }
 }
 
-/// Represents Server Status
-#[derive(Debug, Clone)]
+/// Structure representing current server status
+#[derive(Debug, Clone, Default)]
 pub struct ServerStatus {
-    /// usb backend
     pub usb_backend: UsbBackend,
-
     pub usb_backend_forced: bool,
-
     pub mdns_backend: MDNSBackend,
-
     pub mdns_backend_forced: bool,
-
     pub version: String,
-
     pub build: String,
-
     pub executable_absolute_path: String,
-
     pub log_absolute_path: String,
-
     pub os: String,
 }
 
 impl Display for ServerStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "usb_backend: {}\n", self.usb_backend)?;
-        if self.usb_backend_forced {
-            write!(f, "usb_backend_forced: {}\n", self.usb_backend_forced)?;
-        }
-        write!(f, "mdns_backend: {}\n", self.mdns_backend)?;
-        if self.mdns_backend_forced {
-            write!(f, "mdns_backend_forced: {}\n", self.mdns_backend_forced)?;
-        }
-        write!(f, "version: \"{}\"\n", self.version)?;
-        write!(f, "build: \"{}\"\n", self.build)?;
-        write!(
+        writeln!(f, "usb_backend: {}", self.usb_backend)?;
+        writeln!(f, "usb_backend_forced: {}", self.usb_backend_forced)?;
+        writeln!(f, "mdns_backend: {}", self.mdns_backend)?;
+        writeln!(f, "mdns_backend_forced: {}", self.mdns_backend_forced)?;
+        writeln!(f, "version: \"{}\"", self.version)?;
+        writeln!(f, "build: \"{}\"", self.build)?;
+        writeln!(
             f,
-            "executable_absolute_path: \"{}\"\n",
+            "executable_absolute_path: \"{}\"",
             self.executable_absolute_path
         )?;
-        write!(f, "log_absolute_path: \"{}\"\n", self.log_absolute_path)?;
-        write!(f, "os: \"{}\"\n", self.os)
+        writeln!(f, "log_absolute_path: \"{}\"", self.log_absolute_path)?;
+        writeln!(f, "os: \"{}\"", self.os)
     }
 }
 
-fn parse_tag(cursor: &mut &[u8]) -> Result<(u8, u8), RustADBError>{
+fn parse_tag(cursor: &mut &[u8]) -> Result<(u8, u8), RustADBError> {
     if cursor.is_empty() {
         return Err(RustADBError::ConversionError);
     }
@@ -151,17 +140,7 @@ impl TryFrom<Vec<u8>> for ServerStatus {
     type Error = RustADBError;
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        let mut server_status = ServerStatus {
-            usb_backend: UsbBackend::UNKNOWN,
-            usb_backend_forced: false,
-            mdns_backend: MDNSBackend::UNKNOWN,
-            mdns_backend_forced: false,
-            version: "".to_string(),
-            build: "".to_string(),
-            executable_absolute_path: "".to_string(),
-            log_absolute_path: "".to_string(),
-            os: "".to_string(),
-        };
+        let mut server_status = ServerStatus::default();
         let mut cursor = &value[..];
         while !cursor.is_empty() {
             let (field_number, wire_type) = parse_tag(&mut cursor)?;

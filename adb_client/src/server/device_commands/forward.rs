@@ -12,7 +12,7 @@ impl ADBServerDevice {
             .map(|_| ())
     }
 
-    /// remove all forward rules
+    /// Remove all previously applied forward rules
     pub fn forward_remove_all(&mut self) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?

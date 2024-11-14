@@ -32,7 +32,7 @@ pub(crate) enum AdbServerCommand {
     ReverseRemoveAll,
     Reconnect,
     TcpIp(u16),
-    USB,
+    Usb,
 }
 
 impl Display for AdbServerCommand {
@@ -80,7 +80,7 @@ impl Display for AdbServerCommand {
             AdbServerCommand::TcpIp(port) => {
                 write!(f, "tcpip:{port}")
             }
-            AdbServerCommand::USB => write!(f, "usb:"),
+            AdbServerCommand::Usb => write!(f, "usb:"),
         }
     }
 }
