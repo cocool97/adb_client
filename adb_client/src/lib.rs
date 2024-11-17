@@ -16,7 +16,7 @@ mod utils;
 
 pub use adb_device_ext::ADBDeviceExt;
 pub use error::{Result, RustADBError};
-pub use models::{AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType};
+pub use models::{AdbStatResponse, AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType};
 pub use server::*;
 pub use transports::*;
 pub use usb::ADBUSBDevice;
