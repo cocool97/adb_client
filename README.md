@@ -11,6 +11,9 @@
         <a href="https://deps.rs/repo/github/cocool97/adb_client">
             <img alt="dependency status" src="https://deps.rs/repo/github/cocool97/adb_client/status.svg"/>
         </a>
+        <a href="https://opensource.org/licenses/MIT">
+            <img alt="dependency status" src="https://img.shields.io/badge/License-MIT-yellow.svg"/>
+        </a>
     </p>
 </p>
 
