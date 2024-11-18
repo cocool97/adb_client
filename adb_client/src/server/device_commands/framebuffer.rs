@@ -111,7 +111,7 @@ impl ADBServerDevice {
     }
 
     /// Dump framebuffer of this device and return corresponding bytes.
-    /// 
+    ///
     /// Output data format is currently only `PNG`.
     pub fn framebuffer_bytes<W: Write + Seek>(&mut self, mut writer: W) -> Result<()> {
         let img = self.framebuffer_inner()?;
