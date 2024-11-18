@@ -1,93 +1,114 @@
 use crate::{Result, RustADBError};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use byteorder::{LittleEndian, WriteBytesExt};
-use num_bigint::traits::ModInverse;
-use num_bigint::BigUint;
+use num_bigint::{BigUint, ModInverse};
+use num_traits::cast::ToPrimitive;
+use num_traits::FromPrimitive;
 use rand::rngs::OsRng;
-use rsa::{Hash, PaddingScheme, PublicKeyParts, RSAPrivateKey};
-use std::convert::TryInto;
+use rsa::pkcs8::DecodePrivateKey;
+use rsa::traits::PublicKeyParts;
+use rsa::{Pkcs1v15Sign, RsaPrivateKey};
 
-// From project: https://github.com/hajifkd/webadb
-#[derive(Debug)]
-pub struct ADBRsaKey {
-    private_key: RSAPrivateKey,
+const ADB_PRIVATE_KEY_SIZE: usize = 2048;
+const ANDROID_PUBKEY_MODULUS_SIZE_WORDS: u32 = 64;
+
+#[repr(C)]
+#[derive(Debug, Default)]
+/// Internal ADB representation of a public key
+struct ADBRsaInternalPublicKey {
+    pub modulus_size_words: u32,
+    pub n0inv: u32,
+    pub modulus: BigUint,
+    pub rr: Vec<u8>,
+    pub exponent: u32,
 }
 
-impl ADBRsaKey {
-    pub fn random_with_size(size: usize) -> Result<Self> {
-        let mut rng = OsRng;
+impl ADBRsaInternalPublicKey {
+    pub fn new(exponent: &BigUint, modulus: &BigUint) -> Result<Self> {
         Ok(Self {
-            private_key: RSAPrivateKey::new(&mut rng, size)?,
+            modulus_size_words: ANDROID_PUBKEY_MODULUS_SIZE_WORDS,
+            exponent: exponent.to_u32().ok_or(RustADBError::ConversionError)?,
+            modulus: modulus.clone(),
+            ..Default::default()
         })
     }
 
-    pub fn from_pkcs8(pkcs8_content: &str) -> Result<Self> {
-        let der_encoded = pkcs8_content
-            .lines()
-            .filter(|line| !line.starts_with("-") && !line.is_empty())
-            .fold(String::new(), |mut data, line| {
-                data.push_str(line);
-                data
-            });
-        let der_bytes = STANDARD.decode(&der_encoded)?;
-        let private_key = RSAPrivateKey::from_pkcs8(&der_bytes)?;
+    pub fn into_bytes(mut self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+        bytes.append(&mut self.modulus_size_words.to_le_bytes().to_vec());
+        bytes.append(&mut self.n0inv.to_le_bytes().to_vec());
+        bytes.append(&mut self.modulus.to_bytes_le());
+        bytes.append(&mut self.rr);
+        bytes.append(&mut self.exponent.to_le_bytes().to_vec());
 
-        Ok(ADBRsaKey { private_key })
-    }
-
-    pub fn encoded_public_key(&self) -> Result<String> {
-        // see https://android.googlesource.com/platform/system/core/+/android-4.4_r1/adb/adb_auth_host.c
-        // L63 RSA_to_RSAPublicKey
-        const RSANUMBYTES: u32 = 256;
-        const RSANUMWORDS: u32 = 64;
-        let user: String = format!("adb_client@{}", env!("CARGO_PKG_VERSION"));
-
-        let mut result = vec![];
-        result.write_u32::<LittleEndian>(RSANUMWORDS)?;
-        let r32 = set_bit(32)?;
-        let n = self.private_key.n();
-        let r = set_bit((32 * RSANUMWORDS) as _)?;
-        // Well, let rr = set_bit((64 * RSANUMWORDS) as _) % n is also fine, since r \sim n.
-        let rr = r.modpow(&BigUint::from(2u32), n);
-        let rem = n % &r32;
-        let n0inv = rem.mod_inverse(&r32);
-        if let Some(n0inv) = n0inv {
-            let n0inv = n0inv.to_biguint().ok_or(RustADBError::ConversionError)?;
-            let n0inv_p: u32 = 1 + !u32::from_le_bytes((&n0inv.to_bytes_le()[..4]).try_into()?);
-            result.write_u32::<LittleEndian>(n0inv_p)?;
-        } else {
-            return Err(RustADBError::ConversionError);
-        }
-
-        write_biguint(&mut result, n, RSANUMBYTES as _)?;
-        write_biguint(&mut result, &rr, RSANUMBYTES as _)?;
-        write_biguint(&mut result, self.private_key.e(), 4)?;
-
-        let mut encoded = STANDARD.encode(&result);
-        encoded.push(' ');
-        encoded.push_str(&user);
-        Ok(encoded)
-    }
-
-    pub fn sign(&self, msg: impl AsRef<[u8]>) -> Result<Vec<u8>> {
-        Ok(self.private_key.sign(
-            PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA1)),
-            msg.as_ref(),
-        )?)
+        bytes
     }
 }
 
-fn write_biguint(writer: &mut Vec<u8>, data: &BigUint, n_bytes: usize) -> Result<()> {
-    for &v in data
-        .to_bytes_le()
-        .iter()
-        .chain(std::iter::repeat(&0))
-        .take(n_bytes)
-    {
-        writer.write_u8(v)?;
+#[derive(Debug)]
+pub struct ADBRsaKey {
+    private_key: RsaPrivateKey,
+}
+
+impl ADBRsaKey {
+    pub fn new_random() -> Result<Self> {
+        Ok(Self {
+            private_key: RsaPrivateKey::new(&mut OsRng, ADB_PRIVATE_KEY_SIZE)?,
+        })
     }
 
-    Ok(())
+    pub fn new_from_pkcs8(pkcs8_content: &str) -> Result<Self> {
+        Ok(ADBRsaKey {
+            private_key: RsaPrivateKey::from_pkcs8_pem(pkcs8_content)?,
+        })
+    }
+
+    pub fn android_pubkey_encode(&self) -> Result<String> {
+        // Helped from project: https://github.com/hajifkd/webadb
+        // Source code: https://android.googlesource.com/platform/system/core/+/refs/heads/main/libcrypto_utils/android_pubkey.cpp
+        // Useful function `android_pubkey_encode()`
+        let mut adb_rsa_pubkey =
+            ADBRsaInternalPublicKey::new(self.private_key.e(), self.private_key.n())?;
+
+        // r32 = 2 ^ 32
+        let r32 = BigUint::from_u64(1 << 32).ok_or(RustADBError::ConversionError)?;
+
+        // r = 2 ^ rsa_size = 2 ^ 2048
+        let r = set_bit(ADB_PRIVATE_KEY_SIZE)?;
+
+        // rr = r ^ 2 mod N
+        let rr = r.modpow(&BigUint::from(2u32), &adb_rsa_pubkey.modulus);
+        adb_rsa_pubkey.rr = rr.to_bytes_le();
+
+        // rem = N[0]
+        let rem = &adb_rsa_pubkey.modulus % &r32;
+
+        // n0inv = -1 / rem mod r32
+        let n0inv = rem
+            .mod_inverse(&r32)
+            .and_then(|v| v.to_biguint())
+            .ok_or(RustADBError::ConversionError)?;
+
+        // BN_sub(n0inv, r32, n0inv)
+        adb_rsa_pubkey.n0inv = (r32 - n0inv)
+            .to_u32()
+            .ok_or(RustADBError::ConversionError)?;
+
+        Ok(self.encode_public_key(adb_rsa_pubkey.into_bytes()))
+    }
+
+    fn encode_public_key(&self, pub_key: Vec<u8>) -> String {
+        let mut encoded = STANDARD.encode(pub_key);
+        encoded.push(' ');
+        encoded.push_str(&format!("adb_client@{}", env!("CARGO_PKG_VERSION")));
+
+        encoded
+    }
+
+    pub fn sign(&self, msg: impl AsRef<[u8]>) -> Result<Vec<u8>> {
+        Ok(self
+            .private_key
+            .sign(Pkcs1v15Sign::new::<sha1::Sha1>(), msg.as_ref())?)
+    }
 }
 
 fn set_bit(n: usize) -> Result<BigUint> {
@@ -133,9 +154,9 @@ CNkECiepaGyquQaffwR1CAi8dH6biJjlTQWQPFcCLA0hvernWo3eaSfiL7fHyym+
 ile69MHFENUePSpuRSiF3Z02
 -----END PRIVATE KEY-----";
     let priv_key =
-        ADBRsaKey::from_pkcs8(DEFAULT_PRIV_KEY).expect("cannot create rsa key from data");
+        ADBRsaKey::new_from_pkcs8(DEFAULT_PRIV_KEY).expect("cannot create rsa key from data");
     let pub_key = priv_key
-        .encoded_public_key()
+        .android_pubkey_encode()
         .expect("cannot encode public key");
     let pub_key_adb = "\
 QAAAAFH/pU9PVrHRgEjMGnpvOr2QzKYCavSE1fcSwvpS1uPn9GTmuyZr7c9up\

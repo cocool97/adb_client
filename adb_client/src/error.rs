@@ -90,4 +90,7 @@ pub enum RustADBError {
     /// Given path does not represent an APK
     #[error("wrong file extension: {0}")]
     WrongFileExtension(String),
+    /// An error occurred with PKCS8 data
+    #[error("error with pkcs8: {0}")]
+    RsaPkcs8Error(#[from] rsa::pkcs8::Error),
 }
