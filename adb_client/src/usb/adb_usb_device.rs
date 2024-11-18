@@ -32,7 +32,7 @@ pub struct ADBUSBDevice {
 fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     read_to_string(private_key_path.as_ref())
         .map_err(RustADBError::from)
-        .map(|pk| match ADBRsaKey::from_pkcs8(&pk) {
+        .map(|pk| match ADBRsaKey::new_from_pkcs8(&pk) {
             Ok(pk) => Some(pk),
             Err(e) => {
                 log::error!("Error while create RSA private key: {e}");
@@ -121,7 +121,7 @@ impl ADBUSBDevice {
     ) -> Result<Self> {
         let private_key = match read_adb_private_key(private_key_path)? {
             Some(pk) => pk,
-            None => ADBRsaKey::random_with_size(2048)?,
+            None => ADBRsaKey::new_random()?,
         };
 
         let mut s = Self {
@@ -202,7 +202,7 @@ impl ADBUSBDevice {
             return Ok(());
         }
 
-        let mut pubkey = self.private_key.encoded_public_key()?.into_bytes();
+        let mut pubkey = self.private_key.android_pubkey_encode()?.into_bytes();
         pubkey.push(b'\0');
 
         let message = ADBUsbMessage::new(USBCommand::Auth, AUTH_RSAPUBLICKEY, 0, pubkey);
