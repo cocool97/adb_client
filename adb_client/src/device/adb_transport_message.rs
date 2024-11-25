@@ -1,31 +1,32 @@
 use serde::{Deserialize, Serialize};
 
-use super::usb_commands::USBCommand;
 use crate::RustADBError;
+
+use super::models::MessageCommand;
 
 pub const AUTH_TOKEN: u32 = 1;
 pub const AUTH_SIGNATURE: u32 = 2;
 pub const AUTH_RSAPUBLICKEY: u32 = 3;
 
 #[derive(Debug)]
-pub struct ADBUsbMessage {
-    header: ADBUsbMessageHeader,
+pub struct ADBTransportMessage {
+    header: ADBTransportMessageHeader,
     payload: Vec<u8>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[repr(C)]
-pub struct ADBUsbMessageHeader {
-    command: USBCommand, /* command identifier constant      */
-    arg0: u32,           /* first argument                   */
-    arg1: u32,           /* second argument                  */
-    data_length: u32,    /* length of payload (0 is allowed) */
-    data_crc32: u32,     /* crc32 of data payload            */
-    magic: u32,          /* command ^ 0xffffffff             */
+pub struct ADBTransportMessageHeader {
+    command: MessageCommand, /* command identifier constant      */
+    arg0: u32,               /* first argument                   */
+    arg1: u32,               /* second argument                  */
+    data_length: u32,        /* length of payload (0 is allowed) */
+    data_crc32: u32,         /* crc32 of data payload            */
+    magic: u32,              /* command ^ 0xffffffff             */
 }
 
-impl ADBUsbMessageHeader {
-    pub fn new(command: USBCommand, arg0: u32, arg1: u32, data: &[u8]) -> Self {
+impl ADBTransportMessageHeader {
+    pub fn new(command: MessageCommand, arg0: u32, arg1: u32, data: &[u8]) -> Self {
         Self {
             command,
             arg0,
@@ -36,7 +37,7 @@ impl ADBUsbMessageHeader {
         }
     }
 
-    pub fn command(&self) -> USBCommand {
+    pub fn command(&self) -> MessageCommand {
         self.command
     }
 
@@ -60,7 +61,7 @@ impl ADBUsbMessageHeader {
         data.iter().map(|&x| x as u32).sum()
     }
 
-    fn compute_magic(command: USBCommand) -> u32 {
+    fn compute_magic(command: MessageCommand) -> u32 {
         let command_u32 = command as u32;
         command_u32 ^ 0xFFFFFFFF
     }
@@ -70,24 +71,24 @@ impl ADBUsbMessageHeader {
     }
 }
 
-impl ADBUsbMessage {
-    pub fn new(command: USBCommand, arg0: u32, arg1: u32, data: Vec<u8>) -> Self {
+impl ADBTransportMessage {
+    pub fn new(command: MessageCommand, arg0: u32, arg1: u32, data: Vec<u8>) -> Self {
         Self {
-            header: ADBUsbMessageHeader::new(command, arg0, arg1, &data),
+            header: ADBTransportMessageHeader::new(command, arg0, arg1, &data),
             payload: data,
         }
     }
 
-    pub fn from_header_and_payload(header: ADBUsbMessageHeader, payload: Vec<u8>) -> Self {
+    pub fn from_header_and_payload(header: ADBTransportMessageHeader, payload: Vec<u8>) -> Self {
         Self { header, payload }
     }
 
     pub fn check_message_integrity(&self) -> bool {
-        ADBUsbMessageHeader::compute_magic(self.header.command) == self.header.magic
-            && ADBUsbMessageHeader::compute_crc32(&self.payload) == self.header.data_crc32
+        ADBTransportMessageHeader::compute_magic(self.header.command) == self.header.magic
+            && ADBTransportMessageHeader::compute_crc32(&self.payload) == self.header.data_crc32
     }
 
-    pub fn header(&self) -> &ADBUsbMessageHeader {
+    pub fn header(&self) -> &ADBTransportMessageHeader {
         &self.header
     }
 
@@ -100,7 +101,7 @@ impl ADBUsbMessage {
     }
 }
 
-impl TryFrom<[u8; 24]> for ADBUsbMessageHeader {
+impl TryFrom<[u8; 24]> for ADBTransportMessageHeader {
     type Error = RustADBError;
 
     fn try_from(value: [u8; 24]) -> Result<Self, Self::Error> {

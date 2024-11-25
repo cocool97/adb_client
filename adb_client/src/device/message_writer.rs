@@ -1,20 +1,20 @@
 use std::io::{ErrorKind, Write};
 
-use crate::USBTransport;
+use crate::ADBMessageTransport;
 
-use super::{ADBUsbMessage, USBCommand};
+use super::{ADBTransportMessage, MessageCommand};
 
-/// Wraps a `Writer` to hide underlying ADB protocol write logic.
+/// [`Write`] trait implementation to hide underlying ADB protocol write logic.
 ///
-/// Read received responses to check that message has been received.
-pub struct USBWriter {
-    transport: USBTransport,
+/// Read received responses to check that message has been correctly received.
+pub struct MessageWriter<T: ADBMessageTransport> {
+    transport: T,
     local_id: u32,
     remote_id: u32,
 }
 
-impl USBWriter {
-    pub fn new(transport: USBTransport, local_id: u32, remote_id: u32) -> Self {
+impl<T: ADBMessageTransport> MessageWriter<T> {
+    pub fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
         Self {
             transport,
             local_id,
@@ -23,10 +23,10 @@ impl USBWriter {
     }
 }
 
-impl Write for USBWriter {
+impl<T: ADBMessageTransport> Write for MessageWriter<T> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let message = ADBUsbMessage::new(
-            USBCommand::Write,
+        let message = ADBTransportMessage::new(
+            MessageCommand::Write,
             self.local_id,
             self.remote_id,
             buf.to_vec(),
@@ -37,7 +37,7 @@ impl Write for USBWriter {
 
         match self.transport.read_message() {
             Ok(response) => match response.header().command() {
-                USBCommand::Okay => Ok(buf.len()),
+                MessageCommand::Okay => Ok(buf.len()),
                 c => Err(std::io::Error::new(
                     ErrorKind::Other,
                     format!("wrong response received: {c}"),

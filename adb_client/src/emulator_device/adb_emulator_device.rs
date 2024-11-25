@@ -1,13 +1,11 @@
 use std::net::{Ipv4Addr, SocketAddrV4};
 
-use crate::{ADBTransport, Result, RustADBError, TCPEmulatorTransport};
+use crate::{ADBServerDevice, ADBTransport, Result, RustADBError, TCPEmulatorTransport};
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use super::ADBServerDevice;
-
 lazy_static! {
-    pub static ref EMULATOR_REGEX: Regex =
+    static ref EMULATOR_REGEX: Regex =
         Regex::new("^emulator-(?P<port>\\d+)$").expect("wrong syntax for emulator regex");
 }
 
