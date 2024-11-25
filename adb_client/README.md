@@ -31,9 +31,9 @@ let mut server = ADBServer::new(SocketAddrV4::new(server_ip, server_port));
 server.devices();
 ```
 
-### Using ADB server as proxy
+### Using ADB server as bridge
 
-#### [TCP] Launch a command on device
+#### Launch a command on device
 
 ```rust no_run
 use adb_client::{ADBServer, ADBDeviceExt};
@@ -43,7 +43,7 @@ let mut device = server.get_device().expect("cannot get device");
 device.shell_command(["df", "-h"],std::io::stdout());
 ```
 
-#### [TCP] Push a file to the device
+#### Push a file to the device
 
 ```rust no_run
 use adb_client::ADBServer;
@@ -59,7 +59,7 @@ device.push(&mut input, "/data/local/tmp");
 
 ### Interacting directly with device
 
-#### [USB] Launch a command on device
+#### (USB) Launch a command on device
 
 ```rust no_run
 use adb_client::{ADBUSBDevice, ADBDeviceExt};
@@ -70,7 +70,7 @@ let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find de
 device.shell_command(["df", "-h"],std::io::stdout());
 ```
 
-#### [USB] Push a file to the device
+#### (USB) Push a file to the device
 
 ```rust no_run
 use adb_client::{ADBUSBDevice, ADBDeviceExt};
