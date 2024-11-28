@@ -1,8 +1,8 @@
 use rcgen::{CertificateParams, KeyPair, PKCS_RSA_SHA256};
 use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-    pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
-    ClientConfig, ClientConnection, SignatureScheme, StreamOwned,
+    pki_types::{pem::PemObject, CertificateDer, PrivatePkcs8KeyDer},
+    ClientConfig, ClientConnection, KeyLogFile, SignatureScheme, StreamOwned,
 };
 
 use super::{ADBMessageTransport, ADBTransport};
@@ -26,6 +26,30 @@ use std::{
 enum CurrentConnection {
     Tcp(TcpStream),
     Tls(Box<StreamOwned<ClientConnection, TcpStream>>),
+}
+
+impl CurrentConnection {
+    fn set_read_timeout(&self, read_timeout: Duration) -> Result<()> {
+        match self {
+            CurrentConnection::Tcp(tcp_stream) => {
+                Ok(tcp_stream.set_read_timeout(Some(read_timeout))?)
+            }
+            CurrentConnection::Tls(stream_owned) => {
+                Ok(stream_owned.sock.set_read_timeout(Some(read_timeout))?)
+            }
+        }
+    }
+
+    fn set_write_timeout(&self, write_timeout: Duration) -> Result<()> {
+        match self {
+            CurrentConnection::Tcp(tcp_stream) => {
+                Ok(tcp_stream.set_write_timeout(Some(write_timeout))?)
+            }
+            CurrentConnection::Tls(stream_owned) => {
+                Ok(stream_owned.sock.set_write_timeout(Some(write_timeout))?)
+            }
+        }
+    }
 }
 
 impl Read for CurrentConnection {
@@ -68,12 +92,12 @@ fn certificate_from_pk(key_pair: &KeyPair) -> Result<Vec<CertificateDer<'static>
 }
 
 impl TcpTransport {
-    /// Instantiate a new [`TCPTransport`]
+    /// Instantiate a new [`TcpTransport`]
     pub fn new(address: SocketAddr) -> Result<Self> {
         Self::new_with_custom_private_key(address, get_default_adb_key_path()?)
     }
 
-    /// Instantiate a new [`TCPTransport`] using a given private key
+    /// Instantiate a new [`TcpTransport`] using a given private key
     pub fn new_with_custom_private_key(
         address: SocketAddr,
         private_key_path: PathBuf,
@@ -96,56 +120,65 @@ impl TcpTransport {
     }
 
     pub(crate) fn upgrade_connection(&mut self) -> Result<()> {
-        if let Some(current_conn) = self.current_connection.clone() {
-            let current_conn_locked = current_conn.try_lock()?;
-            if let CurrentConnection::Tcp(tcp_stream) = current_conn_locked.deref() {
-                // TODO: Check if we cannot be more precise
+        let current_connection = match self.current_connection.clone() {
+            Some(current_connection) => current_connection,
+            None => {
+                return Err(RustADBError::UpgradeError(
+                    "cannot upgrade a non-existing connection...".into(),
+                ))
+            }
+        };
 
-                let pk_content =
-                    read_to_string(&self.private_key_path).map_err(RustADBError::from)?;
+        {
+            let mut current_conn_locked = current_connection.lock()?;
+            match current_conn_locked.deref() {
+                CurrentConnection::Tcp(tcp_stream) => {
+                    // TODO: Check if we cannot be more precise
 
-                let key_pair =
-                    KeyPair::from_pkcs8_pem_and_sign_algo(&pk_content, &PKCS_RSA_SHA256)?;
+                    let pk_content = read_to_string(&self.private_key_path)?;
 
-                let certificate = certificate_from_pk(&key_pair)?;
-                let private_key = PrivatePkcs8KeyDer::from_pem_file(&self.private_key_path)?;
+                    let key_pair =
+                        KeyPair::from_pkcs8_pem_and_sign_algo(&pk_content, &PKCS_RSA_SHA256)?;
 
-                let mut client_config = ClientConfig::builder()
-                    .dangerous()
-                    .with_custom_certificate_verifier(Arc::new(NoCertificateVerification {}))
-                    .with_client_auth_cert(certificate, PrivateKeyDer::Pkcs8(private_key))?;
+                    let certificate = certificate_from_pk(&key_pair)?;
+                    let private_key = PrivatePkcs8KeyDer::from_pem_file(&self.private_key_path)?;
 
-                // TODO: REMOVE - Allow using SSLKEYLOGFILE.
-                client_config.key_log = Arc::new(rustls::KeyLogFile::new());
+                    let mut client_config = ClientConfig::builder()
+                        .dangerous()
+                        .with_custom_certificate_verifier(Arc::new(NoCertificateVerification {}))
+                        .with_client_auth_cert(certificate, private_key.into())?;
 
-                let rc_config = Arc::new(client_config);
-                let example_com = self.address.ip().into();
-                let conn = ClientConnection::new(rc_config, example_com)?;
-                let owned = tcp_stream.try_clone()?;
-                let client = StreamOwned::new(conn, owned);
+                    client_config.key_log = Arc::new(KeyLogFile::new());
 
-                self.current_connection = Some(Arc::new(Mutex::new(CurrentConnection::Tls(
-                    Box::new(client),
-                ))));
+                    let rc_config = Arc::new(client_config);
+                    let example_com = self.address.ip().into();
+                    let conn = ClientConnection::new(rc_config, example_com)?;
+                    let owned = tcp_stream.try_clone()?;
+                    let client = StreamOwned::new(conn, owned);
 
-                let message = self.read_message()?;
-                match message.header().command() {
-                    MessageCommand::Cnxn => {
-                        let device_infos = String::from_utf8(message.into_payload())?;
-                        log::debug!("received device info: {device_infos}");
-                        return Ok(());
-                    }
-                    c => {
-                        return Err(RustADBError::ADBRequestFailed(format!(
-                            "Wrong command received {}",
-                            c
-                        )))
-                    }
+                    // Update current connection state to now use TLS protocol
+                    *current_conn_locked = CurrentConnection::Tls(Box::new(client));
+                }
+                CurrentConnection::Tls(_) => {
+                    return Err(RustADBError::UpgradeError(
+                        "cannot upgrade a TLS connection...".into(),
+                    ))
                 }
             }
         }
 
-        todo!();
+        let message = self.read_message()?;
+        match message.header().command() {
+            MessageCommand::Cnxn => {
+                let device_infos = String::from_utf8(message.into_payload())?;
+                log::debug!("received device info: {device_infos}");
+                Ok(())
+            }
+            c => Err(RustADBError::ADBRequestFailed(format!(
+                "Wrong command received {}",
+                c
+            ))),
+        }
     }
 }
 
@@ -157,8 +190,9 @@ impl ADBTransport for TcpTransport {
     }
 
     fn disconnect(&mut self) -> Result<()> {
+        log::debug!("disconnecting...");
         if let Some(current_connection) = &self.current_connection {
-            let mut lock = current_connection.try_lock()?;
+            let mut lock = current_connection.lock()?;
             match lock.deref_mut() {
                 CurrentConnection::Tcp(tcp_stream) => {
                     let _ = tcp_stream.shutdown(Shutdown::Both);
@@ -180,7 +214,9 @@ impl ADBMessageTransport for TcpTransport {
         read_timeout: std::time::Duration,
     ) -> Result<crate::device::ADBTransportMessage> {
         let raw_connection_lock = self.get_current_connection()?;
-        let mut raw_connection = raw_connection_lock.try_lock()?;
+        let mut raw_connection = raw_connection_lock.lock()?;
+
+        raw_connection.set_read_timeout(read_timeout)?;
 
         let mut data = [0; 24];
         let mut total_read = 0;
@@ -226,7 +262,10 @@ impl ADBMessageTransport for TcpTransport {
     ) -> Result<()> {
         let message_bytes = message.header().as_bytes()?;
         let raw_connection_lock = self.get_current_connection()?;
-        let mut raw_connection = raw_connection_lock.try_lock()?;
+        let mut raw_connection = raw_connection_lock.lock()?;
+
+        raw_connection.set_write_timeout(write_timeout)?;
+
         let mut total_written = 0;
         loop {
             total_written += raw_connection.write(&message_bytes[total_written..])?;

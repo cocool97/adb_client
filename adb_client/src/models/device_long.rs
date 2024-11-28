@@ -1,16 +1,15 @@
-use lazy_static::lazy_static;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::{fmt::Display, str};
 
 use crate::{DeviceState, RustADBError};
 use regex::bytes::Regex;
 
-lazy_static! {
-    static ref DEVICES_LONG_REGEX: Regex = Regex::new("^(?P<identifier>\\S+)\\s+(?P<state>\\w+) ((usb:(?P<usb1>.*)|(?P<usb2>\\d-\\d)) )?(product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+) )?transport_id:(?P<transport_id>\\d+)$").expect("cannot build devices long regex");
+static DEVICES_LONG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("^(?P<identifier>\\S+)\\s+(?P<state>\\w+) ((usb:(?P<usb1>.*)|(?P<usb2>\\d-\\d)) )?(product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+) )?transport_id:(?P<transport_id>\\d+)$").expect("cannot build devices long regex")
+});
 
-}
-
-/// Represents a new device with more informations helded.
+/// Represents a new device with more informations.
 #[derive(Debug)]
 pub struct DeviceLong {
     /// Unique device identifier.

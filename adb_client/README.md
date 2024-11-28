@@ -57,7 +57,7 @@ let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
 device.push(&mut input, "/data/local/tmp");
 ```
 
-### Interacting directly with device
+### Interact directly with end devices
 
 #### (USB) Launch a command on device
 
@@ -82,4 +82,13 @@ let product_id = 0x6860;
 let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find device");
 let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
 device.push(&mut input, "/data/local/tmp");
+```
+
+### (TCP) Get a shell from device
+
+```rust no_run
+use adb_client::{ADBTCPDevice, ADBDeviceExt};
+
+let mut device = ADBTCPDevice::new("192.168.112.10:43210").expect("cannot find device");
+device.shell();
 ```

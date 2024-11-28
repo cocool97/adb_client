@@ -104,14 +104,14 @@ pub enum RustADBError {
     PemCertError(#[from] rustls_pki_types::pem::Error),
     /// Error while locking mutex
     #[error("error while locking data")]
-    LockError,
+    PoisonError,
     /// Cannot upgrade connection from TCP to TLS
     #[error("upgrade error: {0}")]
     UpgradeError(String),
 }
 
-impl<T> From<std::sync::TryLockError<T>> for RustADBError {
-    fn from(_err: std::sync::TryLockError<T>) -> Self {
-        Self::LockError
+impl<T> From<std::sync::PoisonError<T>> for RustADBError {
+    fn from(_err: std::sync::PoisonError<T>) -> Self {
+        Self::PoisonError
     }
 }

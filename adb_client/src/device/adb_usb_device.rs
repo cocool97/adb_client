@@ -23,15 +23,15 @@ pub struct ADBUSBDevice {
 }
 
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
-    read_to_string(private_key_path.as_ref())
-        .map_err(RustADBError::from)
-        .map(|pk| match ADBRsaKey::new_from_pkcs8(&pk) {
+    Ok(read_to_string(private_key_path.as_ref()).map(|pk| {
+        match ADBRsaKey::new_from_pkcs8(&pk) {
             Ok(pk) => Some(pk),
             Err(e) => {
                 log::error!("Error while create RSA private key: {e}");
                 None
             }
-        })
+        }
+    })?)
 }
 
 /// Search for adb devices with known interface class and subclass values
