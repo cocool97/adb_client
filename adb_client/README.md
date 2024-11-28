@@ -87,8 +87,11 @@ device.push(&mut input, "/data/local/tmp");
 ### (TCP) Get a shell from device
 
 ```rust no_run
-use adb_client::{ADBTCPDevice, ADBDeviceExt};
+use std::net::{SocketAddr, IpAddr, Ipv4Addr};
+use adb_client::{ADBTcpDevice, ADBDeviceExt};
 
-let mut device = ADBTCPDevice::new("192.168.112.10:43210").expect("cannot find device");
-device.shell();
+let device_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 10));
+let device_port = 43210;
+let mut device = ADBTcpDevice::new(SocketAddr::new(device_ip, device_port)).expect("cannot find device");
+device.shell(std::io::stdin(), std::io::stdout());
 ```
