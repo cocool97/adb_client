@@ -19,7 +19,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         Self { transport }
     }
 
-    pub(crate) fn get_transport(&mut self) -> &mut T {
+    pub(crate) fn get_transport(&mut self) -> &T {
+        &self.transport
+    }
+
+    pub(crate) fn get_transport_mut(&mut self) -> &mut T {
         &mut self.transport
     }
 

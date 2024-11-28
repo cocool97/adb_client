@@ -30,9 +30,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             .as_bytes()
             .to_vec(),
         );
-        self.get_transport().write_message(message)?;
+        self.get_transport_mut().write_message(message)?;
 
-        let response = self.get_transport().read_message()?;
+        let response = self.get_transport_mut().read_message()?;
         if response.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
                 "wrong command {}",
@@ -41,7 +41,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
 
         loop {
-            let response = self.get_transport().read_message()?;
+            let response = self.get_transport_mut().read_message()?;
             if response.header().command() != MessageCommand::Write {
                 break;
             }
@@ -96,8 +96,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
         });
 
-        let mut shell_writer =
-            ShellMessageWriter::new(self.get_transport().clone(), local_id, remote_id);
+        let transport = self.get_transport().clone();
+        let mut shell_writer = ShellMessageWriter::new(transport, local_id, remote_id);
 
         // Read from given reader (that could be stdin e.g), and write content to device adbd
         if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {

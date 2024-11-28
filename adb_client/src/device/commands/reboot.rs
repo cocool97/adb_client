@@ -15,9 +15,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             0,
             format!("reboot:{}\0", reboot_type).as_bytes().to_vec(),
         );
-        self.get_transport().write_message(message)?;
+        self.get_transport_mut().write_message(message)?;
 
-        let message = self.get_transport().read_message()?;
+        let message = self.get_transport_mut().read_message()?;
 
         if message.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBShellNotSupported);

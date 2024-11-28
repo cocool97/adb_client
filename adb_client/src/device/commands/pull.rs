@@ -14,7 +14,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let source = source.as_ref();
 
         let adb_stat_response = self.stat_with_explicit_ids(source, local_id, remote_id)?;
-        self.get_transport()
+        self.get_transport_mut()
             .write_message(ADBTransportMessage::new(
                 MessageCommand::Okay,
                 local_id,

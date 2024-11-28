@@ -22,7 +22,7 @@ pub struct ADBUSBDevice {
     inner: ADBMessageDevice<USBTransport>,
 }
 
-fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
+pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     read_to_string(private_key_path.as_ref())
         .map_err(RustADBError::from)
         .map(|pk| match ADBRsaKey::new_from_pkcs8(&pk) {
@@ -93,7 +93,7 @@ fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> b
     false
 }
 
-fn get_default_adb_key_path() -> Result<PathBuf> {
+pub fn get_default_adb_key_path() -> Result<PathBuf> {
     homedir::my_home()
         .ok()
         .flatten()
@@ -147,7 +147,7 @@ impl ADBUSBDevice {
 
     /// Send initial connect
     pub fn connect(&mut self) -> Result<()> {
-        self.get_transport().connect()?;
+        self.get_transport_mut().connect()?;
 
         let message = ADBTransportMessage::new(
             MessageCommand::Cnxn,
@@ -158,9 +158,9 @@ impl ADBUSBDevice {
                 .to_vec(),
         );
 
-        self.get_transport().write_message(message)?;
+        self.get_transport_mut().write_message(message)?;
 
-        let message = self.get_transport().read_message()?;
+        let message = self.get_transport_mut().read_message()?;
 
         // At this point, we should have received either:
         // - an AUTH message with arg0 == 1
@@ -184,9 +184,9 @@ impl ADBUSBDevice {
 
         let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_SIGNATURE, 0, sign);
 
-        self.get_transport().write_message(message)?;
+        self.get_transport_mut().write_message(message)?;
 
-        let received_response = self.get_transport().read_message()?;
+        let received_response = self.get_transport_mut().read_message()?;
 
         if received_response.header().command() == MessageCommand::Cnxn {
             log::info!(
@@ -201,10 +201,10 @@ impl ADBUSBDevice {
 
         let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, pubkey);
 
-        self.get_transport().write_message(message)?;
+        self.get_transport_mut().write_message(message)?;
 
         let response = self
-            .get_transport()
+            .get_transport_mut()
             .read_message_with_timeout(Duration::from_secs(10))?;
 
         match response.header().command() {
@@ -223,8 +223,8 @@ impl ADBUSBDevice {
         Ok(())
     }
 
-    fn get_transport(&mut self) -> &mut USBTransport {
-        self.inner.get_transport()
+    fn get_transport_mut(&mut self) -> &mut USBTransport {
+        self.inner.get_transport_mut()
     }
 }
 
@@ -269,6 +269,6 @@ impl ADBDeviceExt for ADBUSBDevice {
 impl Drop for ADBUSBDevice {
     fn drop(&mut self) {
         // Best effort here
-        let _ = self.get_transport().disconnect();
+        let _ = self.get_transport_mut().disconnect();
     }
 }

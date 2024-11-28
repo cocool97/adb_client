@@ -6,10 +6,12 @@ mod adb_termios;
 mod commands;
 mod models;
 
-use adb_client::{ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBUSBDevice, DeviceShort};
+use adb_client::{
+    ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort,
+};
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use commands::{EmuCommand, HostCommand, LocalCommand, UsbCommands};
+use commands::{EmuCommand, HostCommand, LocalCommand, TcpCommands, UsbCommands};
 use models::{Command, Opts};
 use std::fs::File;
 use std::io::Write;
@@ -228,6 +230,60 @@ fn main() -> Result<()> {
                     std::io::stdout().write_all(&output)?;
                 }
                 UsbCommands::Install { path } => {
+                    log::info!("Starting installation of APK {}...", path.display());
+                    device.install(path)?;
+                }
+            }
+        }
+        Command::Tcp(tcp) => {
+            let mut device = ADBTcpDevice::new(tcp.address)?;
+
+            match tcp.commands {
+                TcpCommands::Shell { commands } => {
+                    if commands.is_empty() {
+                        // Need to duplicate some code here as ADBTermios [Drop] implementation resets terminal state.
+                        // Using a scope here would call drop() too early..
+                        #[cfg(any(target_os = "linux", target_os = "macos"))]
+                        {
+                            let mut adb_termios = adb_termios::ADBTermios::new(std::io::stdin())?;
+                            adb_termios.set_adb_termios()?;
+                            device.shell(std::io::stdin(), std::io::stdout())?;
+                        }
+
+                        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+                        {
+                            device.shell(std::io::stdin(), std::io::stdout())?;
+                        }
+                    } else {
+                        device.shell_command(commands, std::io::stdout())?;
+                    }
+                }
+                TcpCommands::Pull {
+                    source,
+                    destination,
+                } => {
+                    let mut output = File::create(Path::new(&destination))?;
+                    device.pull(&source, &mut output)?;
+                    log::info!("Downloaded {source} as {destination}");
+                }
+                TcpCommands::Stat { path } => {
+                    let stat_response = device.stat(&path)?;
+                    println!("{}", stat_response);
+                }
+                TcpCommands::Reboot { reboot_type } => {
+                    log::info!("Reboots device in mode {:?}", reboot_type);
+                    device.reboot(reboot_type.into())?
+                }
+                TcpCommands::Push { filename, path } => {
+                    let mut input = File::open(Path::new(&filename))?;
+                    device.push(&mut input, &path)?;
+                    log::info!("Uploaded {filename} to {path}");
+                }
+                TcpCommands::Run { package, activity } => {
+                    let output = device.run_activity(&package, &activity)?;
+                    std::io::stdout().write_all(&output)?;
+                }
+                TcpCommands::Install { path } => {
                     log::info!("Starting installation of APK {}...", path.display());
                     device.install(path)?;
                 }

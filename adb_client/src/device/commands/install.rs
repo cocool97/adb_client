@@ -30,16 +30,18 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 .as_bytes()
                 .to_vec(),
         );
-        self.get_transport().write_message(message)?;
+        self.get_transport_mut().write_message(message)?;
 
-        let response = self.get_transport().read_message()?;
+        let response = self.get_transport_mut().read_message()?;
         let remote_id = response.header().arg0();
 
-        let mut writer = MessageWriter::new(self.get_transport().clone(), local_id, remote_id);
+        let transport = self.get_transport().clone();
+
+        let mut writer = MessageWriter::new(transport, local_id, remote_id);
 
         std::io::copy(&mut apk_file, &mut writer)?;
 
-        let final_status = self.get_transport().read_message()?;
+        let final_status = self.get_transport_mut().read_message()?;
 
         match final_status.into_payload().as_slice() {
             b"Success\n" => {

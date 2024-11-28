@@ -18,7 +18,8 @@ pub enum MessageCommand {
     /// Server understood the message
     Okay = 0x59414b4f,
     // Sync 0x434e5953
-    // Stls 0x534C5453
+    /// Start a connection using TLS
+    Stls = 0x534C5453,
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Serialize_repr, Deserialize_repr)]
@@ -58,6 +59,7 @@ impl Display for MessageCommand {
             MessageCommand::Open => write!(f, "OPEN"),
             MessageCommand::Write => write!(f, "WRTE"),
             MessageCommand::Okay => write!(f, "OKAY"),
+            MessageCommand::Stls => write!(f, "STLS"),
         }
     }
 }
