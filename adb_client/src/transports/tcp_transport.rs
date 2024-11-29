@@ -270,16 +270,20 @@ impl ADBMessageTransport for TcpTransport {
         loop {
             total_written += raw_connection.write(&message_bytes[total_written..])?;
             if total_written == message_bytes.len() {
+                raw_connection.flush()?;
                 break;
             }
         }
 
         let payload = message.into_payload();
-        let mut total_written = 0;
-        loop {
-            total_written += raw_connection.write(&payload[total_written..])?;
-            if total_written == payload.len() {
-                break;
+        if !payload.is_empty() {
+            let mut total_written = 0;
+            loop {
+                total_written += raw_connection.write(&payload[total_written..])?;
+                if total_written == payload.len() {
+                    raw_connection.flush()?;
+                    break;
+                }
             }
         }
 

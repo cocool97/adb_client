@@ -14,20 +14,17 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let source = source.as_ref();
 
         let adb_stat_response = self.stat_with_explicit_ids(source, local_id, remote_id)?;
-        self.get_transport_mut()
-            .write_message(ADBTransportMessage::new(
-                MessageCommand::Okay,
-                local_id,
-                remote_id,
-                "".into(),
-            ))?;
 
-        log::debug!("{:?}", adb_stat_response);
         if adb_stat_response.file_perm == 0 {
             return Err(RustADBError::UnknownResponseType(
                 "mode is 0: source file does not exist".to_string(),
             ));
         }
+
+        self.get_transport_mut().write_message_with_timeout(
+            ADBTransportMessage::new(MessageCommand::Okay, local_id, remote_id, "".into()),
+            std::time::Duration::from_secs(4),
+        )?;
 
         let recv_buffer = MessageSubcommand::Recv.with_arg(source.len() as u32);
         let recv_buffer =

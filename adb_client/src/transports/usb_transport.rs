@@ -162,12 +162,14 @@ impl ADBMessageTransport for USBTransport {
         }
 
         let payload = message.into_payload();
-        let mut total_written = 0;
-        loop {
-            total_written +=
-                handle.write_bulk(endpoint.address, &payload[total_written..], timeout)?;
-            if total_written == payload.len() {
-                break;
+        if !payload.is_empty() {
+            let mut total_written = 0;
+            loop {
+                total_written +=
+                    handle.write_bulk(endpoint.address, &payload[total_written..], timeout)?;
+                if total_written == payload.len() {
+                    break;
+                }
             }
         }
 

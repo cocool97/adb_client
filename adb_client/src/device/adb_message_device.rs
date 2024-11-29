@@ -79,23 +79,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         len.replace(rdr.read_u32::<LittleEndian>()? as u64);
                     }
                     Some(length) => {
-                        log::debug!("len = {length}");
                         let remaining_bytes = payload.len() as u64 - rdr.position();
-                        log::debug!(
-                            "payload length {} - reader_position {} = {remaining_bytes}",
-                            payload.len(),
-                            rdr.position()
-                        );
                         if length < remaining_bytes {
-                            let read = std::io::copy(&mut rdr.by_ref().take(length), &mut output)?;
-                            log::debug!(
-                                "expected to read {length} bytes, actually read {read} bytes"
-                            );
+                            std::io::copy(&mut rdr.by_ref().take(length), &mut output)?;
                         } else {
-                            let read = std::io::copy(&mut rdr.take(remaining_bytes), &mut output)?;
+                            std::io::copy(&mut rdr.take(remaining_bytes), &mut output)?;
                             len.replace(length - remaining_bytes);
-                            log::debug!("expected to read {remaining_bytes} bytes, actually read {read} bytes");
-                            // this payload is exhausted
+                            // this payload is now exhausted
                             break;
                         }
                     }
