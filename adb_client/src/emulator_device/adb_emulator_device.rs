@@ -1,15 +1,14 @@
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::{
+    net::{Ipv4Addr, SocketAddrV4},
+    sync::LazyLock,
+};
 
-use crate::{ADBTransport, Result, RustADBError, TCPEmulatorTransport};
-use lazy_static::lazy_static;
+use crate::{ADBServerDevice, ADBTransport, Result, RustADBError, TCPEmulatorTransport};
 use regex::Regex;
 
-use super::ADBServerDevice;
-
-lazy_static! {
-    pub static ref EMULATOR_REGEX: Regex =
-        Regex::new("^emulator-(?P<port>\\d+)$").expect("wrong syntax for emulator regex");
-}
+static EMULATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("^emulator-(?P<port>\\d+)$").expect("wrong syntax for emulator regex")
+});
 
 /// Represents an emulator connected to the ADB server.
 #[derive(Debug)]

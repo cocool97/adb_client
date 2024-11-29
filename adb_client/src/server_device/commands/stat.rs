@@ -41,7 +41,7 @@ impl ADBServerDevice {
         }
     }
 
-    /// Stat file given as [path] on the device.
+    /// Stat file given as `path` on the device.
     pub fn stat<A: AsRef<str>>(&mut self, path: A) -> Result<AdbStatResponse> {
         let serial = self.identifier.clone();
         self.connect()?

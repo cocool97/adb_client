@@ -4,7 +4,7 @@ use std::fmt::Display;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
 #[repr(u32)]
-pub enum USBCommand {
+pub enum MessageCommand {
     /// Connect to a device
     Cnxn = 0x4e584e43,
     /// Close connection to a device
@@ -18,12 +18,13 @@ pub enum USBCommand {
     /// Server understood the message
     Okay = 0x59414b4f,
     // Sync 0x434e5953
-    // Stls 0x534C5453
+    /// Start a connection using TLS
+    Stls = 0x534C5453,
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Serialize_repr, Deserialize_repr)]
 #[repr(u32)]
-pub enum USBSubcommand {
+pub enum MessageSubcommand {
     Stat = 0x54415453,
     Send = 0x444E4553,
     Recv = 0x56434552,
@@ -36,11 +37,11 @@ pub enum USBSubcommand {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SubcommandWithArg {
-    subcommand: USBSubcommand,
+    subcommand: MessageSubcommand,
     arg: u32,
 }
 
-impl USBSubcommand {
+impl MessageSubcommand {
     pub fn with_arg(self, arg: u32) -> SubcommandWithArg {
         SubcommandWithArg {
             subcommand: self,
@@ -49,15 +50,16 @@ impl USBSubcommand {
     }
 }
 
-impl Display for USBCommand {
+impl Display for MessageCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            USBCommand::Cnxn => write!(f, "CNXN"),
-            USBCommand::Clse => write!(f, "CLSE"),
-            USBCommand::Auth => write!(f, "AUTH"),
-            USBCommand::Open => write!(f, "OPEN"),
-            USBCommand::Write => write!(f, "WRTE"),
-            USBCommand::Okay => write!(f, "OKAY"),
+            MessageCommand::Cnxn => write!(f, "CNXN"),
+            MessageCommand::Clse => write!(f, "CLSE"),
+            MessageCommand::Auth => write!(f, "AUTH"),
+            MessageCommand::Open => write!(f, "OPEN"),
+            MessageCommand::Write => write!(f, "WRTE"),
+            MessageCommand::Okay => write!(f, "OKAY"),
+            MessageCommand::Stls => write!(f, "STLS"),
         }
     }
 }

@@ -44,7 +44,7 @@ impl ADBRsaInternalPublicKey {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ADBRsaKey {
     private_key: RsaPrivateKey,
 }

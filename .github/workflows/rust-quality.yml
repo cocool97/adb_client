@@ -23,6 +23,14 @@ jobs:
       - name: Run formatter
         run : cargo fmt --all --check
 
+  doc:
+    name: "doc"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run doc
+        run : cargo doc --all-features --keep-going
+
   tests:
     name: "tests"
     runs-on: ubuntu-latest

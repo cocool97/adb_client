@@ -104,7 +104,7 @@ impl TryFrom<[u8; std::mem::size_of::<Self>()]> for FrameBufferInfoV2 {
 
 impl ADBServerDevice {
     /// Dump framebuffer of this device into given ['path']
-    /// Big help from source code (https://android.googlesource.com/platform/system/adb/+/refs/heads/main/framebuffer_service.cpp)
+    /// Big help from source code (<https://android.googlesource.com/platform/system/adb/+/refs/heads/main/framebuffer_service.cpp>)
     pub fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         let img = self.framebuffer_inner()?;
         Ok(img.save(path.as_ref())?)

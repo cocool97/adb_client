@@ -6,8 +6,10 @@ use std::{
 use crate::{
     constants::BUFFER_SIZE,
     models::{AdbServerCommand, AdbStatResponse, HostFeatures},
-    ADBDeviceExt, ADBServerDevice, Result, RustADBError,
+    ADBDeviceExt, Result, RustADBError,
 };
+
+use super::ADBServerDevice;
 
 impl ADBDeviceExt for ADBServerDevice {
     fn shell_command<S: ToString, W: Write>(

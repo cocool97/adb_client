@@ -1,6 +1,8 @@
 use std::{fs::File, io::Read, path::Path};
 
-use crate::{models::AdbServerCommand, utils::check_extension_is_apk, ADBServerDevice, Result};
+use crate::{
+    models::AdbServerCommand, server_device::ADBServerDevice, utils::check_extension_is_apk, Result,
+};
 
 impl ADBServerDevice {
     /// Install an APK on device

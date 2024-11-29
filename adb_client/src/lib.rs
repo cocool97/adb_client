@@ -6,17 +6,20 @@
 
 mod adb_device_ext;
 mod constants;
-mod emulator;
+mod device;
+mod emulator_device;
 mod error;
 mod models;
 mod server;
+mod server_device;
 mod transports;
-mod usb;
 mod utils;
 
 pub use adb_device_ext::ADBDeviceExt;
+pub use device::{ADBTcpDevice, ADBUSBDevice};
+pub use emulator_device::ADBEmulatorDevice;
 pub use error::{Result, RustADBError};
 pub use models::{AdbStatResponse, AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType};
 pub use server::*;
+pub use server_device::ADBServerDevice;
 pub use transports::*;
-pub use usb::ADBUSBDevice;

@@ -31,9 +31,9 @@ let mut server = ADBServer::new(SocketAddrV4::new(server_ip, server_port));
 server.devices();
 ```
 
-### Using ADB server as proxy
+### Using ADB server as bridge
 
-#### [TCP] Launch a command on device
+#### Launch a command on device
 
 ```rust no_run
 use adb_client::{ADBServer, ADBDeviceExt};
@@ -43,7 +43,7 @@ let mut device = server.get_device().expect("cannot get device");
 device.shell_command(["df", "-h"],std::io::stdout());
 ```
 
-#### [TCP] Push a file to the device
+#### Push a file to the device
 
 ```rust no_run
 use adb_client::ADBServer;
@@ -57,9 +57,9 @@ let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
 device.push(&mut input, "/data/local/tmp");
 ```
 
-### Interacting directly with device
+### Interact directly with end devices
 
-#### [USB] Launch a command on device
+#### (USB) Launch a command on device
 
 ```rust no_run
 use adb_client::{ADBUSBDevice, ADBDeviceExt};
@@ -70,7 +70,7 @@ let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find de
 device.shell_command(["df", "-h"],std::io::stdout());
 ```
 
-#### [USB] Push a file to the device
+#### (USB) Push a file to the device
 
 ```rust no_run
 use adb_client::{ADBUSBDevice, ADBDeviceExt};
@@ -82,4 +82,16 @@ let product_id = 0x6860;
 let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find device");
 let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
 device.push(&mut input, "/data/local/tmp");
+```
+
+### (TCP) Get a shell from device
+
+```rust no_run
+use std::net::{SocketAddr, IpAddr, Ipv4Addr};
+use adb_client::{ADBTcpDevice, ADBDeviceExt};
+
+let device_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 10));
+let device_port = 43210;
+let mut device = ADBTcpDevice::new(SocketAddr::new(device_ip, device_port)).expect("cannot find device");
+device.shell(std::io::stdin(), std::io::stdout());
 ```

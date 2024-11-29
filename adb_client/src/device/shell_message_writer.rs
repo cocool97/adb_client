@@ -1,18 +1,18 @@
 use std::io::Write;
 
-use crate::USBTransport;
+use crate::ADBMessageTransport;
 
-use super::{ADBUsbMessage, USBCommand};
+use super::{models::MessageCommand, ADBTransportMessage};
 
-/// Wraps a `Writer` to hide underlying ADB protocol write logic.
-pub struct USBShellWriter {
-    transport: USBTransport,
+/// [`Write`] trait implementation to hide underlying ADB protocol write logic for shell commands.
+pub struct ShellMessageWriter<T: ADBMessageTransport> {
+    transport: T,
     local_id: u32,
     remote_id: u32,
 }
 
-impl USBShellWriter {
-    pub fn new(transport: USBTransport, local_id: u32, remote_id: u32) -> Self {
+impl<T: ADBMessageTransport> ShellMessageWriter<T> {
+    pub fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
         Self {
             transport,
             local_id,
@@ -21,10 +21,10 @@ impl USBShellWriter {
     }
 }
 
-impl Write for USBShellWriter {
+impl<T: ADBMessageTransport> Write for ShellMessageWriter<T> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let message = ADBUsbMessage::new(
-            USBCommand::Write,
+        let message = ADBTransportMessage::new(
+            MessageCommand::Write,
             self.local_id,
             self.remote_id,
             buf.to_vec(),

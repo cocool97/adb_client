@@ -93,4 +93,25 @@ pub enum RustADBError {
     /// An error occurred with PKCS8 data
     #[error("error with pkcs8: {0}")]
     RsaPkcs8Error(#[from] rsa::pkcs8::Error),
+    /// Error during certificate generation
+    #[error(transparent)]
+    CertificateGenerationError(#[from] rcgen::Error),
+    /// TLS Error
+    #[error(transparent)]
+    TLSError(#[from] rustls::Error),
+    /// PEM certificate error
+    #[error(transparent)]
+    PemCertError(#[from] rustls_pki_types::pem::Error),
+    /// Error while locking mutex
+    #[error("error while locking data")]
+    PoisonError,
+    /// Cannot upgrade connection from TCP to TLS
+    #[error("upgrade error: {0}")]
+    UpgradeError(String),
+}
+
+impl<T> From<std::sync::PoisonError<T>> for RustADBError {
+    fn from(_err: std::sync::PoisonError<T>) -> Self {
+        Self::PoisonError
+    }
 }
