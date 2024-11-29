@@ -10,7 +10,6 @@ use std::time::Duration;
 const LOCAL_TEST_FILE_PATH: &str = "test_file.bin";
 const REMOTE_TEST_FILE_PATH: &str = "/data/local/tmp/test_file.bin";
 
-
 /// Generate random test file with given size
 fn generate_test_file(size_in_bytes: usize) -> Result<()> {
     let mut test_file = File::create(LOCAL_TEST_FILE_PATH)?;
