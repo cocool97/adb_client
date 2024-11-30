@@ -69,7 +69,7 @@ impl<R: Read> Read for ADBRecvCommandReader<R> {
 }
 
 impl ADBServerDevice {
-    /// Receives `path` to `stream` from the device.
+    /// Receives path to stream from the device.
     pub fn pull<A: AsRef<str>>(&mut self, path: A, stream: &mut dyn Write) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?

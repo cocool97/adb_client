@@ -1,7 +1,8 @@
 use std::{sync::Arc, time::Duration};
 
 use rusb::{
-    constants::LIBUSB_CLASS_VENDOR_SPEC, DeviceHandle, Direction, GlobalContext, TransferType,
+    constants::LIBUSB_CLASS_VENDOR_SPEC, Device, DeviceHandle, Direction, GlobalContext,
+    TransferType,
 };
 
 use super::{ADBMessageTransport, ADBTransport};
@@ -19,18 +20,35 @@ struct Endpoint {
 /// Transport running on USB
 #[derive(Debug, Clone)]
 pub struct USBTransport {
-    vendor_id: u16,
-    product_id: u16,
+    device: Device<GlobalContext>,
     handle: Option<Arc<DeviceHandle<GlobalContext>>>,
 }
 
 impl USBTransport {
-    /// Instantiate a new [USBTransport]
-    pub fn new(vendor_id: u16, product_id: u16) -> Self {
+    /// Instantiate a new [`USBTransport`].
+    /// Only the first device with given vendor_id and product_id is returned.
+    pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
+        for device in rusb::devices()?.iter() {
+            if let Ok(descriptor) = device.device_descriptor() {
+                if descriptor.vendor_id() == vendor_id && descriptor.product_id() == product_id {
+                    return Ok(Self::new_from_device(device));
+                }
+            }
+        }
+
+        Err(RustADBError::DeviceNotFound(format!(
+            "cannot find USB device with vendor_id={} and product_id={}",
+            vendor_id, product_id
+        )))
+    }
+
+    /// Instantiate a new [`USBTransport`] from a [`rusb::Device`].
+    ///
+    /// Devices can be enumerated using [`rusb::devices()`] and then filtered out to get desired device.
+    pub fn new_from_device(rusb_device: rusb::Device<GlobalContext>) -> Self {
         Self {
+            device: rusb_device,
             handle: None,
-            vendor_id,
-            product_id,
         }
     }
 
@@ -112,22 +130,8 @@ impl USBTransport {
 
 impl ADBTransport for USBTransport {
     fn connect(&mut self) -> crate::Result<()> {
-        for d in rusb::devices()?.iter() {
-            if let Ok(descriptor) = d.device_descriptor() {
-                if descriptor.vendor_id() == self.vendor_id
-                    && descriptor.product_id() == self.product_id
-                {
-                    self.handle = Some(Arc::new(d.open()?));
-
-                    return Ok(());
-                }
-            }
-        }
-
-        Err(RustADBError::DeviceNotFound(format!(
-            "Cannot find device with vendor id {} and product id {}",
-            self.vendor_id, self.product_id
-        )))
+        self.handle = Some(Arc::new(self.device.open()?));
+        Ok(())
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {

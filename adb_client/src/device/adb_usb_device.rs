@@ -15,13 +15,6 @@ use crate::ADBMessageTransport;
 use crate::ADBTransport;
 use crate::{Result, RustADBError, USBTransport};
 
-/// Represent a device reached and available over USB.
-#[derive(Debug)]
-pub struct ADBUSBDevice {
-    private_key: ADBRsaKey,
-    inner: ADBMessageDevice<USBTransport>,
-}
-
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     Ok(read_to_string(private_key_path.as_ref()).map(|pk| {
         match ADBRsaKey::new_from_pkcs8(&pk) {
@@ -101,6 +94,13 @@ pub fn get_default_adb_key_path() -> Result<PathBuf> {
         .ok_or(RustADBError::NoHomeDirectory)
 }
 
+/// Represent a device reached and available over USB.
+#[derive(Debug)]
+pub struct ADBUSBDevice {
+    private_key: ADBRsaKey,
+    inner: ADBMessageDevice<USBTransport>,
+}
+
 impl ADBUSBDevice {
     /// Instantiate a new [`ADBUSBDevice`]
     pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
@@ -113,6 +113,26 @@ impl ADBUSBDevice {
         product_id: u16,
         private_key_path: PathBuf,
     ) -> Result<Self> {
+        Self::new_from_transport_inner(USBTransport::new(vendor_id, product_id)?, private_key_path)
+    }
+
+    /// Instantiate a new [`ADBUSBDevice`] from a [`USBTransport`] and an optional private key path.
+    pub fn new_from_transport(
+        transport: USBTransport,
+        private_key_path: Option<PathBuf>,
+    ) -> Result<Self> {
+        let private_key_path = match private_key_path {
+            Some(private_key_path) => private_key_path,
+            None => get_default_adb_key_path()?,
+        };
+
+        Self::new_from_transport_inner(transport, private_key_path)
+    }
+
+    fn new_from_transport_inner(
+        transport: USBTransport,
+        private_key_path: PathBuf,
+    ) -> Result<Self> {
         let private_key = match read_adb_private_key(private_key_path)? {
             Some(pk) => pk,
             None => ADBRsaKey::new_random()?,
@@ -120,7 +140,7 @@ impl ADBUSBDevice {
 
         let mut s = Self {
             private_key,
-            inner: ADBMessageDevice::new(USBTransport::new(vendor_id, product_id)),
+            inner: ADBMessageDevice::new(transport),
         };
 
         s.connect()?;
