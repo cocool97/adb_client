@@ -30,3 +30,12 @@ serde = { version = "1.0.210", features = ["derive"] }
 serde_repr = { version = "0.1.19" }
 sha1 = { version = "0.10.6", features = ["oid"] }
 thiserror = { version = "2.0.1" }
+
+[dev-dependencies]
+anyhow = { version = "1.0.93" }
+criterion = { version = "0.5.1" } # Used for benchmarks
+
+[[bench]]
+harness = false
+name = "benchmark_adb_push"
+path = "../benches/benchmark_adb_push.rs"
