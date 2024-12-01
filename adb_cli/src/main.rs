@@ -7,7 +7,7 @@ mod commands;
 mod models;
 
 use adb_client::{
-    ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort, MDNSBackend,
+    ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort, MDNSDiscoveryService, MDNSBackend,
 };
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -19,6 +19,11 @@ use std::path::Path;
 
 fn main() -> Result<()> {
     let opt = Opts::parse();
+
+    // Setting default log level as "info" if not set
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
+    }
     env_logger::init();
 
     match opt.command {
@@ -311,6 +316,22 @@ fn main() -> Result<()> {
                     device.install(path)?;
                 }
             }
+        }
+        Command::Mdns => {
+            let mut service = MDNSDiscoveryService::new()?;
+
+            let (tx, rx) = std::sync::mpsc::channel();
+            service.start(tx)?;
+
+            while let Ok(device) = rx.recv() {
+                log::info!(
+                    "Found device {} with addresses {:?}",
+                    device.fullname,
+                    device.addresses
+                )
+            }
+
+            service.shutdown()?;
         }
     }
 

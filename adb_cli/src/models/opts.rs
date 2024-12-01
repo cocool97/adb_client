@@ -29,4 +29,6 @@ pub enum Command {
     Usb(UsbCommand),
     /// Device commands via TCP, no server needed
     Tcp(TcpCommand),
+    /// Discover devices over MDNS
+    Mdns,
 }

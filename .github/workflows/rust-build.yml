@@ -12,4 +12,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build project
-      run: cargo build --release
+      run: cargo build --release --all-features

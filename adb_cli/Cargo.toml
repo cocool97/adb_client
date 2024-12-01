@@ -10,11 +10,11 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-adb_client = { version = "2.0.5" }
+adb_client = { version = "2.0.5", features = ["mdns"] }
 anyhow = { version = "1.0.89" }
 clap = { version = "4.5.18", features = ["derive"] }
 env_logger = { version = "0.11.5" }
-log = { version = "0.4.22" }
+log = { version = "0.4.22", features = ["release_max_level_trace"] }
 
 [target.'cfg(unix)'.dependencies]
 termios = { version = "0.3.3" }
