@@ -7,7 +7,7 @@ mod commands;
 mod models;
 
 use adb_client::{
-    ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort,
+    ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort, MDNSBackend,
 };
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -147,6 +147,26 @@ fn main() -> Result<()> {
                 HostCommand::Disconnect { address } => {
                     adb_server.disconnect_device(address)?;
                     log::info!("Disconnected {address}");
+                }
+                HostCommand::MDNS { command } => {
+                    if command == "check" {
+                        let check = adb_server.mdns_check()?;
+                        let server_status = adb_server.server_status()?;
+                        if server_status.mdns_backend == MDNSBackend::Bonjour {
+                            if check {
+                                log::info!("mdns daemon version [Bonjour]");
+                            } else {
+                                log::info!("ERROR: mdns daemon unavailable");
+                            }
+                        } else {
+                            log::info!("mdns daemon version [Openscreen discovery 0.0.0]");
+                        }
+                    } else if command == "services" {
+                        log::info!("List of discovered mdns services");
+                        for service in adb_server.mdns_services()? {
+                            log::info!("{}", service);
+                        }
+                    }
                 }
                 HostCommand::ServerStatus => {
                     log::info!("{}", adb_server.server_status()?);

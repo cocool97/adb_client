@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::BufRead};
+use std::io::BufRead;
 
 use crate::{
     models::{AdbServerCommand, MDNSBackend, MDNSServices},
@@ -40,15 +40,17 @@ impl ADBServer {
         Ok(vec_services)
     }
 
-    /// Check if openscreen mdns service is used, otherwise restart adb server with envs
-    pub fn mdns_force_openscreen_backend(&mut self) -> Result<()> {
+    /// Check if specified backend mdns service is used, otherwise restart adb server with envs
+    pub fn mdns_force_backend(&mut self, backend: MDNSBackend) -> Result<()> {
         let server_status = self.server_status()?;
-        if server_status.mdns_backend != MDNSBackend::OpenScreen {
+        if server_status.mdns_backend != backend {
             self.kill()?;
-            self.start_server(HashMap::from([(
-                OPENSCREEN_MDNS_BACKEND.to_string(),
-                "1".to_string(),
-            )]))?;
+            self.envs.insert(OPENSCREEN_MDNS_BACKEND.to_string(), (if backend == MDNSBackend::OpenScreen {
+                "1"
+            } else {
+                "0"
+            })
+            .to_string());
             self.connect()?;
         }
 

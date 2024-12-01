@@ -19,7 +19,7 @@ pub use adb_device_ext::ADBDeviceExt;
 pub use device::{ADBTcpDevice, ADBUSBDevice};
 pub use emulator_device::ADBEmulatorDevice;
 pub use error::{Result, RustADBError};
-pub use models::{AdbStatResponse, AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType};
+pub use models::{AdbStatResponse, AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType, MDNSBackend};
 pub use server::*;
 pub use server_device::ADBServerDevice;
 pub use transports::*;

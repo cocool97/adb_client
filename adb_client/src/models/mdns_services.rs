@@ -1,14 +1,13 @@
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 use regex::bytes::Regex;
 use std::net::SocketAddrV4;
 use std::{fmt::Display, str::FromStr};
 
 use crate::RustADBError;
 
-lazy_static! {
-    static ref MDNS_SERVICES_REGEX: Regex = Regex::new("^(\\S+)\t(\\S+)\t([\\d\\.]+:\\d+)\n?$")
-        .expect("Cannot build mdns services regex");
-}
+static MDNS_SERVICES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("^(\\S+)\t(\\S+)\t([\\d\\.]+:\\d+)\n?$").expect("Cannot build mdns services regex")
+});
 
 /// Represents MDNS Services
 #[derive(Debug, Clone)]
