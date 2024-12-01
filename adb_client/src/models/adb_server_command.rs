@@ -16,6 +16,10 @@ pub(crate) enum AdbServerCommand {
     Pair(SocketAddrV4, String),
     TransportAny,
     TransportSerial(String),
+    MDNSCheck,
+    MDNSServices,
+    ServerStatus,
+    ReconnectOffline,
     Install(u64),
     // Local commands
     ShellCommand(String),
@@ -23,8 +27,13 @@ pub(crate) enum AdbServerCommand {
     FrameBuffer,
     Sync,
     Reboot(RebootType),
-    Forward(String, String, String),
+    Forward(String, String),
+    ForwardRemoveAll,
     Reverse(String, String),
+    ReverseRemoveAll,
+    Reconnect,
+    TcpIp(u16),
+    Usb,
 }
 
 impl Display for AdbServerCommand {
@@ -56,12 +65,23 @@ impl Display for AdbServerCommand {
                 write!(f, "host:pair:{code}:{addr}")
             }
             AdbServerCommand::FrameBuffer => write!(f, "framebuffer:"),
-            AdbServerCommand::Forward(serial, remote, local) => {
-                write!(f, "host-serial:{serial}:forward:{local};{remote}")
+            AdbServerCommand::Forward(remote, local) => {
+                write!(f, "host:forward:{local};{remote}")
             }
+            AdbServerCommand::ForwardRemoveAll => write!(f, "host:killforward-all"),
             AdbServerCommand::Reverse(remote, local) => {
                 write!(f, "reverse:forward:{remote};{local}")
             }
+            AdbServerCommand::ReverseRemoveAll => write!(f, "reverse:killforward-all"),
+            AdbServerCommand::MDNSCheck => write!(f, "host:mdns:check"),
+            AdbServerCommand::MDNSServices => write!(f, "host:mdns:services"),
+            AdbServerCommand::ServerStatus => write!(f, "host:server-status"),
+            AdbServerCommand::Reconnect => write!(f, "reconnect"),
+            AdbServerCommand::ReconnectOffline => write!(f, "host:reconnect-offline"),
+            AdbServerCommand::TcpIp(port) => {
+                write!(f, "tcpip:{port}")
+            }
+            AdbServerCommand::Usb => write!(f, "usb:"),
             AdbServerCommand::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
         }
     }

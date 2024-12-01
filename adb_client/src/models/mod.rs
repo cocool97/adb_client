@@ -7,7 +7,9 @@ mod device_long;
 mod device_short;
 mod device_state;
 mod host_features;
+mod mdns_services;
 mod reboot_type;
+mod server_status;
 mod sync_command;
 
 pub(crate) use adb_emulator_command::ADBEmulatorCommand;
@@ -19,5 +21,8 @@ pub use device_long::DeviceLong;
 pub use device_short::DeviceShort;
 pub use device_state::DeviceState;
 pub use host_features::HostFeatures;
+pub use mdns_services::MDNSServices;
 pub use reboot_type::RebootType;
+pub use server_status::MDNSBackend;
+pub use server_status::ServerStatus;
 pub use sync_command::SyncCommand;

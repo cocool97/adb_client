@@ -26,7 +26,7 @@ jobs:
           cargo install cargo-generate-rpm
 
       - name: "build-release"
-        run: cargo build --release
+        run: cargo build --all-features --release
 
       - name: "Build DEB package"
         run: cargo deb -p adb_cli

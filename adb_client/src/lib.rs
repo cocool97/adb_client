@@ -9,6 +9,7 @@ mod constants;
 mod device;
 mod emulator_device;
 mod error;
+mod mdns;
 mod models;
 mod server;
 mod server_device;
@@ -19,7 +20,10 @@ pub use adb_device_ext::ADBDeviceExt;
 pub use device::{ADBTcpDevice, ADBUSBDevice};
 pub use emulator_device::ADBEmulatorDevice;
 pub use error::{Result, RustADBError};
-pub use models::{AdbStatResponse, AdbVersion, DeviceLong, DeviceShort, DeviceState, RebootType};
+pub use mdns::*;
+pub use models::{
+    AdbStatResponse, AdbVersion, DeviceLong, DeviceShort, DeviceState, MDNSBackend, RebootType,
+};
 pub use server::*;
 pub use server_device::ADBServerDevice;
 pub use transports::*;

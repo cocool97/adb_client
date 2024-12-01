@@ -108,6 +108,12 @@ pub enum RustADBError {
     /// Cannot upgrade connection from TCP to TLS
     #[error("upgrade error: {0}")]
     UpgradeError(String),
+    /// An error occurred while getting mdns devices
+    #[error(transparent)]
+    MDNSError(#[from] mdns_sd::Error),
+    /// An error occurred while sending data to channel
+    #[error(transparent)]
+    SendError(#[from] std::sync::mpsc::SendError<crate::MDNSDevice>),
 }
 
 impl<T> From<std::sync::PoisonError<T>> for RustADBError {
