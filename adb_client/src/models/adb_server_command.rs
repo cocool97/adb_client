@@ -20,6 +20,7 @@ pub(crate) enum AdbServerCommand {
     MDNSServices,
     ServerStatus,
     ReconnectOffline,
+    Install(u64),
     // Local commands
     ShellCommand(String),
     Shell,
@@ -81,6 +82,7 @@ impl Display for AdbServerCommand {
                 write!(f, "tcpip:{port}")
             }
             AdbServerCommand::Usb => write!(f, "usb:"),
+            AdbServerCommand::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
         }
     }
 }

@@ -42,7 +42,7 @@ impl<W: Write> Write for ADBSendCommandWriter<W> {
 }
 
 impl ADBServerDevice {
-    /// Send [stream] to [path] on the device.
+    /// Send stream to path on the device.
     pub fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
         log::info!("Sending data to {}", path.as_ref());
         let serial = self.identifier.clone();

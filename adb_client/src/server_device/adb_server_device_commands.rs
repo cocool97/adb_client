@@ -1,10 +1,15 @@
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    path::Path,
+};
 
 use crate::{
     constants::BUFFER_SIZE,
     models::{AdbServerCommand, AdbStatResponse, HostFeatures},
-    ADBDeviceExt, ADBServerDevice, Result, RustADBError,
+    ADBDeviceExt, Result, RustADBError,
 };
+
+use super::ADBServerDevice;
 
 impl ADBDeviceExt for ADBServerDevice {
     fn shell_command<S: ToString, W: Write>(
@@ -120,5 +125,9 @@ impl ADBDeviceExt for ADBServerDevice {
 
     fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
         self.push(stream, path)
+    }
+
+    fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
+        self.install(apk_path)
     }
 }

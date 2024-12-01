@@ -9,7 +9,7 @@ use std::{
 };
 
 impl ADBServerDevice {
-    /// Lists files in [path] on the device.
+    /// Lists files in path on the device.
     pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?
