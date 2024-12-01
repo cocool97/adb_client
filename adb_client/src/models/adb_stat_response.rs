@@ -8,10 +8,14 @@ use std::{
 use byteorder::LittleEndian;
 use serde::{Deserialize, Serialize};
 
+/// Represents a `stat` response
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AdbStatResponse {
+    /// File permissions
     pub file_perm: u32,
+    /// File size, in bytes
     pub file_size: u32,
+    /// File modification time
     pub mod_time: u32,
 }
 

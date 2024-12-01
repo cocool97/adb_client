@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::path::PathBuf;
 
 use crate::models::RebootTypeCommand;
 
@@ -36,5 +37,10 @@ pub enum LocalCommand {
     Logcat {
         /// Path to output file (created if not exists)
         path: Option<String>,
+    },
+    /// Install an APK on device
+    Install {
+        /// Path to APK file. Extension must be ".apk"
+        path: PathBuf,
     },
 }

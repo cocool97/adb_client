@@ -87,6 +87,27 @@ pub enum RustADBError {
     /// Cannot convert given data from slice
     #[error(transparent)]
     TryFromSliceError(#[from] std::array::TryFromSliceError),
+    /// Given path does not represent an APK
+    #[error("wrong file extension: {0}")]
+    WrongFileExtension(String),
+    /// An error occurred with PKCS8 data
+    #[error("error with pkcs8: {0}")]
+    RsaPkcs8Error(#[from] rsa::pkcs8::Error),
+    /// Error during certificate generation
+    #[error(transparent)]
+    CertificateGenerationError(#[from] rcgen::Error),
+    /// TLS Error
+    #[error(transparent)]
+    TLSError(#[from] rustls::Error),
+    /// PEM certificate error
+    #[error(transparent)]
+    PemCertError(#[from] rustls_pki_types::pem::Error),
+    /// Error while locking mutex
+    #[error("error while locking data")]
+    PoisonError,
+    /// Cannot upgrade connection from TCP to TLS
+    #[error("upgrade error: {0}")]
+    UpgradeError(String),
     /// An error occurred while getting mdns devices
     #[cfg(feature = "mdns")]
     #[error(transparent)]
@@ -95,4 +116,10 @@ pub enum RustADBError {
     #[cfg(feature = "mdns")]
     #[error(transparent)]
     SendError(#[from] std::sync::mpsc::SendError<crate::MDNSDevice>),
+}
+
+impl<T> From<std::sync::PoisonError<T>> for RustADBError {
+    fn from(_err: std::sync::PoisonError<T>) -> Self {
+        Self::PoisonError
+    }
 }

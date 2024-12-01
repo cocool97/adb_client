@@ -2,7 +2,7 @@ use std::net::SocketAddrV4;
 
 use clap::Parser;
 
-use crate::commands::{EmuCommand, HostCommand, LocalCommand, UsbCommand};
+use crate::commands::{EmuCommand, HostCommand, LocalCommand, TcpCommand, UsbCommand};
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -27,6 +27,8 @@ pub enum Command {
     Emu(EmuCommand),
     /// Device commands via USB, no server needed
     Usb(UsbCommand),
+    /// Device commands via TCP, no server needed
+    Tcp(TcpCommand),
     /// Discover devices over MDNS
     Mdns,
 }
