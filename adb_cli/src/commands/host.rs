@@ -22,7 +22,18 @@ pub enum HostCommand {
     /// Disconnect device over WI-FI
     Disconnect { address: SocketAddrV4 },
     /// MDNS services
-    Mdns { command: String },
+    Mdns {
+        #[clap(subcommand)]
+        subcommand: MdnsCommand,
+    },
     /// Display server status
     ServerStatus,
+}
+
+#[derive(Parser, Debug)]
+pub enum MdnsCommand {
+    /// Check mdns status
+    Check,
+    /// List mdns services available
+    Services,
 }

@@ -7,6 +7,8 @@ use crate::commands::{EmuCommand, HostCommand, LocalCommand, TcpCommand, UsbComm
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 pub struct Opts {
+    #[clap(long = "debug")]
+    pub debug: bool,
     #[clap(short = 'a', long = "address", default_value = "127.0.0.1:5037")]
     pub address: SocketAddrV4,
     /// Serial id of a specific device. Every request will be sent to this device.
@@ -29,6 +31,6 @@ pub enum Command {
     Usb(UsbCommand),
     /// Device commands via TCP, no server needed
     Tcp(TcpCommand),
-    /// Discover devices over MDNS
-    Mdns,
+    /// Discover devices over MDNS without using adb-server
+    MdnsDiscovery,
 }

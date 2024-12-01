@@ -109,11 +109,9 @@ pub enum RustADBError {
     #[error("upgrade error: {0}")]
     UpgradeError(String),
     /// An error occurred while getting mdns devices
-    #[cfg(feature = "mdns")]
     #[error(transparent)]
     MDNSError(#[from] mdns_sd::Error),
     /// An error occurred while sending data to channel
-    #[cfg(feature = "mdns")]
     #[error(transparent)]
     SendError(#[from] std::sync::mpsc::SendError<crate::MDNSDevice>),
 }

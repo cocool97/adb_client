@@ -12,14 +12,24 @@ use adb_client::{
 };
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use commands::{EmuCommand, HostCommand, LocalCommand, TcpCommands, UsbCommands};
+use commands::{EmuCommand, HostCommand, LocalCommand, MdnsCommand, TcpCommands, UsbCommands};
 use models::{Command, Opts};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
 fn main() -> Result<()> {
-    let opt = Opts::parse();
+    let opts = Opts::parse();
+
+    // RUST_LOG variable has more priority then "--debug" flag
+    if std::env::var("RUST_LOG").is_err() {
+        let level = match opts.debug {
+            true => "trace",
+            false => "info",
+        };
+
+        std::env::set_var("RUST_LOG", level);
+    }
 
     // Setting default log level as "info" if not set
     if std::env::var("RUST_LOG").is_err() {
@@ -27,11 +37,11 @@ fn main() -> Result<()> {
     }
     env_logger::init();
 
-    match opt.command {
+    match opts.command {
         Command::Local(local) => {
-            let mut adb_server = ADBServer::new(opt.address);
+            let mut adb_server = ADBServer::new(opts.address);
 
-            let mut device = match opt.serial {
+            let mut device = match opts.serial {
                 Some(serial) => adb_server.get_device_by_name(&serial)?,
                 None => adb_server.get_device()?,
             };
@@ -110,7 +120,7 @@ fn main() -> Result<()> {
             }
         }
         Command::Host(host) => {
-            let mut adb_server = ADBServer::new(opt.address);
+            let mut adb_server = ADBServer::new(opts.address);
 
             match host {
                 HostCommand::Version => {
@@ -154,33 +164,35 @@ fn main() -> Result<()> {
                     adb_server.disconnect_device(address)?;
                     log::info!("Disconnected {address}");
                 }
-                HostCommand::Mdns { command } => {
-                    if command == "check" {
+                HostCommand::Mdns { subcommand } => match subcommand {
+                    MdnsCommand::Check => {
                         let check = adb_server.mdns_check()?;
                         let server_status = adb_server.server_status()?;
-                        if server_status.mdns_backend == MDNSBackend::Bonjour {
-                            if check {
-                                log::info!("mdns daemon version [Bonjour]");
-                            } else {
-                                log::info!("ERROR: mdns daemon unavailable");
+                        match server_status.mdns_backend {
+                            MDNSBackend::Unknown => log::info!("unknown mdns backend..."),
+                            MDNSBackend::Bonjour => match check {
+                                true => log::info!("mdns daemon version [Bonjour]"),
+                                false => log::info!("ERROR: mdns daemon unavailable"),
+                            },
+                            MDNSBackend::OpenScreen => {
+                                log::info!("mdns daemon version [Openscreen discovery 0.0.0]")
                             }
-                        } else {
-                            log::info!("mdns daemon version [Openscreen discovery 0.0.0]");
                         }
-                    } else if command == "services" {
+                    }
+                    MdnsCommand::Services => {
                         log::info!("List of discovered mdns services");
                         for service in adb_server.mdns_services()? {
                             log::info!("{}", service);
                         }
                     }
-                }
+                },
                 HostCommand::ServerStatus => {
                     log::info!("{}", adb_server.server_status()?);
                 }
             }
         }
         Command::Emu(emu) => {
-            let mut emulator = match opt.serial {
+            let mut emulator = match opts.serial {
                 Some(serial) => ADBEmulatorDevice::new(serial, None)?,
                 None => return Err(anyhow!("Serial must be set to use emulators !")),
             };
@@ -318,12 +330,13 @@ fn main() -> Result<()> {
                 }
             }
         }
-        Command::Mdns => {
+        Command::MdnsDiscovery => {
             let mut service = MDNSDiscoveryService::new()?;
 
             let (tx, rx) = std::sync::mpsc::channel();
             service.start(tx)?;
 
+            log::info!("Starting mdns discovery...");
             while let Ok(device) = rx.recv() {
                 log::info!(
                     "Found device {} with addresses {:?}",
