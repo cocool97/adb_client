@@ -17,10 +17,7 @@ chrono = { version = "0.4.38" }
 homedir = { version = "0.3.4" }
 image = { version = "0.25.5" }
 lazy_static = { version = "1.5.0" }
-log = { version = "0.4.22", features = [
-    "max_level_debug",
-    "release_max_level_debug",
-] }
+log = { version = "0.4.22", features = ["max_level_debug"] }
 mdns-sd = { version = "0.11.5", optional = true }
 num-bigint = { version = "0.8.4", package = "num-bigint-dig" }
 num-traits = { version = "0.2.19" }
@@ -45,7 +42,6 @@ criterion = { version = "0.5.1" } # Used for benchmarks
 harness = false
 name = "benchmark_adb_push"
 path = "../benches/benchmark_adb_push.rs"
-thiserror = { version = "2.0.1" }
 
 [features]
 mdns = ["mdns-sd"]

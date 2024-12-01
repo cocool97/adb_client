@@ -22,7 +22,7 @@ pub enum HostCommand {
     /// Disconnect device over WI-FI
     Disconnect { address: SocketAddrV4 },
     /// MDNS services
-    MDNS { command: String },
+    Mdns { command: String },
     /// Display server status
     ServerStatus,
 }

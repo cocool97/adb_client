@@ -45,12 +45,15 @@ impl ADBServer {
         let server_status = self.server_status()?;
         if server_status.mdns_backend != backend {
             self.kill()?;
-            self.envs.insert(OPENSCREEN_MDNS_BACKEND.to_string(), (if backend == MDNSBackend::OpenScreen {
-                "1"
-            } else {
-                "0"
-            })
-            .to_string());
+            self.envs.insert(
+                OPENSCREEN_MDNS_BACKEND.to_string(),
+                (if backend == MDNSBackend::OpenScreen {
+                    "1"
+                } else {
+                    "0"
+                })
+                .to_string(),
+            );
             self.connect()?;
         }
 

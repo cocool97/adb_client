@@ -7,7 +7,8 @@ mod commands;
 mod models;
 
 use adb_client::{
-    ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort, MDNSDiscoveryService, MDNSBackend,
+    ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort,
+    MDNSBackend, MDNSDiscoveryService,
 };
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -153,7 +154,7 @@ fn main() -> Result<()> {
                     adb_server.disconnect_device(address)?;
                     log::info!("Disconnected {address}");
                 }
-                HostCommand::MDNS { command } => {
+                HostCommand::Mdns { command } => {
                     if command == "check" {
                         let check = adb_server.mdns_check()?;
                         let server_status = adb_server.server_status()?;

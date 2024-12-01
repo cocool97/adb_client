@@ -1,6 +1,6 @@
-use std::sync::LazyLock;
 use regex::bytes::Regex;
 use std::net::SocketAddrV4;
+use std::sync::LazyLock;
 use std::{fmt::Display, str::FromStr};
 
 use crate::RustADBError;
