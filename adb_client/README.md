@@ -15,6 +15,20 @@ Add `adb_client` crate as a dependency by simply adding it to your `Cargo.toml`:
 adb_client = "*"
 ```
 
+## Benchmarks
+
+Benchmarks run on a **Samsung S10 SM-G973F** device and an **Intel i7-1265U** CPU laptop.
+
+### `ADBServerDevice` push vs `adb push`
+
+`ADBServerDevice` performs all operations by using adb server as a bridge.
+
+|File size|Sample size|`ADBServerDevice`|`adb`|Difference|
+|:-------:|:---------:|:----------:|:---:|:-----:|
+|10 MB|100|350,79 ms|356,30 ms|<div style="color:green">-1,57 %</div>|
+|500 MB|50|15,60 s|15,64 s|<div style="color:green">-0,25 %</div>|
+|1 GB|20|31,09 s|31,12 s|<div style="color:green">-0,10 %</div>|
+
 ## Examples
 
 ### Get available ADB devices
@@ -84,7 +98,7 @@ let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
 device.push(&mut input, "/data/local/tmp");
 ```
 
-### (TCP) Get a shell from device
+#### (TCP) Get a shell from device
 
 ```rust no_run
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};

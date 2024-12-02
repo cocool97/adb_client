@@ -61,12 +61,14 @@ impl ADBTcpDevice {
         Ok(())
     }
 
+    #[inline]
     fn get_transport_mut(&mut self) -> &mut TcpTransport {
         self.inner.get_transport_mut()
     }
 }
 
 impl ADBDeviceExt for ADBTcpDevice {
+    #[inline]
     fn shell_command<S: ToString, W: std::io::Write>(
         &mut self,
         command: impl IntoIterator<Item = S>,
@@ -75,6 +77,7 @@ impl ADBDeviceExt for ADBTcpDevice {
         self.inner.shell_command(command, output)
     }
 
+    #[inline]
     fn shell<R: std::io::Read, W: std::io::Write + Send + 'static>(
         &mut self,
         reader: R,
@@ -83,22 +86,27 @@ impl ADBDeviceExt for ADBTcpDevice {
         self.inner.shell(reader, writer)
     }
 
+    #[inline]
     fn stat(&mut self, remote_path: &str) -> Result<crate::AdbStatResponse> {
         self.inner.stat(remote_path)
     }
 
+    #[inline]
     fn pull<A: AsRef<str>, W: std::io::Write>(&mut self, source: A, output: W) -> Result<()> {
         self.inner.pull(source, output)
     }
 
+    #[inline]
     fn push<R: std::io::Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
         self.inner.push(stream, path)
     }
 
+    #[inline]
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
         self.inner.reboot(reboot_type)
     }
 
+    #[inline]
     fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
         self.inner.install(apk_path)
     }
