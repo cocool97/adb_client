@@ -12,7 +12,7 @@ use adb_client::{
 };
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use commands::{EmuCommand, HostCommand, LocalCommand, MdnsCommand, TcpCommands, UsbCommands};
+use commands::{DeviceCommands, EmuCommand, HostCommand, LocalCommand, MdnsCommand};
 use models::{Command, Opts};
 use std::fs::File;
 use std::io::Write;
@@ -226,7 +226,7 @@ fn main() -> Result<()> {
             };
 
             match usb.commands {
-                UsbCommands::Shell { commands } => {
+                DeviceCommands::Shell { commands } => {
                     if commands.is_empty() {
                         // Need to duplicate some code here as ADBTermios [Drop] implementation resets terminal state.
                         // Using a scope here would call drop() too early..
@@ -245,7 +245,7 @@ fn main() -> Result<()> {
                         device.shell_command(commands, std::io::stdout())?;
                     }
                 }
-                UsbCommands::Pull {
+                DeviceCommands::Pull {
                     source,
                     destination,
                 } => {
@@ -253,34 +253,35 @@ fn main() -> Result<()> {
                     device.pull(&source, &mut output)?;
                     log::info!("Downloaded {source} as {destination}");
                 }
-                UsbCommands::Stat { path } => {
+                DeviceCommands::Stat { path } => {
                     let stat_response = device.stat(&path)?;
                     println!("{}", stat_response);
                 }
-                UsbCommands::Reboot { reboot_type } => {
+                DeviceCommands::Reboot { reboot_type } => {
                     log::info!("Reboots device in mode {:?}", reboot_type);
                     device.reboot(reboot_type.into())?
                 }
-                UsbCommands::Push { filename, path } => {
+                DeviceCommands::Push { filename, path } => {
                     let mut input = File::open(Path::new(&filename))?;
                     device.push(&mut input, &path)?;
                     log::info!("Uploaded {filename} to {path}");
                 }
-                UsbCommands::Run { package, activity } => {
+                DeviceCommands::Run { package, activity } => {
                     let output = device.run_activity(&package, &activity)?;
                     std::io::stdout().write_all(&output)?;
                 }
-                UsbCommands::Install { path } => {
+                DeviceCommands::Install { path } => {
                     log::info!("Starting installation of APK {}...", path.display());
                     device.install(path)?;
                 }
+                DeviceCommands::Framebuffer { path } => device.framebuffer(path)?,
             }
         }
         Command::Tcp(tcp) => {
             let mut device = ADBTcpDevice::new(tcp.address)?;
 
             match tcp.commands {
-                TcpCommands::Shell { commands } => {
+                DeviceCommands::Shell { commands } => {
                     if commands.is_empty() {
                         // Need to duplicate some code here as ADBTermios [Drop] implementation resets terminal state.
                         // Using a scope here would call drop() too early..
@@ -299,7 +300,7 @@ fn main() -> Result<()> {
                         device.shell_command(commands, std::io::stdout())?;
                     }
                 }
-                TcpCommands::Pull {
+                DeviceCommands::Pull {
                     source,
                     destination,
                 } => {
@@ -307,27 +308,28 @@ fn main() -> Result<()> {
                     device.pull(&source, &mut output)?;
                     log::info!("Downloaded {source} as {destination}");
                 }
-                TcpCommands::Stat { path } => {
+                DeviceCommands::Stat { path } => {
                     let stat_response = device.stat(&path)?;
                     println!("{}", stat_response);
                 }
-                TcpCommands::Reboot { reboot_type } => {
+                DeviceCommands::Reboot { reboot_type } => {
                     log::info!("Reboots device in mode {:?}", reboot_type);
                     device.reboot(reboot_type.into())?
                 }
-                TcpCommands::Push { filename, path } => {
+                DeviceCommands::Push { filename, path } => {
                     let mut input = File::open(Path::new(&filename))?;
                     device.push(&mut input, &path)?;
                     log::info!("Uploaded {filename} to {path}");
                 }
-                TcpCommands::Run { package, activity } => {
+                DeviceCommands::Run { package, activity } => {
                     let output = device.run_activity(&package, &activity)?;
                     std::io::stdout().write_all(&output)?;
                 }
-                TcpCommands::Install { path } => {
+                DeviceCommands::Install { path } => {
                     log::info!("Starting installation of APK {}...", path.display());
                     device.install(path)?;
                 }
+                DeviceCommands::Framebuffer { path } => device.framebuffer(path)?,
             }
         }
         Command::MdnsDiscovery => {

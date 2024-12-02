@@ -130,4 +130,12 @@ impl ADBDeviceExt for ADBServerDevice {
     fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
         self.install(apk_path)
     }
+
+    fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        self.framebuffer(path)
+    }
+
+    fn framebuffer_bytes<W: Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
+        self.framebuffer_bytes(writer)
+    }
 }

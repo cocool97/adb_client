@@ -110,6 +110,16 @@ impl ADBDeviceExt for ADBTcpDevice {
     fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
         self.inner.install(apk_path)
     }
+
+    #[inline]
+    fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        self.inner.framebuffer(path)
+    }
+
+    #[inline]
+    fn framebuffer_bytes<W: std::io::Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
+        self.inner.framebuffer_bytes(writer)
+    }
 }
 
 impl Drop for ADBTcpDevice {

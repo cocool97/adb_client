@@ -35,4 +35,12 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     fn install<P: AsRef<std::path::Path>>(&mut self, apk_path: P) -> Result<()> {
         self.install(apk_path)
     }
+
+    fn framebuffer<P: AsRef<std::path::Path>>(&mut self, path: P) -> Result<()> {
+        self.framebuffer(path)
+    }
+
+    fn framebuffer_bytes<W: Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
+        self.framebuffer_bytes(writer)
+    }
 }
