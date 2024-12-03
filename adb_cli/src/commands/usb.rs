@@ -54,8 +54,8 @@ pub enum DeviceCommands {
         path: PathBuf,
     },
     /// Dump framebuffer of device
-    Framebuffer { 
+    Framebuffer {
         /// Framebuffer image destination path
-        path: String
+        path: String,
     },
 }
