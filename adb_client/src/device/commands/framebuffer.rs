@@ -44,19 +44,28 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
                 let framebuffer_info: FrameBufferInfoV1 = buf.try_into()?;
 
-                let mut data = vec![
-                    0_u8;
-                    framebuffer_info
-                        .size
-                        .try_into()
-                        .map_err(|_| RustADBError::ConversionError)?
-                ];
-                payload_cursor.read_exact(&mut data)?;
+                let mut framebuffer_data = Vec::new();
+                payload_cursor.read_to_end(&mut framebuffer_data)?;
+
+                loop {
+                    if framebuffer_data.len() as u32 == framebuffer_info.size {
+                        break;
+                    }
+
+                    let response = self.recv_and_reply_okay(local_id, remote_id)?;
+
+                    framebuffer_data.extend_from_slice(&response.into_payload());
+
+                    log::debug!(
+                        "received framebuffer data. new size {}",
+                        framebuffer_data.len()
+                    );
+                }
 
                 ImageBuffer::<Rgba<u8>, Vec<u8>>::from_vec(
                     framebuffer_info.width,
                     framebuffer_info.height,
-                    data,
+                    framebuffer_data,
                 )
                 .ok_or_else(|| RustADBError::FramebufferConversionError)?
             }
