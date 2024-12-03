@@ -173,9 +173,7 @@ impl ADBUSBDevice {
             MessageCommand::Cnxn,
             0x01000000,
             1048576,
-            format!("host::{}\0", env!("CARGO_PKG_NAME"))
-                .as_bytes()
-                .to_vec(),
+            format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
         );
 
         self.get_transport_mut().write_message(message)?;
@@ -202,7 +200,7 @@ impl ADBUSBDevice {
 
         let sign = self.private_key.sign(auth_message.into_payload())?;
 
-        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_SIGNATURE, 0, sign);
+        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign);
 
         self.get_transport_mut().write_message(message)?;
 
@@ -219,7 +217,7 @@ impl ADBUSBDevice {
         let mut pubkey = self.private_key.android_pubkey_encode()?.into_bytes();
         pubkey.push(b'\0');
 
-        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, pubkey);
+        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey);
 
         self.get_transport_mut().write_message(message)?;
 

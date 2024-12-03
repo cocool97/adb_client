@@ -4,7 +4,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use image::{ImageBuffer, ImageFormat, Rgba};
 
 use crate::{
-    device::{adb_message_device::ADBMessageDevice, ADBTransportMessage, MessageCommand},
+    device::{adb_message_device::ADBMessageDevice, MessageCommand},
     models::{FrameBufferInfoV1, FrameBufferInfoV2},
     ADBMessageTransport, Result, RustADBError,
 };
@@ -21,15 +21,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
-        let message =
-            ADBTransportMessage::new(MessageCommand::Open, 1, 0, b"framebuffer:\0".to_vec());
+        self.open_session(b"framebuffer:\0")?;
 
-        let response = self.send_and_expect_okay(message)?;
-
-        let local_id = response.header().arg1();
-        let remote_id = response.header().arg0();
-
-        let response = self.recv_and_reply_okay(local_id, remote_id)?;
+        let response = self.recv_and_reply_okay()?;
 
         let mut payload_cursor = Cursor::new(response.payload());
 
@@ -52,7 +46,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         break;
                     }
 
-                    let response = self.recv_and_reply_okay(local_id, remote_id)?;
+                    let response = self.recv_and_reply_okay()?;
 
                     framebuffer_data.extend_from_slice(&response.into_payload());
 
@@ -85,7 +79,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         break;
                     }
 
-                    let response = self.recv_and_reply_okay(local_id, remote_id)?;
+                    let response = self.recv_and_reply_okay()?;
 
                     framebuffer_data.extend_from_slice(&response.into_payload());
 

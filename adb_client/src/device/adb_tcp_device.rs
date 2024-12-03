@@ -32,9 +32,7 @@ impl ADBTcpDevice {
             MessageCommand::Cnxn,
             0x01000000,
             1048576,
-            format!("host::{}\0", env!("CARGO_PKG_NAME"))
-                .as_bytes()
-                .to_vec(),
+            format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
         );
 
         self.get_transport_mut().write_message(message)?;
@@ -49,7 +47,7 @@ impl ADBTcpDevice {
             )));
         };
 
-        let message = ADBTransportMessage::new(MessageCommand::Stls, 1, 0, vec![]);
+        let message = ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]);
 
         self.get_transport_mut().write_message(message)?;
 

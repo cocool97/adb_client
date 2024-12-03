@@ -17,7 +17,7 @@ adb_client = "*"
 
 ## Benchmarks
 
-Benchmarks run on a **Samsung S10 SM-G973F** device and an **Intel i7-1265U** CPU laptop.
+Benchmarks run on `v2.0.6`, on a **Samsung S10 SM-G973F** device and an **Intel i7-1265U** CPU laptop
 
 ### `ADBServerDevice` push vs `adb push`
 

@@ -1,5 +1,4 @@
-use rand::Rng;
-use std::io::{Read, Write};
+use std::io::{ErrorKind, Read, Write};
 
 use crate::device::ShellMessageWriter;
 use crate::Result;
@@ -9,16 +8,13 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    /// Runs 'command' in a shell on the device, and write its output and error streams into [`output`].
+    /// Runs 'command' in a shell on the device, and write its output and error streams into output.
     pub(crate) fn shell_command<S: ToString, W: Write>(
         &mut self,
         command: impl IntoIterator<Item = S>,
         mut output: W,
     ) -> Result<()> {
-        let message = ADBTransportMessage::new(
-            MessageCommand::Open,
-            1,
-            0,
+        let response = self.open_session(
             format!(
                 "shell:{}\0",
                 command
@@ -27,12 +23,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     .collect::<Vec<_>>()
                     .join(" "),
             )
-            .as_bytes()
-            .to_vec(),
-        );
-        self.get_transport_mut().write_message(message)?;
+            .as_bytes(),
+        )?;
 
-        let response = self.get_transport_mut().read_message()?;
         if response.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
                 "wrong command {}",
@@ -60,20 +53,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         mut reader: R,
         mut writer: W,
     ) -> Result<()> {
-        let sync_directive = "shell:\0";
-
-        let mut rng = rand::thread_rng();
-        let message = ADBTransportMessage::new(
-            MessageCommand::Open,
-            rng.gen(), /* Our 'local-id' */
-            0,
-            sync_directive.into(),
-        );
-        let message = self.send_and_expect_okay(message)?;
-        let local_id = message.header().arg1();
-        let remote_id = message.header().arg0();
+        self.open_session(b"shell:\0")?;
 
         let mut transport = self.get_transport().clone();
+
+        let local_id = self.get_local_id()?;
+        let remote_id = self.get_remote_id()?;
 
         // Reading thread, reads response from adbd
         std::thread::spawn(move || -> Result<()> {
@@ -82,17 +67,17 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
                 // Acknowledge for more data
                 let response =
-                    ADBTransportMessage::new(MessageCommand::Okay, local_id, remote_id, vec![]);
+                    ADBTransportMessage::new(MessageCommand::Okay, local_id, remote_id, &[]);
                 transport.write_message(response)?;
 
                 match message.header().command() {
-                    MessageCommand::Write => {}
+                    MessageCommand::Write => {
+                        writer.write_all(&message.into_payload())?;
+                        writer.flush()?;
+                    }
                     MessageCommand::Okay => continue,
                     _ => return Err(RustADBError::ADBShellNotSupported),
                 }
-
-                writer.write_all(&message.into_payload())?;
-                writer.flush()?;
             }
         });
 
@@ -102,7 +87,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         // Read from given reader (that could be stdin e.g), and write content to device adbd
         if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {
             match e.kind() {
-                std::io::ErrorKind::BrokenPipe => return Ok(()),
+                ErrorKind::BrokenPipe => return Ok(()),
                 _ => return Err(RustADBError::IOError(e)),
             }
         }

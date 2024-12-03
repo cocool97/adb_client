@@ -72,10 +72,10 @@ impl ADBTransportMessageHeader {
 }
 
 impl ADBTransportMessage {
-    pub fn new(command: MessageCommand, arg0: u32, arg1: u32, data: Vec<u8>) -> Self {
+    pub fn new(command: MessageCommand, arg0: u32, arg1: u32, data: &[u8]) -> Self {
         Self {
-            header: ADBTransportMessageHeader::new(command, arg0, arg1, &data),
-            payload: data,
+            header: ADBTransportMessageHeader::new(command, arg0, arg1, data),
+            payload: data.to_vec(),
         }
     }
 

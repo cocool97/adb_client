@@ -3,9 +3,7 @@ use std::fs::File;
 use rand::Rng;
 
 use crate::{
-    device::{
-        adb_message_device::ADBMessageDevice, ADBTransportMessage, MessageCommand, MessageWriter,
-    },
+    device::{adb_message_device::ADBMessageDevice, MessageWriter},
     utils::check_extension_is_apk,
     ADBMessageTransport, Result,
 };
@@ -22,22 +20,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let local_id = rng.gen();
 
-        let message = ADBTransportMessage::new(
-            MessageCommand::Open,
-            local_id,
-            0,
-            format!("exec:cmd package 'install' -S {}\0", file_size)
-                .as_bytes()
-                .to_vec(),
-        );
-        self.get_transport_mut().write_message(message)?;
-
-        let response = self.get_transport_mut().read_message()?;
-        let remote_id = response.header().arg0();
+        self.open_session(format!("exec:cmd package 'install' -S {}\0", file_size).as_bytes())?;
 
         let transport = self.get_transport().clone();
 
-        let mut writer = MessageWriter::new(transport, local_id, remote_id);
+        let mut writer = MessageWriter::new(transport, local_id, self.get_remote_id()?);
 
         std::io::copy(&mut apk_file, &mut writer)?;
 

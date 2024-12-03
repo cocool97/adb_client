@@ -25,12 +25,8 @@ impl<T: ADBMessageTransport> MessageWriter<T> {
 
 impl<T: ADBMessageTransport> Write for MessageWriter<T> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let message = ADBTransportMessage::new(
-            MessageCommand::Write,
-            self.local_id,
-            self.remote_id,
-            buf.to_vec(),
-        );
+        let message =
+            ADBTransportMessage::new(MessageCommand::Write, self.local_id, self.remote_id, buf);
         self.transport
             .write_message(message)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;

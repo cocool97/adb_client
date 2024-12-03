@@ -10,10 +10,10 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
-        let (local_id, remote_id) = self.begin_synchronization()?;
+        self.begin_synchronization()?;
         let source = source.as_ref();
 
-        let adb_stat_response = self.stat_with_explicit_ids(source, local_id, remote_id)?;
+        let adb_stat_response = self.stat_with_explicit_ids(source)?;
 
         if adb_stat_response.file_perm == 0 {
             return Err(RustADBError::UnknownResponseType(
@@ -21,8 +21,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             ));
         }
 
+        let local_id = self.get_local_id()?;
+        let remote_id = self.get_remote_id()?;
+
         self.get_transport_mut().write_message_with_timeout(
-            ADBTransportMessage::new(MessageCommand::Okay, local_id, remote_id, "".into()),
+            ADBTransportMessage::new(MessageCommand::Okay, local_id, remote_id, &[]),
             std::time::Duration::from_secs(4),
         )?;
 
@@ -31,19 +34,19 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             bincode::serialize(&recv_buffer).map_err(|_e| RustADBError::ConversionError)?;
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            local_id,
-            remote_id,
-            recv_buffer,
+            self.get_local_id()?,
+            self.get_remote_id()?,
+            &recv_buffer,
         ))?;
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            local_id,
-            remote_id,
-            source.into(),
+            self.get_local_id()?,
+            self.get_remote_id()?,
+            source.as_bytes(),
         ))?;
 
-        self.recv_file(local_id, remote_id, output)?;
-        self.end_transaction(local_id, remote_id)?;
+        self.recv_file(output)?;
+        self.end_transaction()?;
         Ok(())
     }
 }
