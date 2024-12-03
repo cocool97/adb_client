@@ -11,12 +11,18 @@ use super::{models::MessageSubcommand, ADBTransportMessage, MessageCommand};
 #[derive(Debug)]
 pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
+    local_id: Option<u32>,
+    remote_id: Option<u32>,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Instantiate a new [`ADBMessageTransport`]
     pub fn new(transport: T) -> Self {
-        Self { transport }
+        Self {
+            transport,
+            local_id: None,
+            remote_id: None,
+        }
     }
 
     pub(crate) fn get_transport(&mut self) -> &T {
@@ -28,17 +34,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     /// Receive a message and acknowledge it by replying with an `OKAY` command
-    pub(crate) fn recv_and_reply_okay(
-        &mut self,
-        local_id: u32,
-        remote_id: u32,
-    ) -> Result<ADBTransportMessage> {
+    pub(crate) fn recv_and_reply_okay(&mut self) -> Result<ADBTransportMessage> {
         let message = self.transport.read_message()?;
         self.transport.write_message(ADBTransportMessage::new(
             MessageCommand::Okay,
-            local_id,
-            remote_id,
-            "".into(),
+            self.get_local_id()?,
+            self.get_remote_id()?,
+            &[],
         ))?;
         Ok(message)
     }
@@ -62,15 +64,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn recv_file<W: std::io::Write>(
         &mut self,
-        local_id: u32,
-        remote_id: u32,
         mut output: W,
     ) -> std::result::Result<(), RustADBError> {
         let mut len: Option<u64> = None;
         loop {
-            let payload = self
-                .recv_and_reply_okay(local_id, remote_id)?
-                .into_payload();
+            let payload = self.recv_and_reply_okay()?.into_payload();
             let mut rdr = Cursor::new(&payload);
             while rdr.position() != payload.len() as u64 {
                 match len.take() {
@@ -119,7 +117,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             MessageCommand::Write,
             local_id,
             remote_id,
-            serialized_message,
+            &serialized_message,
         );
 
         self.send_and_expect_okay(message)?;
@@ -139,7 +137,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         MessageCommand::Write,
                         local_id,
                         remote_id,
-                        serialized_message,
+                        &serialized_message,
                     );
 
                     self.send_and_expect_okay(message)?;
@@ -167,7 +165,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         MessageCommand::Write,
                         local_id,
                         remote_id,
-                        serialized_message,
+                        &serialized_message,
                     );
 
                     self.send_and_expect_okay(message)?;
@@ -179,41 +177,25 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
     }
 
-    pub(crate) fn begin_synchronization(&mut self) -> Result<(u32, u32)> {
-        let sync_directive = "sync:\0";
-
-        let mut rng = rand::thread_rng();
-        let message = ADBTransportMessage::new(
-            MessageCommand::Open,
-            rng.gen(), /* Our 'local-id' */
-            0,
-            sync_directive.into(),
-        );
-        let message = self.send_and_expect_okay(message)?;
-        let local_id = message.header().arg1();
-        let remote_id = message.header().arg0();
-        Ok((local_id, remote_id))
+    pub(crate) fn begin_synchronization(&mut self) -> Result<()> {
+        self.open_session(b"sync:\0")?;
+        Ok(())
     }
 
-    pub(crate) fn stat_with_explicit_ids(
-        &mut self,
-        remote_path: &str,
-        local_id: u32,
-        remote_id: u32,
-    ) -> Result<AdbStatResponse> {
+    pub(crate) fn stat_with_explicit_ids(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
         let stat_buffer = MessageSubcommand::Stat.with_arg(remote_path.len() as u32);
         let message = ADBTransportMessage::new(
             MessageCommand::Write,
-            local_id,
-            remote_id,
-            bincode::serialize(&stat_buffer).map_err(|_e| RustADBError::ConversionError)?,
+            self.get_local_id()?,
+            self.get_remote_id()?,
+            &bincode::serialize(&stat_buffer).map_err(|_e| RustADBError::ConversionError)?,
         );
         self.send_and_expect_okay(message)?;
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            local_id,
-            remote_id,
-            remote_path.into(),
+            self.get_local_id()?,
+            self.get_remote_id()?,
+            remote_path.as_bytes(),
         ))?;
         let response = self.transport.read_message()?;
         // Skip first 4 bytes as this is the literal "STAT".
@@ -222,15 +204,46 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             .map_err(|_e| RustADBError::ConversionError)
     }
 
-    pub(crate) fn end_transaction(&mut self, local_id: u32, remote_id: u32) -> Result<()> {
+    pub(crate) fn end_transaction(&mut self) -> Result<()> {
         let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            local_id,
-            remote_id,
-            bincode::serialize(&quit_buffer).map_err(|_e| RustADBError::ConversionError)?,
+            self.get_local_id()?,
+            self.get_remote_id()?,
+            &bincode::serialize(&quit_buffer).map_err(|_e| RustADBError::ConversionError)?,
         ))?;
         let _discard_close = self.transport.read_message()?;
         Ok(())
+    }
+
+    pub(crate) fn open_session(&mut self, data: &[u8]) -> Result<ADBTransportMessage> {
+        let mut rng = rand::thread_rng();
+
+        let message = ADBTransportMessage::new(
+            MessageCommand::Open,
+            rng.gen(), // Our 'local-id'
+            0,
+            data,
+        );
+        self.get_transport_mut().write_message(message)?;
+
+        let response = self.get_transport_mut().read_message()?;
+
+        self.local_id = Some(response.header().arg1());
+        self.remote_id = Some(response.header().arg0());
+
+        Ok(response)
+    }
+
+    pub(crate) fn get_local_id(&self) -> Result<u32> {
+        self.local_id.ok_or(RustADBError::ADBRequestFailed(
+            "connection not opened, no local_id".into(),
+        ))
+    }
+
+    pub(crate) fn get_remote_id(&self) -> Result<u32> {
+        self.remote_id.ok_or(RustADBError::ADBRequestFailed(
+            "connection not opened, no remote_id".into(),
+        ))
     }
 }

@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::{Read, Seek, Write};
 use std::path::Path;
 
 use crate::models::AdbStatResponse;
@@ -43,4 +43,12 @@ pub trait ADBDeviceExt {
 
     /// Install an APK pointed to by `apk_path` on device.
     fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()>;
+
+    /// Dump framebuffer of this device into given path
+    fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()>;
+
+    /// Dump framebuffer of this device and return corresponding bytes.
+    ///
+    /// Output data format is currently only `PNG`.
+    fn framebuffer_bytes<W: Write + Seek>(&mut self, writer: W) -> Result<()>;
 }

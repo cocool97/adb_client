@@ -135,7 +135,7 @@ impl ADBTransport for USBTransport {
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {
-        let message = ADBTransportMessage::new(MessageCommand::Clse, 0, 0, "".into());
+        let message = ADBTransportMessage::new(MessageCommand::Clse, 0, 0, &[]);
         self.write_message(message)
     }
 }

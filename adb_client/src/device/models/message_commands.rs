@@ -6,18 +6,17 @@ use std::fmt::Display;
 #[repr(u32)]
 pub enum MessageCommand {
     /// Connect to a device
-    Cnxn = 0x4e584e43,
+    Cnxn = 0x4E584E43,
     /// Close connection to a device
-    Clse = 0x45534c43,
+    Clse = 0x45534C43,
     /// Device ask for authentication
     Auth = 0x48545541,
     /// Open a data connection
-    Open = 0x4e45504f,
+    Open = 0x4E45504F,
     /// Write data to connection
     Write = 0x45545257,
     /// Server understood the message
-    Okay = 0x59414b4f,
-    // Sync 0x434e5953
+    Okay = 0x59414B4F,
     /// Start a connection using TLS
     Stls = 0x534C5453,
 }
@@ -29,10 +28,10 @@ pub enum MessageSubcommand {
     Send = 0x444E4553,
     Recv = 0x56434552,
     Quit = 0x54495551,
-    Fail = 0x4c494146,
-    Done = 0x454e4f44,
+    Fail = 0x4C494146,
+    Done = 0x454E4F44,
     Data = 0x41544144,
-    List = 0x5453494c,
+    List = 0x5453494C,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

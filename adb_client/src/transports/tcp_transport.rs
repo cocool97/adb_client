@@ -151,8 +151,8 @@ impl TcpTransport {
                     client_config.key_log = Arc::new(KeyLogFile::new());
 
                     let rc_config = Arc::new(client_config);
-                    let example_com = self.address.ip().into();
-                    let conn = ClientConnection::new(rc_config, example_com)?;
+                    let server_name = self.address.ip().into();
+                    let conn = ClientConnection::new(rc_config, server_name)?;
                     let owned = tcp_stream.try_clone()?;
                     let client = StreamOwned::new(conn, owned);
 

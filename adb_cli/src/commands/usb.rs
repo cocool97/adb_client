@@ -21,11 +21,11 @@ pub struct UsbCommand {
     #[clap(short = 'k', long = "private-key")]
     pub path_to_private_key: Option<PathBuf>,
     #[clap(subcommand)]
-    pub commands: UsbCommands,
+    pub commands: DeviceCommands,
 }
 
 #[derive(Parser, Debug)]
-pub enum UsbCommands {
+pub enum DeviceCommands {
     /// Spawn an interactive shell or run a list of commands on the device
     Shell { commands: Vec<String> },
     /// Pull a file from device
@@ -52,5 +52,10 @@ pub enum UsbCommands {
     Install {
         /// Path to APK file. Extension must be ".apk"
         path: PathBuf,
+    },
+    /// Dump framebuffer of device
+    Framebuffer {
+        /// Framebuffer image destination path
+        path: String,
     },
 }

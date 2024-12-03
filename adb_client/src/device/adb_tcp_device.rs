@@ -32,9 +32,7 @@ impl ADBTcpDevice {
             MessageCommand::Cnxn,
             0x01000000,
             1048576,
-            format!("host::{}\0", env!("CARGO_PKG_NAME"))
-                .as_bytes()
-                .to_vec(),
+            format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
         );
 
         self.get_transport_mut().write_message(message)?;
@@ -49,7 +47,7 @@ impl ADBTcpDevice {
             )));
         };
 
-        let message = ADBTransportMessage::new(MessageCommand::Stls, 1, 0, vec![]);
+        let message = ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]);
 
         self.get_transport_mut().write_message(message)?;
 
@@ -61,12 +59,14 @@ impl ADBTcpDevice {
         Ok(())
     }
 
+    #[inline]
     fn get_transport_mut(&mut self) -> &mut TcpTransport {
         self.inner.get_transport_mut()
     }
 }
 
 impl ADBDeviceExt for ADBTcpDevice {
+    #[inline]
     fn shell_command<S: ToString, W: std::io::Write>(
         &mut self,
         command: impl IntoIterator<Item = S>,
@@ -75,6 +75,7 @@ impl ADBDeviceExt for ADBTcpDevice {
         self.inner.shell_command(command, output)
     }
 
+    #[inline]
     fn shell<R: std::io::Read, W: std::io::Write + Send + 'static>(
         &mut self,
         reader: R,
@@ -83,24 +84,39 @@ impl ADBDeviceExt for ADBTcpDevice {
         self.inner.shell(reader, writer)
     }
 
+    #[inline]
     fn stat(&mut self, remote_path: &str) -> Result<crate::AdbStatResponse> {
         self.inner.stat(remote_path)
     }
 
+    #[inline]
     fn pull<A: AsRef<str>, W: std::io::Write>(&mut self, source: A, output: W) -> Result<()> {
         self.inner.pull(source, output)
     }
 
+    #[inline]
     fn push<R: std::io::Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
         self.inner.push(stream, path)
     }
 
+    #[inline]
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
         self.inner.reboot(reboot_type)
     }
 
+    #[inline]
     fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
         self.inner.install(apk_path)
+    }
+
+    #[inline]
+    fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        self.inner.framebuffer(path)
+    }
+
+    #[inline]
+    fn framebuffer_bytes<W: std::io::Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
+        self.inner.framebuffer_bytes(writer)
     }
 }
 
