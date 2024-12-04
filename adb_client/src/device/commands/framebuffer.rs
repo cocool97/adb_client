@@ -1,7 +1,7 @@
-use std::io::{Cursor, Read, Write};
+use std::io::{Cursor, Read};
 
 use byteorder::{LittleEndian, ReadBytesExt};
-use image::{ImageBuffer, ImageFormat, Rgba};
+use image::{ImageBuffer, Rgba};
 
 use crate::{
     device::{adb_message_device::ADBMessageDevice, MessageCommand},
@@ -10,17 +10,7 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub fn framebuffer<P: AsRef<std::path::Path>>(&mut self, path: P) -> Result<()> {
-        let img = self.framebuffer_inner()?;
-        Ok(img.save(path.as_ref())?)
-    }
-
-    pub fn framebuffer_bytes<W: Write + std::io::Seek>(&mut self, mut writer: W) -> Result<()> {
-        let img = self.framebuffer_inner()?;
-        Ok(img.write_to(&mut writer, ImageFormat::Png)?)
-    }
-
-    fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+    pub(crate) fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
         self.open_session(b"framebuffer:\0")?;
 
         let response = self.recv_and_reply_okay()?;

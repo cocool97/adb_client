@@ -292,13 +292,8 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
-    fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
-        self.inner.framebuffer(path)
-    }
-
-    #[inline]
-    fn framebuffer_bytes<W: std::io::Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
-        self.inner.framebuffer_bytes(writer)
+    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
+        self.inner.framebuffer_inner()
     }
 }
 

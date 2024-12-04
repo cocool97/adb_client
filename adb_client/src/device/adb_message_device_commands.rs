@@ -36,11 +36,7 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
         self.install(apk_path)
     }
 
-    fn framebuffer<P: AsRef<std::path::Path>>(&mut self, path: P) -> Result<()> {
-        self.framebuffer(path)
-    }
-
-    fn framebuffer_bytes<W: Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
-        self.framebuffer_bytes(writer)
+    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
+        self.framebuffer_inner()
     }
 }

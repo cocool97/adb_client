@@ -5,6 +5,7 @@ mod adb_termios;
 
 mod commands;
 mod models;
+mod utils;
 
 use adb_client::{
     ADBDeviceExt, ADBEmulatorDevice, ADBServer, ADBTcpDevice, ADBUSBDevice, DeviceShort,
@@ -17,25 +18,12 @@ use models::{Command, Opts};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use utils::setup_logger;
 
 fn main() -> Result<()> {
     let opts = Opts::parse();
 
-    // RUST_LOG variable has more priority then "--debug" flag
-    if std::env::var("RUST_LOG").is_err() {
-        let level = match opts.debug {
-            true => "trace",
-            false => "info",
-        };
-
-        std::env::set_var("RUST_LOG", level);
-    }
-
-    // Setting default log level as "info" if not set
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
-    }
-    env_logger::init();
+    setup_logger(opts.debug);
 
     match opts.command {
         Command::Local(local) => {
