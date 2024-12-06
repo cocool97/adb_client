@@ -9,22 +9,8 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Runs 'command' in a shell on the device, and write its output and error streams into output.
-    pub(crate) fn shell_command<S: ToString, W: Write>(
-        &mut self,
-        command: impl IntoIterator<Item = S>,
-        mut output: W,
-    ) -> Result<()> {
-        let response = self.open_session(
-            format!(
-                "shell:{}\0",
-                command
-                    .into_iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<_>>()
-                    .join(" "),
-            )
-            .as_bytes(),
-        )?;
+    pub(crate) fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
+        let response = self.open_session(format!("shell:{}\0", command.join(" "),).as_bytes())?;
 
         if response.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
@@ -47,11 +33,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     /// Starts an interactive shell session on the device.
     /// Input data is read from [reader] and write to [writer].
-    /// [W] has a 'static bound as it is internally used in a thread.
-    pub(crate) fn shell<R: Read, W: Write + Send + 'static>(
+    pub(crate) fn shell(
         &mut self,
-        mut reader: R,
-        mut writer: W,
+        mut reader: &mut dyn Read,
+        mut writer: Box<(dyn Write + Send)>,
     ) -> Result<()> {
         self.open_session(b"shell:\0")?;
 

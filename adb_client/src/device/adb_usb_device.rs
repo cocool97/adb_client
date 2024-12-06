@@ -2,6 +2,8 @@ use rusb::Device;
 use rusb::DeviceDescriptor;
 use rusb::UsbContext;
 use std::fs::read_to_string;
+use std::io::Read;
+use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -249,20 +251,12 @@ impl ADBUSBDevice {
 
 impl ADBDeviceExt for ADBUSBDevice {
     #[inline]
-    fn shell_command<S: ToString, W: std::io::Write>(
-        &mut self,
-        command: impl IntoIterator<Item = S>,
-        output: W,
-    ) -> Result<()> {
+    fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
         self.inner.shell_command(command, output)
     }
 
     #[inline]
-    fn shell<R: std::io::Read, W: std::io::Write + Send + 'static>(
-        &mut self,
-        reader: R,
-        writer: W,
-    ) -> Result<()> {
+    fn shell<'a>(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()> {
         self.inner.shell(reader, writer)
     }
 
@@ -272,12 +266,12 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
-    fn pull<A: AsRef<str>, W: std::io::Write>(&mut self, source: A, output: W) -> Result<()> {
+    fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
         self.inner.pull(source, output)
     }
 
     #[inline]
-    fn push<R: std::io::Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
+    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
         self.inner.push(stream, path)
     }
 
@@ -287,18 +281,13 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
-    fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
+    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.inner.install(apk_path)
     }
 
     #[inline]
-    fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
-        self.inner.framebuffer(path)
-    }
-
-    #[inline]
-    fn framebuffer_bytes<W: std::io::Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
-        self.inner.framebuffer_bytes(writer)
+    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
+        self.inner.framebuffer_inner()
     }
 }
 

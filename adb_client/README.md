@@ -54,7 +54,7 @@ use adb_client::{ADBServer, ADBDeviceExt};
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
-device.shell_command(["df", "-h"],std::io::stdout());
+device.shell_command(&["df", "-h"], &mut std::io::stdout());
 ```
 
 #### Push a file to the device
@@ -81,7 +81,7 @@ use adb_client::{ADBUSBDevice, ADBDeviceExt};
 let vendor_id = 0x04e8;
 let product_id = 0x6860;
 let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find device");
-device.shell_command(["df", "-h"],std::io::stdout());
+device.shell_command(&["df", "-h"], &mut std::io::stdout());
 ```
 
 #### (USB) Push a file to the device
@@ -95,7 +95,7 @@ let vendor_id = 0x04e8;
 let product_id = 0x6860;
 let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find device");
 let mut input = File::open(Path::new("/tmp/f")).expect("Cannot open file");
-device.push(&mut input, "/data/local/tmp");
+device.push(&mut input, &"/data/local/tmp");
 ```
 
 #### (TCP) Get a shell from device
@@ -107,5 +107,5 @@ use adb_client::{ADBTcpDevice, ADBDeviceExt};
 let device_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 10));
 let device_port = 43210;
 let mut device = ADBTcpDevice::new(SocketAddr::new(device_ip, device_port)).expect("cannot find device");
-device.shell(std::io::stdin(), std::io::stdout());
+device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()));
 ```

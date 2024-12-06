@@ -1,18 +1,17 @@
 use crate::{models::AdbStatResponse, ADBDeviceExt, ADBMessageTransport, RebootType, Result};
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    path::Path,
+};
 
 use super::ADBMessageDevice;
 
 impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
-    fn shell_command<S: ToString, W: Write>(
-        &mut self,
-        command: impl IntoIterator<Item = S>,
-        output: W,
-    ) -> Result<()> {
+    fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
         self.shell_command(command, output)
     }
 
-    fn shell<R: Read, W: Write + Send + 'static>(&mut self, reader: R, writer: W) -> Result<()> {
+    fn shell(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()> {
         self.shell(reader, writer)
     }
 
@@ -20,11 +19,11 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
         self.stat(remote_path)
     }
 
-    fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
+    fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
         self.pull(source, output)
     }
 
-    fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
+    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
         self.push(stream, path)
     }
 
@@ -32,15 +31,11 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
         self.reboot(reboot_type)
     }
 
-    fn install<P: AsRef<std::path::Path>>(&mut self, apk_path: P) -> Result<()> {
+    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.install(apk_path)
     }
 
-    fn framebuffer<P: AsRef<std::path::Path>>(&mut self, path: P) -> Result<()> {
-        self.framebuffer(path)
-    }
-
-    fn framebuffer_bytes<W: Write + std::io::Seek>(&mut self, writer: W) -> Result<()> {
-        self.framebuffer_bytes(writer)
+    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
+        self.framebuffer_inner()
     }
 }
