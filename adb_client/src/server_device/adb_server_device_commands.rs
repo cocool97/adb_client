@@ -12,11 +12,7 @@ use crate::{
 use super::ADBServerDevice;
 
 impl ADBDeviceExt for ADBServerDevice {
-    fn shell_command<S: ToString, W: Write>(
-        &mut self,
-        command: impl IntoIterator<Item = S>,
-        mut output: W,
-    ) -> Result<()> {
+    fn shell_command(&mut self, command: &[&dyn ToString], output: &mut dyn Write) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -30,7 +26,7 @@ impl ADBDeviceExt for ADBServerDevice {
         self.get_transport_mut()
             .send_adb_request(AdbServerCommand::ShellCommand(
                 command
-                    .into_iter()
+                    .iter()
                     .map(|v| v.to_string())
                     .collect::<Vec<_>>()
                     .join(" "),
@@ -62,10 +58,10 @@ impl ADBDeviceExt for ADBServerDevice {
         self.stat(remote_path)
     }
 
-    fn shell<R: Read, W: Write + Send + 'static>(
+    fn shell(
         &mut self,
-        mut reader: R,
-        mut writer: W,
+        mut reader: &mut dyn Read,
+        mut writer: Box<(dyn Write + Send)>,
     ) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
@@ -115,7 +111,7 @@ impl ADBDeviceExt for ADBServerDevice {
         Ok(())
     }
 
-    fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, mut output: W) -> Result<()> {
+    fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
         self.pull(source, &mut output)
     }
 
@@ -123,11 +119,11 @@ impl ADBDeviceExt for ADBServerDevice {
         self.reboot(reboot_type)
     }
 
-    fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
+    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
         self.push(stream, path)
     }
 
-    fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
+    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.install(apk_path)
     }
 

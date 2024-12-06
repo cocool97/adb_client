@@ -9,9 +9,5 @@ pub fn setup_logger(debug: bool) {
         std::env::set_var("RUST_LOG", level);
     }
 
-    // Setting default log level as "info" if not set
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
-    }
     env_logger::init();
 }

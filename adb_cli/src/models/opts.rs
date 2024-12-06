@@ -1,36 +1,41 @@
 use std::net::SocketAddrV4;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
-use crate::commands::{EmuCommand, HostCommand, LocalCommand, TcpCommand, UsbCommand};
+use super::{EmulatorCommand, HostCommand, LocalCommand, TcpCommand, UsbCommand};
 
-#[derive(Parser, Debug)]
+#[derive(Debug, Parser)]
 #[clap(about, version, author)]
 pub struct Opts {
     #[clap(long = "debug")]
     pub debug: bool,
+    #[clap(subcommand)]
+    pub command: MainCommand,
+}
+
+#[derive(Debug, Parser)]
+pub enum MainCommand {
+    /// Server related commands
+    Host(ServerCommand<HostCommand>),
+    /// Device related commands using server
+    Local(ServerCommand<LocalCommand>),
+    /// Emulator related commands
+    Emu(EmulatorCommand),
+    /// USB device related commands
+    Usb(UsbCommand),
+    /// TCP device related commands
+    Tcp(TcpCommand),
+    /// MDNS discovery related commands
+    Mdns,
+}
+
+#[derive(Debug, Parser)]
+pub struct ServerCommand<T: Subcommand> {
     #[clap(short = 'a', long = "address", default_value = "127.0.0.1:5037")]
     pub address: SocketAddrV4,
     /// Serial id of a specific device. Every request will be sent to this device.
     #[clap(short = 's', long = "serial")]
     pub serial: Option<String>,
     #[clap(subcommand)]
-    pub command: Command,
-}
-
-#[derive(Parser, Debug)]
-pub enum Command {
-    #[clap(flatten)]
-    Local(LocalCommand),
-    #[clap(flatten)]
-    Host(HostCommand),
-    /// Emulator specific commands
-    #[clap(subcommand)]
-    Emu(EmuCommand),
-    /// Device commands via USB, no server needed
-    Usb(UsbCommand),
-    /// Device commands via TCP, no server needed
-    Tcp(TcpCommand),
-    /// Discover devices over MDNS without using adb-server
-    MdnsDiscovery,
+    pub command: T,
 }
