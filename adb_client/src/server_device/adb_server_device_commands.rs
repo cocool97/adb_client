@@ -12,7 +12,7 @@ use crate::{
 use super::ADBServerDevice;
 
 impl ADBDeviceExt for ADBServerDevice {
-    fn shell_command(&mut self, command: &[&dyn ToString], output: &mut dyn Write) -> Result<()> {
+    fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -24,13 +24,7 @@ impl ADBDeviceExt for ADBServerDevice {
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
         self.get_transport_mut()
-            .send_adb_request(AdbServerCommand::ShellCommand(
-                command
-                    .iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<_>>()
-                    .join(" "),
-            ))?;
+            .send_adb_request(AdbServerCommand::ShellCommand(command.join(" ")))?;
 
         const BUFFER_SIZE: usize = 4096;
         loop {

@@ -68,7 +68,7 @@ impl ADBTcpDevice {
 
 impl ADBDeviceExt for ADBTcpDevice {
     #[inline]
-    fn shell_command(&mut self, command: &[&dyn ToString], output: &mut dyn Write) -> Result<()> {
+    fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
         self.inner.shell_command(command, output)
     }
 

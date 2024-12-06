@@ -7,7 +7,7 @@ use std::{
 use super::ADBMessageDevice;
 
 impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
-    fn shell_command(&mut self, command: &[&dyn ToString], output: &mut dyn Write) -> Result<()> {
+    fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
         self.shell_command(command, output)
     }
 

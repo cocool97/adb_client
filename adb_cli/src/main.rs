@@ -100,8 +100,7 @@ fn main() -> Result<()> {
                     device.shell(std::io::stdin(), std::io::stdout())?;
                 }
             } else {
-                let commands: Vec<&dyn ToString> =
-                    commands.iter().map(|v| v as &dyn ToString).collect();
+                let commands: Vec<&str> = commands.iter().map(|v| v.as_str()).collect();
                 device.shell_command(&commands, &mut std::io::stdout())?;
             }
         }
