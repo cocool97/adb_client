@@ -149,10 +149,6 @@ impl ADBMessageTransport for USBTransport {
         let endpoint = self.find_writable_endpoint()?;
         let handle = self.get_raw_connection()?;
 
-        if let Ok(true) = handle.kernel_driver_active(endpoint.iface) {
-            handle.detach_kernel_driver(endpoint.iface)?;
-        }
-
         Self::configure_endpoint(&handle, &endpoint)?;
 
         let message_bytes = message.header().as_bytes()?;
@@ -183,10 +179,6 @@ impl ADBMessageTransport for USBTransport {
     fn read_message_with_timeout(&mut self, timeout: Duration) -> Result<ADBTransportMessage> {
         let endpoint = self.find_readable_endpoint()?;
         let handle = self.get_raw_connection()?;
-
-        if let Ok(true) = handle.kernel_driver_active(endpoint.iface) {
-            handle.detach_kernel_driver(endpoint.iface)?;
-        }
 
         Self::configure_endpoint(&handle, &endpoint)?;
 
