@@ -5,7 +5,10 @@ use std::{io::Read, net::SocketAddr};
 use super::adb_message_device::ADBMessageDevice;
 use super::models::MessageCommand;
 use super::ADBTransportMessage;
-use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, Result, RustADBError, TcpTransport};
+use crate::{
+    ADBDeviceExt, ADBMessageTransport, ADBProtoPort, ADBTransport, Result, RustADBError,
+    TcpTransport,
+};
 
 /// Represent a device reached and available over USB.
 #[derive(Debug)]
@@ -105,6 +108,26 @@ impl ADBDeviceExt for ADBTcpDevice {
     #[inline]
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.inner.framebuffer_inner()
+    }
+
+    #[inline]
+    fn forward(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()> {
+        self.inner.forward(remote, local)
+    }
+
+    #[inline]
+    fn forward_remove_all(&mut self) -> Result<()> {
+        self.inner.forward_remove_all()
+    }
+
+    #[inline]
+    fn reverse(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()> {
+        self.inner.reverse(remote, local)
+    }
+
+    #[inline]
+    fn reverse_remove_all(&mut self) -> Result<()> {
+        self.inner.reverse_remove_all()
     }
 }
 

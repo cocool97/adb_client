@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use adb_client::ADBProtoPort;
 use clap::Parser;
 
 use super::RebootTypeCommand;
@@ -38,4 +39,13 @@ pub enum DeviceCommands {
         /// Framebuffer image destination path
         path: String,
     },
+    /// Reverse socket connection from remote port to local port
+    Reverse {
+        /// Remote port
+        remote: ADBProtoPort,
+        /// Local port
+        local: ADBProtoPort,
+    },
+    /// Remove all previously applied reverse rules
+    ReverseRemoveAll,
 }

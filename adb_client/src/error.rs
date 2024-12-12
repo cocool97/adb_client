@@ -1,3 +1,5 @@
+use std::sync::mpsc;
+
 use thiserror::Error;
 
 /// Custom Result type thrown by this crate.
@@ -9,6 +11,9 @@ pub enum RustADBError {
     /// Indicates that an error occurred with I/O.
     #[error(transparent)]
     IOError(#[from] std::io::Error),
+    /// Unknown adb protocol received
+    #[error("Unknown protocol received: {0}")]
+    UnknownProtocol(String),
     /// Indicates that an error occurred when sending ADB request.
     #[error("ADB request failed - {0}")]
     ADBRequestFailed(String),
@@ -111,9 +116,12 @@ pub enum RustADBError {
     /// An error occurred while getting mdns devices
     #[error(transparent)]
     MDNSError(#[from] mdns_sd::Error),
-    /// An error occurred while sending data to channel
+    /// An error occurred while sending data to a channel
+    #[error("error while sending data to channel")]
+    SendError,
+    /// An error occurred while receiving data from channel
     #[error(transparent)]
-    SendError(#[from] std::sync::mpsc::SendError<crate::MDNSDevice>),
+    RecvError(#[from] mpsc::RecvError),
 }
 
 impl<T> From<std::sync::PoisonError<T>> for RustADBError {

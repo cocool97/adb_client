@@ -1,8 +1,8 @@
-use crate::{models::AdbServerCommand, ADBServerDevice, Result};
+use crate::{models::AdbServerCommand, ADBProtoPort, ADBServerDevice, Result};
 
 impl ADBServerDevice {
     /// Forward socket connection
-    pub fn forward(&mut self, remote: String, local: String) -> Result<()> {
+    pub fn forward(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial.clone()))?;

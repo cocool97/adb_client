@@ -17,7 +17,7 @@ pub struct Opts {
 pub enum MainCommand {
     /// Server related commands
     Host(ServerCommand<HostCommand>),
-    /// Device related commands using server
+    /// Device related commands (using adb-server as a bridge)
     Local(ServerCommand<LocalCommand>),
     /// Emulator related commands
     Emu(EmulatorCommand),

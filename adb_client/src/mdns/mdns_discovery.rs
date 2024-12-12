@@ -44,9 +44,9 @@ impl MDNSDiscoveryService {
                         continue;
                     }
                     ServiceEvent::ServiceResolved(service_info) => {
-                        if let Err(e) = sender.send(MDNSDevice::from(service_info)) {
-                            return Err(e.into());
-                        }
+                        sender
+                            .send(MDNSDevice::from(service_info))
+                            .map_err(|_| RustADBError::SendError)?;
                     }
                 }
             }

@@ -1,4 +1,5 @@
 mod adb_emulator_command;
+mod adb_proto_port;
 mod adb_request_status;
 mod adb_server_command;
 mod adb_stat_response;
@@ -14,6 +15,7 @@ mod server_status;
 mod sync_command;
 
 pub(crate) use adb_emulator_command::ADBEmulatorCommand;
+pub use adb_proto_port::ADBProtoPort;
 pub use adb_request_status::AdbRequestStatus;
 pub(crate) use adb_server_command::AdbServerCommand;
 pub use adb_stat_response::AdbStatResponse;
