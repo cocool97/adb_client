@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::RebootType;
+use super::{ADBProtoPort, RebootType};
 use std::net::SocketAddrV4;
 
 pub(crate) enum AdbServerCommand {
@@ -27,9 +27,9 @@ pub(crate) enum AdbServerCommand {
     FrameBuffer,
     Sync,
     Reboot(RebootType),
-    Forward(String, String),
+    Forward(ADBProtoPort, ADBProtoPort),
     ForwardRemoveAll,
-    Reverse(String, String),
+    Reverse(ADBProtoPort, ADBProtoPort),
     ReverseRemoveAll,
     Reconnect,
     TcpIp(u16),
@@ -45,7 +45,7 @@ impl Display for AdbServerCommand {
             AdbServerCommand::DevicesLong => write!(f, "host:devices-l"),
             AdbServerCommand::Sync => write!(f, "sync:"),
             AdbServerCommand::TrackDevices => write!(f, "host:track-devices"),
-            AdbServerCommand::TransportAny => write!(f, "host:transport-any"),
+            AdbServerCommand::TransportAny => write!(f, "host:transport:any"),
             AdbServerCommand::TransportSerial(serial) => write!(f, "host:transport:{serial}"),
             AdbServerCommand::ShellCommand(command) => match std::env::var("TERM") {
                 Ok(term) => write!(f, "shell,TERM={term},raw:{command}"),

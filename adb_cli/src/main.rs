@@ -134,6 +134,14 @@ fn main() -> Result<()> {
             device.install(&path)?;
         }
         DeviceCommands::Framebuffer { path } => device.framebuffer(&path)?,
+        DeviceCommands::Reverse { remote, local } => {
+            log::info!("Reverse port {} to local {}", remote, local);
+            device.reverse(remote, local)?;
+        }
+        DeviceCommands::ReverseRemoveAll => {
+            log::info!("Remove all previous forward rules");
+            device.reverse_remove_all()?;
+        }
     }
 
     Ok(())

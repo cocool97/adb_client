@@ -1,4 +1,6 @@
-use crate::{models::AdbStatResponse, ADBDeviceExt, ADBMessageTransport, RebootType, Result};
+use crate::{
+    models::AdbStatResponse, ADBDeviceExt, ADBMessageTransport, ADBProtoPort, RebootType, Result,
+};
 use std::{
     io::{Read, Write},
     path::Path,
@@ -37,5 +39,21 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
 
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.framebuffer_inner()
+    }
+
+    fn forward(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()> {
+        todo!()
+    }
+
+    fn forward_remove_all(&mut self) -> Result<()> {
+        todo!()
+    }
+
+    fn reverse(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()> {
+        self.reverse(remote, local)
+    }
+
+    fn reverse_remove_all(&mut self) -> Result<()> {
+        self.reverse_remove_all()
     }
 }

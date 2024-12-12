@@ -4,7 +4,7 @@ use std::path::Path;
 use image::{ImageBuffer, ImageFormat, Rgba};
 
 use crate::models::AdbStatResponse;
-use crate::{RebootType, Result};
+use crate::{ADBProtoPort, RebootType, Result};
 
 /// Trait representing all features available on both [`crate::ADBServerDevice`] and [`crate::ADBUSBDevice`]
 pub trait ADBDeviceExt {
@@ -61,6 +61,18 @@ pub trait ADBDeviceExt {
 
         Ok(vec.into_inner())
     }
+
+    /// Forward socket connection
+    fn forward(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()>;
+
+    /// Remove all previously applied forward rules
+    fn forward_remove_all(&mut self) -> Result<()>;
+
+    /// Reverse socket connection
+    fn reverse(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()>;
+
+    /// Remove all reverse rules
+    fn reverse_remove_all(&mut self) -> Result<()>;
 
     /// Return a boxed instance representing this trait
     fn boxed(self) -> Box<dyn ADBDeviceExt>

@@ -1,8 +1,8 @@
-use crate::{models::AdbServerCommand, ADBServerDevice, Result};
+use crate::{models::AdbServerCommand, ADBProtoPort, ADBServerDevice, Result};
 
 impl ADBServerDevice {
     /// Reverse socket connection
-    pub fn reverse(&mut self, remote: String, local: String) -> Result<()> {
+    pub fn reverse(&mut self, remote: ADBProtoPort, local: ADBProtoPort) -> Result<()> {
         let serial = self.identifier.clone();
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;

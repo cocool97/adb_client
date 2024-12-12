@@ -8,7 +8,7 @@ use super::{models::MessageSubcommand, ADBTransportMessage, MessageCommand};
 
 /// Generic structure representing an ADB device reachable over an [`ADBMessageTransport`].
 /// Structure is totally agnostic over which transport is truly used.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
     local_id: Option<u32>,
@@ -233,6 +233,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         self.remote_id = Some(response.header().arg0());
 
         Ok(response)
+    }
+
+    pub(crate) fn set_random_local_id(&mut self) {
+        let mut rng = rand::thread_rng();
+        self.local_id = Some(rng.gen());
+    }
+
+    pub(crate) fn set_remote_id(&mut self, remote_id: u32) {
+        self.remote_id = Some(remote_id);
     }
 
     pub(crate) fn get_local_id(&self) -> Result<u32> {
