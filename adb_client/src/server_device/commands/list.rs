@@ -16,12 +16,10 @@ impl ADBServerDevice {
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
         // Set device in SYNC mode
-        self.get_transport_mut()
-            .send_adb_request(AdbServerCommand::Sync)?;
+        self.transport.send_adb_request(AdbServerCommand::Sync)?;
 
         // Send a list command
-        self.get_transport_mut()
-            .send_sync_request(SyncCommand::List)?;
+        self.transport.send_sync_request(SyncCommand::List)?;
 
         self.handle_list_command(path)
     }
@@ -33,19 +31,17 @@ impl ADBServerDevice {
         LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
         // 4 bytes of command name is already sent by send_sync_request
-        self.get_transport_mut()
-            .get_raw_connection()?
-            .write_all(&len_buf)?;
+        self.transport.get_raw_connection()?.write_all(&len_buf)?;
 
         // List send the string of the directory to list, and then the server send a list of files
-        self.get_transport_mut()
+        self.transport
             .get_raw_connection()?
             .write_all(path.as_ref().to_string().as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut response = [0_u8; 4];
         loop {
-            self.get_transport_mut()
+            self.transport
                 .get_raw_connection()?
                 .read_exact(&mut response)?;
             match str::from_utf8(response.as_ref())? {
@@ -57,7 +53,7 @@ impl ADBServerDevice {
                     let mut mod_time = [0_u8; 4];
                     let mut name_len = [0_u8; 4];
 
-                    let mut connection = self.get_transport_mut().get_raw_connection()?;
+                    let mut connection = self.transport.get_raw_connection()?;
                     connection.read_exact(&mut file_mod)?;
                     connection.read_exact(&mut file_size)?;
                     connection.read_exact(&mut mod_time)?;

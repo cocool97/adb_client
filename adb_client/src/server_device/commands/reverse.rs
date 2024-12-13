@@ -7,7 +7,7 @@ impl ADBServerDevice {
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
-        self.get_transport_mut()
+        self.transport
             .proxy_connection(AdbServerCommand::Reverse(remote, local), false)
             .map(|_| ())
     }
@@ -18,7 +18,7 @@ impl ADBServerDevice {
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial.clone()))?;
 
-        self.get_transport_mut()
+        self.transport
             .proxy_connection(AdbServerCommand::ReverseRemoveAll, false)
             .map(|_| ())
     }

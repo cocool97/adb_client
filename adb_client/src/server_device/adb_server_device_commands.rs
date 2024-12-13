@@ -1,5 +1,5 @@
 use std::{
-    io::{Read, Write},
+    io::{ErrorKind, Read, Write},
     path::Path,
 };
 
@@ -23,17 +23,13 @@ impl ADBDeviceExt for ADBServerDevice {
         let serial = self.identifier.clone();
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
-        self.get_transport_mut()
+        self.transport
             .send_adb_request(AdbServerCommand::ShellCommand(command.join(" ")))?;
 
         const BUFFER_SIZE: usize = 4096;
         loop {
             let mut buffer = [0; BUFFER_SIZE];
-            match self
-                .get_transport_mut()
-                .get_raw_connection()?
-                .read(&mut buffer)
-            {
+            match self.transport.get_raw_connection()?.read(&mut buffer) {
                 Ok(size) => {
                     if size == 0 {
                         return Ok(());
@@ -67,10 +63,9 @@ impl ADBDeviceExt for ADBServerDevice {
         let serial = self.identifier.clone();
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
-        self.get_transport_mut()
-            .send_adb_request(AdbServerCommand::Shell)?;
+        self.transport.send_adb_request(AdbServerCommand::Shell)?;
 
-        let mut read_stream = self.get_transport_mut().get_raw_connection()?.try_clone()?;
+        let mut read_stream = self.transport.get_raw_connection()?.try_clone()?;
 
         let mut write_stream = read_stream.try_clone()?;
 
@@ -97,7 +92,7 @@ impl ADBDeviceExt for ADBServerDevice {
         // Read from given reader (that could be stdin e.g), and write content to server socket
         if let Err(e) = std::io::copy(&mut reader, &mut write_stream) {
             match e.kind() {
-                std::io::ErrorKind::BrokenPipe => return Ok(()),
+                ErrorKind::BrokenPipe => return Ok(()),
                 _ => return Err(RustADBError::IOError(e)),
             }
         }

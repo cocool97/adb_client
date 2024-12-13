@@ -7,7 +7,7 @@ pub struct ADBServerDevice {
     /// Unique device identifier.
     pub identifier: String,
     /// Internal [TCPServerTransport]
-    transport: TCPServerTransport,
+    pub(crate) transport: TCPServerTransport,
 }
 
 impl ADBServerDevice {
@@ -25,19 +25,11 @@ impl ADBServerDevice {
         }
     }
 
-    pub(crate) fn get_transport(&self) -> &TCPServerTransport {
-        &self.transport
-    }
-
-    pub(crate) fn get_transport_mut(&mut self) -> &mut TCPServerTransport {
-        &mut self.transport
-    }
-
     /// Connect to underlying transport
     pub(crate) fn connect(&mut self) -> Result<&mut TCPServerTransport> {
         self.transport.connect()?;
 
-        Ok(self.get_transport_mut())
+        Ok(&mut self.transport)
     }
 }
 
