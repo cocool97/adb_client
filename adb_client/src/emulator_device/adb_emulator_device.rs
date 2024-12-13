@@ -67,7 +67,7 @@ impl TryFrom<ADBServerDevice> for ADBEmulatorDevice {
     fn try_from(value: ADBServerDevice) -> std::result::Result<Self, Self::Error> {
         ADBEmulatorDevice::new(
             value.identifier.clone(),
-            Some(*value.get_transport().get_socketaddr().ip()),
+            Some(*value.transport.get_socketaddr().ip()),
         )
     }
 }

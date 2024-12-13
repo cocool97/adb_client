@@ -50,12 +50,10 @@ impl ADBServerDevice {
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
         // Set device in SYNC mode
-        self.get_transport_mut()
-            .send_adb_request(AdbServerCommand::Sync)?;
+        self.transport.send_adb_request(AdbServerCommand::Sync)?;
 
         // Send a send command
-        self.get_transport_mut()
-            .send_sync_request(SyncCommand::Send)?;
+        self.transport.send_sync_request(SyncCommand::Send)?;
 
         self.handle_send_command(stream, path)
     }
@@ -64,7 +62,7 @@ impl ADBServerDevice {
         // Append the permission flags to the filename
         let to = to.as_ref().to_string() + ",0777";
 
-        let mut raw_connection = self.get_transport_mut().get_raw_connection()?;
+        let mut raw_connection = self.transport.get_raw_connection()?;
 
         // The name of the command is already sent by get_transport()?.send_sync_request
         let to_as_bytes = to.as_bytes();
@@ -99,7 +97,7 @@ impl ADBServerDevice {
         match AdbRequestStatus::from_str(str::from_utf8(&request_status)?)? {
             AdbRequestStatus::Fail => {
                 // We can keep reading to get further details
-                let length = self.get_transport_mut().get_body_length()?;
+                let length = self.transport.get_body_length()?;
 
                 let mut body = vec![
                     0;
@@ -108,9 +106,7 @@ impl ADBServerDevice {
                         .map_err(|_| RustADBError::ConversionError)?
                 ];
                 if length > 0 {
-                    self.get_transport()
-                        .get_raw_connection()?
-                        .read_exact(&mut body)?;
+                    self.transport.get_raw_connection()?.read_exact(&mut body)?;
                 }
 
                 Err(RustADBError::ADBRequestFailed(String::from_utf8(body)?))

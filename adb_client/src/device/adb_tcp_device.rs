@@ -5,7 +5,7 @@ use std::{io::Read, net::SocketAddr};
 use super::adb_message_device::ADBMessageDevice;
 use super::models::MessageCommand;
 use super::ADBTransportMessage;
-use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, Result, RustADBError, TcpTransport};
+use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, Result, TcpTransport};
 
 /// Represent a device reached and available over USB.
 #[derive(Debug)]
@@ -38,19 +38,13 @@ impl ADBTcpDevice {
 
         self.get_transport_mut().write_message(message)?;
 
-        let message = self.get_transport_mut().read_message()?;
+        // At this point, we should have received a STLS command indicating that the device wants to upgrade connection with TLS
+        self.get_transport_mut()
+            .read_message()
+            .and_then(|message| message.assert_command(MessageCommand::Stls))?;
 
-        // At this point, we should have received a STLS message
-        if message.header().command() != MessageCommand::Stls {
-            return Err(RustADBError::ADBRequestFailed(format!(
-                "Wrong command received {}",
-                message.header().command()
-            )));
-        };
-
-        let message = ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]);
-
-        self.get_transport_mut().write_message(message)?;
+        self.get_transport_mut()
+            .write_message(ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]))?;
 
         // Upgrade TCP connection to TLS
         self.get_transport_mut().upgrade_connection()?;

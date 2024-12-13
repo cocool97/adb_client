@@ -91,14 +91,23 @@ impl Display for MDNSBackend {
 /// Structure representing current server status
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ServerStatus {
+    /// Currently active USB backend
     pub usb_backend: UsbBackend,
+    /// Is USB backend forced ?
     pub usb_backend_forced: bool,
+    /// Currently active MDNS backend
     pub mdns_backend: MDNSBackend,
+    /// Is MDNS backend forced ?
     pub mdns_backend_forced: bool,
+    /// Server version
     pub version: String,
+    /// Server build information
     pub build: String,
+    /// Server executable absolute path
     pub executable_absolute_path: String,
+    /// Server logs absolute path
     pub log_absolute_path: String,
+    /// OS server is running on
     pub os: String,
 }
 

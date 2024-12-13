@@ -13,24 +13,20 @@ impl ADBServerDevice {
         LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
         // 4 bytes of command name is already sent by send_sync_request
-        self.get_transport_mut()
-            .get_raw_connection()?
-            .write_all(&len_buf)?;
-        self.get_transport_mut()
+        self.transport.get_raw_connection()?.write_all(&len_buf)?;
+        self.transport
             .get_raw_connection()?
             .write_all(path.as_ref().to_string().as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut response = [0_u8; 4];
-        self.get_transport_mut()
+        self.transport
             .get_raw_connection()?
             .read_exact(&mut response)?;
         match std::str::from_utf8(response.as_ref())? {
             "STAT" => {
                 let mut data = [0_u8; 12];
-                self.get_transport_mut()
-                    .get_raw_connection()?
-                    .read_exact(&mut data)?;
+                self.transport.get_raw_connection()?.read_exact(&mut data)?;
 
                 Ok(data.into())
             }
@@ -48,12 +44,10 @@ impl ADBServerDevice {
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
         // Set device in SYNC mode
-        self.get_transport_mut()
-            .send_adb_request(AdbServerCommand::Sync)?;
+        self.transport.send_adb_request(AdbServerCommand::Sync)?;
 
         // Send a "Stat" command
-        self.get_transport_mut()
-            .send_sync_request(SyncCommand::Stat)?;
+        self.transport.send_sync_request(SyncCommand::Stat)?;
 
         self.handle_stat_command(path)
     }

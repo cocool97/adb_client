@@ -11,7 +11,7 @@ impl ADBServerDevice {
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
         let features = self
-            .get_transport_mut()
+            .transport
             .proxy_connection(AdbServerCommand::HostFeatures, true)?;
 
         Ok(features

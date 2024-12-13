@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::{Error, ErrorKind, Read, Write};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpStream};
 use std::str::FromStr;
 
@@ -66,8 +66,8 @@ impl TCPServerTransport {
     pub(crate) fn get_raw_connection(&self) -> Result<&TcpStream> {
         self.tcp_stream
             .as_ref()
-            .ok_or(RustADBError::IOError(std::io::Error::new(
-                std::io::ErrorKind::NotConnected,
+            .ok_or(RustADBError::IOError(Error::new(
+                ErrorKind::NotConnected,
                 "not connected",
             )))
     }

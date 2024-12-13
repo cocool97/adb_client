@@ -76,12 +76,10 @@ impl ADBServerDevice {
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
 
         // Set device in SYNC mode
-        self.get_transport_mut()
-            .send_adb_request(AdbServerCommand::Sync)?;
+        self.transport.send_adb_request(AdbServerCommand::Sync)?;
 
         // Send a recv command
-        self.get_transport_mut()
-            .send_sync_request(SyncCommand::Recv)?;
+        self.transport.send_sync_request(SyncCommand::Recv)?;
 
         self.handle_recv_command(path, stream)
     }
@@ -91,7 +89,7 @@ impl ADBServerDevice {
         from: S,
         output: &mut dyn Write,
     ) -> Result<()> {
-        let mut raw_connection = self.get_transport().get_raw_connection()?;
+        let mut raw_connection = self.transport.get_raw_connection()?;
 
         let from_as_bytes = from.as_ref().as_bytes();
         let mut buffer = Vec::with_capacity(4 + from_as_bytes.len());
