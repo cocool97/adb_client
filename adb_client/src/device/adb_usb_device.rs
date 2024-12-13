@@ -181,21 +181,14 @@ impl ADBUSBDevice {
         self.get_transport_mut().write_message(message)?;
 
         let message = self.get_transport_mut().read_message()?;
+        message.assert_command(MessageCommand::Auth)?;
 
-        // At this point, we should have received either:
-        // - an AUTH message with arg0 == 1
-        // - a CNXN message
-        let auth_message = match message.header().command() {
-            MessageCommand::Auth if message.header().arg0() == AUTH_TOKEN => message,
-            MessageCommand::Auth if message.header().arg0() != AUTH_TOKEN => {
-                return Err(RustADBError::ADBRequestFailed(
-                    "Received AUTH message with type != 1".into(),
-                ))
-            }
-            c => {
+        // At this point, we should have receive an AUTH message with arg0 == 1
+        let auth_message = match message.header().arg0() {
+            AUTH_TOKEN => message,
+            v => {
                 return Err(RustADBError::ADBRequestFailed(format!(
-                    "Wrong command received {}",
-                    c
+                    "Received AUTH message with type != 1 ({v})"
                 )))
             }
         };
@@ -225,20 +218,16 @@ impl ADBUSBDevice {
 
         let response = self
             .get_transport_mut()
-            .read_message_with_timeout(Duration::from_secs(10))?;
+            .read_message_with_timeout(Duration::from_secs(10))
+            .and_then(|message| {
+                message.assert_command(MessageCommand::Cnxn)?;
+                Ok(message)
+            })?;
 
-        match response.header().command() {
-            MessageCommand::Cnxn => log::info!(
-                "Authentication OK, device info {}",
-                String::from_utf8(response.into_payload())?
-            ),
-            _ => {
-                return Err(RustADBError::ADBRequestFailed(format!(
-                    "wrong response {}",
-                    response.header().command()
-                )))
-            }
-        }
+        log::info!(
+            "Authentication OK, device info {}",
+            String::from_utf8(response.into_payload())?
+        );
 
         Ok(())
     }

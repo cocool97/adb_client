@@ -89,13 +89,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             v => return Err(RustADBError::UnimplementedFramebufferImageVersion(v)),
         };
 
-        let message = self.get_transport_mut().read_message()?;
-        match message.header().command() {
-            MessageCommand::Clse => Ok(img),
-            c => Err(RustADBError::ADBRequestFailed(format!(
-                "Wrong command received {}",
-                c
-            ))),
-        }
+        self.get_transport_mut()
+            .read_message()
+            .and_then(|message| message.assert_command(MessageCommand::Clse))?;
+
+        Ok(img)
     }
 }

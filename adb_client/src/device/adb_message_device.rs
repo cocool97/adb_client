@@ -51,15 +51,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         message: ADBTransportMessage,
     ) -> Result<ADBTransportMessage> {
         self.transport.write_message(message)?;
-        let message = self.transport.read_message()?;
-        let received_command = message.header().command();
-        if received_command != MessageCommand::Okay {
-            return Err(RustADBError::ADBRequestFailed(format!(
-                "expected command OKAY after message, got {}",
-                received_command
-            )));
-        }
-        Ok(message)
+
+        self.transport.read_message().and_then(|message| {
+            message.assert_command(MessageCommand::Okay)?;
+            Ok(message)
+        })
     }
 
     pub(crate) fn recv_file<W: std::io::Write>(

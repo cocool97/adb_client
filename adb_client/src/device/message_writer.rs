@@ -1,4 +1,4 @@
-use std::io::{ErrorKind, Write};
+use std::io::{Error, ErrorKind, Result, Write};
 
 use crate::ADBMessageTransport;
 
@@ -24,26 +24,25 @@ impl<T: ADBMessageTransport> MessageWriter<T> {
 }
 
 impl<T: ADBMessageTransport> Write for MessageWriter<T> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
         let message =
             ADBTransportMessage::new(MessageCommand::Write, self.local_id, self.remote_id, buf);
         self.transport
             .write_message(message)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+            .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
 
         match self.transport.read_message() {
-            Ok(response) => match response.header().command() {
-                MessageCommand::Okay => Ok(buf.len()),
-                c => Err(std::io::Error::new(
-                    ErrorKind::Other,
-                    format!("wrong response received: {c}"),
-                )),
-            },
-            Err(e) => Err(std::io::Error::new(ErrorKind::Other, e)),
+            Ok(response) => {
+                response
+                    .assert_command(MessageCommand::Okay)
+                    .map_err(|e| Error::new(ErrorKind::Other, e))?;
+                Ok(buf.len())
+            }
+            Err(e) => Err(Error::new(ErrorKind::Other, e)),
         }
     }
 
-    fn flush(&mut self) -> std::io::Result<()> {
+    fn flush(&mut self) -> Result<()> {
         Ok(())
     }
 }

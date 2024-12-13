@@ -133,7 +133,10 @@ fn main() -> Result<()> {
             log::info!("Starting installation of APK {}...", path.display());
             device.install(&path)?;
         }
-        DeviceCommands::Framebuffer { path } => device.framebuffer(&path)?,
+        DeviceCommands::Framebuffer { path } => {
+            device.framebuffer(&path)?;
+            log::info!("Successfully dumped framebuffer at path {path}");
+        }
     }
 
     Ok(())

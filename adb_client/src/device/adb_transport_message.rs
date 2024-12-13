@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::RustADBError;
+use crate::{Result, RustADBError};
 
 use super::models::MessageCommand;
 
@@ -66,7 +66,7 @@ impl ADBTransportMessageHeader {
         command_u32 ^ 0xFFFFFFFF
     }
 
-    pub fn as_bytes(&self) -> Result<Vec<u8>, RustADBError> {
+    pub fn as_bytes(&self) -> Result<Vec<u8>> {
         bincode::serialize(&self).map_err(|_e| RustADBError::ConversionError)
     }
 }
@@ -88,6 +88,18 @@ impl ADBTransportMessage {
             && ADBTransportMessageHeader::compute_crc32(&self.payload) == self.header.data_crc32
     }
 
+    pub fn assert_command(&self, expected_command: MessageCommand) -> Result<()> {
+        let our_command = self.header().command();
+        if expected_command == our_command {
+            return Ok(());
+        }
+
+        Err(RustADBError::WrongResponseReceived(
+            our_command.to_string(),
+            expected_command.to_string(),
+        ))
+    }
+
     pub fn header(&self) -> &ADBTransportMessageHeader {
         &self.header
     }
@@ -104,7 +116,7 @@ impl ADBTransportMessage {
 impl TryFrom<[u8; 24]> for ADBTransportMessageHeader {
     type Error = RustADBError;
 
-    fn try_from(value: [u8; 24]) -> Result<Self, Self::Error> {
+    fn try_from(value: [u8; 24]) -> Result<Self> {
         bincode::deserialize(&value).map_err(|_e| RustADBError::ConversionError)
     }
 }
