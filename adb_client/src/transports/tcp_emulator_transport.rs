@@ -1,13 +1,13 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader, Error, ErrorKind, Read, Write},
     net::{SocketAddrV4, TcpStream},
 };
 
 use homedir::my_home;
 
 use super::ADBTransport;
-use crate::{models::ADBEmulatorCommand, Result, RustADBError};
+use crate::{emulator_device::ADBEmulatorCommand, Result, RustADBError};
 
 /// Emulator transport running on top on TCP.
 #[derive(Debug)]
@@ -28,8 +28,8 @@ impl TCPEmulatorTransport {
     pub(crate) fn get_raw_connection(&self) -> Result<&TcpStream> {
         self.tcp_stream
             .as_ref()
-            .ok_or(RustADBError::IOError(std::io::Error::new(
-                std::io::ErrorKind::NotConnected,
+            .ok_or(RustADBError::IOError(Error::new(
+                ErrorKind::NotConnected,
                 "not connected",
             )))
     }

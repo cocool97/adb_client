@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-pub(crate) enum ADBEmulatorCommand {
+pub enum ADBEmulatorCommand {
     Authenticate(String),
     Sms(String, String),
     Rotate,

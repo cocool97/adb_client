@@ -21,9 +21,7 @@ pub use device::{ADBTcpDevice, ADBUSBDevice};
 pub use emulator_device::ADBEmulatorDevice;
 pub use error::{Result, RustADBError};
 pub use mdns::*;
-pub use models::{
-    AdbStatResponse, AdbVersion, DeviceLong, DeviceShort, DeviceState, MDNSBackend, RebootType,
-};
+pub use models::{AdbStatResponse, RebootType};
 pub use server::*;
 pub use server_device::ADBServerDevice;
 pub use transports::*;

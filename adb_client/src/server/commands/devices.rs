@@ -1,8 +1,8 @@
 use std::io::Read;
 
 use crate::{
-    models::{AdbServerCommand, DeviceShort},
-    ADBEmulatorDevice, ADBServer, ADBServerDevice, DeviceLong, Result, RustADBError,
+    models::AdbServerCommand, ADBEmulatorDevice, ADBServer, ADBServerDevice, DeviceLong,
+    DeviceShort, Result, RustADBError,
 };
 
 impl ADBServer {

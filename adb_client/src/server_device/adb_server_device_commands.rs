@@ -26,7 +26,6 @@ impl ADBDeviceExt for ADBServerDevice {
         self.transport
             .send_adb_request(AdbServerCommand::ShellCommand(command.join(" ")))?;
 
-        const BUFFER_SIZE: usize = 4096;
         loop {
             let mut buffer = [0; BUFFER_SIZE];
             match self.transport.get_raw_connection()?.read(&mut buffer) {
