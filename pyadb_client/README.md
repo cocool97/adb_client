@@ -4,7 +4,12 @@ Python library to communicate with ADB devices. Built on top of Rust `adb_client
 
 ## Examples
 
-TODO
+### Push a file on device
+
+```python
+usb_device = PyADBUSBDevice.autodetect()
+usb_device.push("file.txt", "/data/local/tmp/file.txt")
+```
 
 ## Development
 
