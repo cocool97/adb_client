@@ -25,6 +25,13 @@ jobs:
           cargo install cargo-deb
           cargo install cargo-generate-rpm
 
+      - name: "Publish crates"
+        run: |
+          cargo publish -p adb_client --token ${CRATES_IO_TOKEN}
+          cargo publish -p adb_cli --token ${CRATES_IO_TOKEN}
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+
       - name: "build-release"
         run: cargo build --all-features --release
 
@@ -41,10 +48,3 @@ jobs:
             target/debian/*.deb
             target/generate-rpm/*.rpm
             target/release/adb_cli
-
-      - name: "Publish crates"
-        run: |
-          cargo publish -p adb_client --token ${CRATES_IO_TOKEN}
-          cargo publish -p adb_cli --token ${CRATES_IO_TOKEN}
-        env:
-          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
