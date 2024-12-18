@@ -1,3 +1,4 @@
+use rusb::constants::LIBUSB_CLASS_VENDOR_SPEC;
 use rusb::Device;
 use rusb::DeviceDescriptor;
 use rusb::UsbContext;
@@ -57,8 +58,6 @@ fn search_adb_devices() -> Result<Option<(u16, u16)>> {
 }
 
 fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> bool {
-    const ADB_CLASS: u8 = 0xff;
-
     const ADB_SUBCLASS: u8 = 0x42;
     const ADB_PROTOCOL: u8 = 0x1;
 
@@ -77,7 +76,7 @@ fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> b
                 let class = interface_des.class_code();
                 let subcl = interface_des.sub_class_code();
                 if proto == ADB_PROTOCOL
-                    && ((class == ADB_CLASS && subcl == ADB_SUBCLASS)
+                    && ((class == LIBUSB_CLASS_VENDOR_SPEC && subcl == ADB_SUBCLASS)
                         || (class == BULK_CLASS && subcl == BULK_ADB_SUBCLASS))
                 {
                     return true;

@@ -67,7 +67,7 @@ pub enum RustADBError {
     #[error("Cannot get home directory")]
     NoHomeDirectory,
     /// Generic USB error
-    #[error(transparent)]
+    #[error("USB Error: {0}")]
     UsbError(#[from] rusb::Error),
     /// USB device not found
     #[error("USB Device not found: {0} {1}")]
