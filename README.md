@@ -48,5 +48,6 @@ Improved documentation available [here](./adb_cli/README.md).
 ## Related publications
 
 - [Diving into ADB protocol internals (1/2)](https://www.synacktiv.com/publications/diving-into-adb-protocol-internals-12)
+- [Diving into ADB protocol internals (2/2)](https://www.synacktiv.com/publications/diving-into-adb-protocol-internals-22)
 
 Some features may still be missing, all pull requests are welcome !
