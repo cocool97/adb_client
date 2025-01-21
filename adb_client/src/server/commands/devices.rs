@@ -97,7 +97,12 @@ impl ADBServer {
                     .get_raw_connection()?
                     .read_exact(&mut body)?;
 
-                callback(DeviceShort::try_from(body)?)?;
+                for device in body.split(|x| x.eq(&b'\n')) {
+                    if device.is_empty() {
+                        break;
+                    }
+                    callback(DeviceShort::try_from(device.to_vec())?)?;
+                }
             }
         }
     }
