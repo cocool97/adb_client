@@ -1,5 +1,5 @@
 target
 /Cargo.lock
 /.vscode
-.venv
+venv
 /.mypy_cache

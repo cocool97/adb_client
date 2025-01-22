@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 dependencies = ["maturin", "patchelf"]
 name = "pyadb_client"
-requires-python = ">=3.7"
+dynamic = ["version"] # Let the build system automatically set package version
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
