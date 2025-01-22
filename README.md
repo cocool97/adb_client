@@ -30,6 +30,7 @@ Main features of this library:
     - Over **TCP/IP**
 - Implements hidden `adb` features, like `framebuffer`
 - Highly configurable
+- Provides wrappers to use directly from Python code
 - Easy to use !
 
 ## adb_client
@@ -41,9 +42,15 @@ Improved documentation available [here](./adb_client/README.md).
 ## adb_cli
 
 Rust binary providing an improved version of Google's official `adb` CLI, by using `adb_client` library.
-Provides an usage example of the library.
+Provides a "real-world" usage example of this library.
 
 Improved documentation available [here](./adb_cli/README.md).
+
+## pyadb_client
+
+Python wrapper using `adb_client` library to export classes usable directly from a Python environment.
+
+Improved documentation available [here](./pyadb_client/README.md)
 
 ## Related publications
 

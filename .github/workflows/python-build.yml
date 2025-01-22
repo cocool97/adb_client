@@ -1,0 +1,20 @@
+name: Python - Build
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-release-python:
+    name: "build-release-python"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pyadb_client
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Python dependencies
+      run: pip install .
+    - name: Build project
+      run: maturin build --release
