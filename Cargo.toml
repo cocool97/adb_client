@@ -9,7 +9,7 @@ homepage = "https://github.com/cocool97/adb_client"
 keywords = ["adb", "android", "tcp", "usb"]
 license = "MIT"
 repository = "https://github.com/cocool97/adb_client"
-version = "2.1.0"
+version = "2.1.1"
 
 # To build locally when working on a new release
 [patch.crates-io]
