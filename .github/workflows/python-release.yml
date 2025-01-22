@@ -1,4 +1,4 @@
-name: Rust - Release creation
+name: Python - Release creation
 
 on:
   release:
@@ -18,7 +18,7 @@ jobs:
         run: pip install .
 
       - name: Publish Python package
-        run: maturin publish --non-interactive
+        run: maturin publish --non-interactive --no-sdist
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 
