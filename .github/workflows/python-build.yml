@@ -9,35 +9,29 @@ on:
 jobs:
   build-python-packages:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: pyadb_client
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Python dependencies
-        run: pip install .
+      - name: Install Python build dependencies
+        run: pip install ".[build]"
 
       - name: Build Python packages
-        run: maturin build --release --interpreter "3.8" --interpreter "3.9" --interpreter "3.10" --interpreter "3.11" --interpreter "3.12" --interpreter "3.13"
+        run: maturin build --release --compatibility manylinux_2_25 --auditwheel=skip
 
   publish-python-packages:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: pyadb_client
     needs: [build-python-packages]
     if: github.event_name == 'release' && github.event.action == 'created'
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Python dependencies
-        run: pip install .
+      - name: Install Python build dependencies
+        run: pip install ".[build]"
 
       - name: Publish Python packages
-        run: maturin publish --non-interactive
+        run: maturin publish --non-interactive --compatibility manylinux_2_25 --auditwheel=skip
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 

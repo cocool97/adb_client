@@ -2,11 +2,19 @@
 
 Python library to communicate with ADB devices. Built on top of Rust `adb_client` library.
 
+## Installation
+
+```bash
+pip install pyadb_client
+```
+
 ## Examples
 
 ### Use ADB server
 
 ```python
+from pyadb_client import pyadb_client
+
 server = pyadb_client.PyADBServer("127.0.0.1:5037")
 for i, device in enumerate(server.devices()):
     print(i, device.identifier, device.state)
@@ -19,6 +27,8 @@ print(device, device.identifier)
 ### Push a file on device
 
 ```python
+from pyadb_client import pyadb_client
+
 usb_device = PyADBUSBDevice.autodetect()
 usb_device.push("file.txt", "/data/local/tmp/file.txt")
 ```
@@ -31,14 +41,12 @@ cd pyadb_client
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install needed dependencies
-pip install -e .
+# Install needed build dependencies
+pip install ".[build]"
 
 # Build development package
 maturin develop
 
 # Build release Python package
 maturin build --release
-
-# Publish Python package
 ```
