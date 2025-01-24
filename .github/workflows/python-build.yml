@@ -1,20 +1,49 @@
-name: Python - Build
+name: Python - Build packages & Release
 
-on: [push, pull_request]
-
-env:
-  CARGO_TERM_COLOR: always
+on:
+  push: {}
+  pull_request: {}
+  release:
+    types: [created]
 
 jobs:
-  build-release-python:
-    name: "build-release-python"
+  build-python-packages:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: pyadb_client
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Python dependencies
-      run: pip install .
-    - name: Build project
-      run: maturin build --release
+      - uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: pip install .
+
+      - name: Build Python packages
+        run: maturin build --release --interpreter "3.8" --interpreter "3.9" --interpreter "3.10" --interpreter "3.11" --interpreter "3.12" --interpreter "3.13"
+
+  publish-python-packages:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pyadb_client
+    needs: [build-python-packages]
+    if: github.event_name == 'release' && github.event.action == 'created'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: pip install .
+
+      - name: Publish Python packages
+        run: maturin publish --no-interactive
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
+
+      - name: "Publish GitHub artefacts"
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/wheels/pyadb_client*.whl
+            target/wheels/pyadb_client*.tar.gz
