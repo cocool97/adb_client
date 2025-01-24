@@ -37,7 +37,7 @@ jobs:
         run: pip install .
 
       - name: Publish Python packages
-        run: maturin publish --no-interactive
+        run: maturin publish --non-interactive
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 
