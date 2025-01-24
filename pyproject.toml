@@ -1,0 +1,16 @@
+[build-system]
+build-backend = "maturin"
+requires = ["maturin>=1,<2"]
+
+[project]
+classifiers = ["Programming Language :: Python", "Programming Language :: Rust"]
+dynamic = ["authors", "keywords", "version"]
+name = "pyadb_client"
+requires-python = ">= 3.7"
+
+[project.optional-dependencies]
+build = ["maturin", "patchelf"]
+
+[tool.maturin]
+include = [{ path = "adb_client/**/*", format = "sdist" }]
+manifest-path = "pyadb_client/Cargo.toml"
