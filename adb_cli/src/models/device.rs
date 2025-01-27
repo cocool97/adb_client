@@ -33,6 +33,11 @@ pub enum DeviceCommands {
         /// Path to APK file. Extension must be ".apk"
         path: PathBuf,
     },
+    /// Uninstall a package from the device
+    Uninstall {
+        /// Name of the package to uninstall
+        package: String,
+    },
     /// Dump framebuffer of device
     Framebuffer {
         /// Framebuffer image destination path

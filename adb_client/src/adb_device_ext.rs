@@ -41,6 +41,9 @@ pub trait ADBDeviceExt {
     /// Install an APK pointed to by `apk_path` on device.
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()>;
 
+    /// Uninstall the package `package` from device.
+    fn uninstall(&mut self, package: &str) -> Result<()>;
+
     /// Inner method requesting framebuffer from an Android device
     fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;
 

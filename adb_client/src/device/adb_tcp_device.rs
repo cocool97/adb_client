@@ -97,6 +97,11 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
+    fn uninstall(&mut self, package: &str) -> Result<()> {
+        self.inner.uninstall(package)
+    }
+
+    #[inline]
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.inner.framebuffer_inner()
     }
