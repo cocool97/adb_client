@@ -115,6 +115,10 @@ impl ADBDeviceExt for ADBServerDevice {
         self.install(apk_path)
     }
 
+    fn uninstall(&mut self, package: &str) -> Result<()> {
+        self.uninstall(package)
+    }
+
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.framebuffer_inner()
     }
