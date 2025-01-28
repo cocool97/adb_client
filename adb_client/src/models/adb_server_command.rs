@@ -84,7 +84,9 @@ impl Display for AdbServerCommand {
             }
             AdbServerCommand::Usb => write!(f, "usb:"),
             AdbServerCommand::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
-            AdbServerCommand::Uninstall(package) => write!(f, "exec:cmd package 'uninstall' {package}"),
+            AdbServerCommand::Uninstall(package) => {
+                write!(f, "exec:cmd package 'uninstall' {package}")
+            }
         }
     }
 }

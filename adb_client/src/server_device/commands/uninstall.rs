@@ -1,13 +1,10 @@
 use std::io::Read;
 
-use crate::{
-    models::AdbServerCommand, server_device::ADBServerDevice, Result,
-};
+use crate::{models::AdbServerCommand, server_device::ADBServerDevice, Result};
 
 impl ADBServerDevice {
     /// Uninstall a package from device
     pub fn uninstall(&mut self, package_name: &str) -> Result<()> {
-
         let serial: String = self.identifier.clone();
         self.connect()?
             .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
@@ -20,10 +17,7 @@ impl ADBServerDevice {
 
         match &data[0..read_amount] {
             b"Success\n" => {
-                log::info!(
-                    "Package {} successfully uninstalled",
-                    package_name
-                );
+                log::info!("Package {} successfully uninstalled", package_name);
                 Ok(())
             }
             d => Err(crate::RustADBError::ADBRequestFailed(String::from_utf8(
