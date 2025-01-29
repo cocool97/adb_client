@@ -5,3 +5,4 @@ mod push;
 mod reboot;
 mod shell;
 mod stat;
+mod uninstall;

@@ -133,6 +133,10 @@ fn main() -> Result<()> {
             log::info!("Starting installation of APK {}...", path.display());
             device.install(&path)?;
         }
+        DeviceCommands::Uninstall { package } => {
+            log::info!("Uninstalling the package {}...", package);
+            device.uninstall(&package)?;
+        }
         DeviceCommands::Framebuffer { path } => {
             device.framebuffer(&path)?;
             log::info!("Successfully dumped framebuffer at path {path}");
