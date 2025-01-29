@@ -18,17 +18,17 @@ homedir = { version = "0.3.4" }
 image = { version = "0.25.5" }
 lazy_static = { version = "1.5.0" }
 log = { version = "0.4.22" }
-mdns-sd = { version = "0.13.1" }
+mdns-sd = { version = "0.13.2" }
 num-bigint = { version = "0.8.4", package = "num-bigint-dig" }
 num-traits = { version = "0.2.19" }
 quick-protobuf = { version = "0.8.1" }
-rand = { version = "0.8.5" }
+rand = { version = "0.9.0" }
 rcgen = { version = "0.13.1" }
 regex = { version = "1.11.1", features = ["perf", "std", "unicode"] }
 rsa = { version = "0.9.7" }
 rusb = { version = "0.9.4", features = ["vendored"] }
-rustls = { version = "0.23.18" }
-rustls-pki-types = "1.10.0"
+rustls = { version = "0.23.22" }
+rustls-pki-types = "1.11.0"
 serde = { version = "1.0.216", features = ["derive"] }
 serde_repr = { version = "0.1.19" }
 sha1 = { version = "0.10.6", features = ["oid"] }

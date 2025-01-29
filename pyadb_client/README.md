@@ -47,6 +47,9 @@ pip install ".[build]"
 # Build development package
 maturin develop
 
+# Build stub file (.pyi)
+cargo run --bin stub_gen
+
 # Build release Python package
 maturin build --release
 ```

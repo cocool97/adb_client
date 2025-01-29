@@ -1,7 +1,7 @@
 use adb_client::ADBServer;
 use anyhow::Result;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
@@ -14,7 +14,7 @@ const REMOTE_TEST_FILE_PATH: &str = "/data/local/tmp/test_file.bin";
 fn generate_test_file(size_in_bytes: usize) -> Result<()> {
     let mut test_file = File::create(LOCAL_TEST_FILE_PATH)?;
 
-    let mut rng = thread_rng();
+    let mut rng = rng();
 
     const BUFFER_SIZE: usize = 64 * 1024;
     let mut buffer = [0u8; BUFFER_SIZE];

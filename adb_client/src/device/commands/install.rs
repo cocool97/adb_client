@@ -16,9 +16,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let file_size = apk_file.metadata()?.len();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
-        let local_id = rng.gen();
+        let local_id = rng.random();
 
         self.open_session(format!("exec:cmd package 'install' -S {}\0", file_size).as_bytes())?;
 

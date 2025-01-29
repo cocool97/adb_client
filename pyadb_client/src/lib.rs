@@ -8,6 +8,7 @@ pub use adb_usb_device::*;
 pub use models::*;
 
 use pyo3::prelude::*;
+use pyo3_stub_gen::StubInfo;
 
 #[pymodule]
 fn pyadb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -17,4 +18,9 @@ fn pyadb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyADBUSBDevice>()?;
 
     Ok(())
+}
+
+pub fn stub_info() -> anyhow::Result<StubInfo> {
+    // Need to be run from workspace root directory
+    StubInfo::from_pyproject_toml("pyproject.toml")
 }

@@ -7,6 +7,14 @@ on:
     types: [created]
 
 jobs:
+  gen-stubs:
+    name: "build-release"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build project
+      run: cargo run --bin stub_gen
+
   build-python-packages:
     runs-on: ubuntu-latest
 
