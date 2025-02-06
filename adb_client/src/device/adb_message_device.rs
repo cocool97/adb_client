@@ -213,11 +213,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     pub(crate) fn open_session(&mut self, data: &[u8]) -> Result<ADBTransportMessage> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let message = ADBTransportMessage::new(
             MessageCommand::Open,
-            rng.gen(), // Our 'local-id'
+            rng.random(), // Our 'local-id'
             0,
             data,
         );

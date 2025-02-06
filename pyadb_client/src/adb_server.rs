@@ -3,12 +3,15 @@ use std::net::SocketAddrV4;
 use adb_client::ADBServer;
 use anyhow::Result;
 use pyo3::{pyclass, pymethods, PyResult};
+use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::{PyADBServerDevice, PyDeviceShort};
 
+#[gen_stub_pyclass]
 #[pyclass]
 pub struct PyADBServer(ADBServer);
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyADBServer {
     #[new]

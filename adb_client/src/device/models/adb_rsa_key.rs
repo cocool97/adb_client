@@ -3,7 +3,6 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use num_bigint::{BigUint, ModInverse};
 use num_traits::cast::ToPrimitive;
 use num_traits::FromPrimitive;
-use rand::rngs::OsRng;
 use rsa::pkcs8::DecodePrivateKey;
 use rsa::traits::PublicKeyParts;
 use rsa::{Pkcs1v15Sign, RsaPrivateKey};
@@ -52,7 +51,7 @@ pub struct ADBRsaKey {
 impl ADBRsaKey {
     pub fn new_random() -> Result<Self> {
         Ok(Self {
-            private_key: RsaPrivateKey::new(&mut OsRng, ADB_PRIVATE_KEY_SIZE)?,
+            private_key: RsaPrivateKey::new(&mut rsa::rand_core::OsRng, ADB_PRIVATE_KEY_SIZE)?,
         })
     }
 
