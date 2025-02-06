@@ -25,7 +25,7 @@ jobs:
         run: pip install ".[build]"
 
       - name: Build Python packages
-        run: maturin build --release --compatibility manylinux_2_25 --auditwheel=skip
+        run: maturin build --release -m pyadb_client/Cargo.toml --compatibility manylinux_2_25 --auditwheel=skip
 
   publish-python-packages:
     runs-on: ubuntu-latest
