@@ -13,9 +13,9 @@ pip install pyadb_client
 ### Use ADB server
 
 ```python
-from pyadb_client import pyadb_client
+from pyadb_client import PyADBServer
 
-server = pyadb_client.PyADBServer("127.0.0.1:5037")
+server = PyADBServer("127.0.0.1:5037")
 for i, device in enumerate(server.devices()):
     print(i, device.identifier, device.state)
 
@@ -27,7 +27,7 @@ print(device, device.identifier)
 ### Push a file on device
 
 ```python
-from pyadb_client import pyadb_client
+from pyadb_client import PyADBUSBDevice
 
 usb_device = PyADBUSBDevice.autodetect()
 usb_device.push("file.txt", "/data/local/tmp/file.txt")
@@ -51,5 +51,5 @@ maturin develop
 cargo run --bin stub_gen
 
 # Build release Python package
-maturin build --release
+maturin build --release -m pyadb_client/Cargo.toml
 ```
