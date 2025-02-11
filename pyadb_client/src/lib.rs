@@ -26,5 +26,5 @@ fn pyadb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
 /// Get stub informations for this package.
 pub fn stub_info() -> anyhow::Result<StubInfo> {
     // Need to be run from workspace root directory
-    StubInfo::from_pyproject_toml("pyproject.toml")
+    StubInfo::from_pyproject_toml(format!("{}/pyproject.toml", env!("CARGO_MANIFEST_DIR")))
 }
