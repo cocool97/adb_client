@@ -12,6 +12,4 @@ requires-python = ">= 3.7"
 build = ["maturin", "patchelf"]
 
 [tool.maturin]
-include = [{ path = "adb_client/**/*", format = "sdist" }]
 features = ["pyo3/extension-module"]
-manifest-path = "pyadb_client/Cargo.toml"

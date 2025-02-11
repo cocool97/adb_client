@@ -1,3 +1,6 @@
+#![forbid(missing_docs)]
+#![doc = include_str!("../README.md")]
+
 mod adb_server;
 mod adb_server_device;
 mod adb_usb_device;
@@ -20,6 +23,7 @@ fn pyadb_client(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
+/// Get stub informations for this package.
 pub fn stub_info() -> anyhow::Result<StubInfo> {
     // Need to be run from workspace root directory
     StubInfo::from_pyproject_toml("pyproject.toml")

@@ -6,17 +6,20 @@ use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 #[gen_stub_pyclass]
 #[pyclass]
+/// Represent a device output as shown when running `adb devices`
 pub struct PyDeviceShort(DeviceShort);
 
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyDeviceShort {
     #[getter]
+    /// Device identifier
     pub fn identifier(&self) -> String {
         self.0.identifier.clone()
     }
 
     #[getter]
+    /// Device state
     pub fn state(&self) -> String {
         self.0.state.to_string()
     }

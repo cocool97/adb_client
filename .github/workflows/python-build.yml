@@ -39,7 +39,7 @@ jobs:
         run: pip install ".[build]"
 
       - name: Publish Python packages
-        run: maturin publish --non-interactive --compatibility manylinux_2_25 --auditwheel=skip
+        run: maturin publish -m pyadb_client/Cargo.toml --non-interactive --compatibility manylinux_2_25 --auditwheel=skip
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 
