@@ -8,10 +8,5 @@ dynamic = ["authors", "keywords", "version"]
 name = "pyadb_client"
 requires-python = ">= 3.7"
 
-[project.optional-dependencies]
-build = ["maturin", "patchelf"]
-
 [tool.maturin]
-include = [{ path = "adb_client/**/*", format = "sdist" }]
 features = ["pyo3/extension-module"]
-manifest-path = "pyadb_client/Cargo.toml"

@@ -42,7 +42,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # Install needed build dependencies
-pip install ".[build]"
+pip install maturin
 
 # Build development package
 maturin develop

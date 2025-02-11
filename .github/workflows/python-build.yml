@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Python build dependencies
-        run: pip install ".[build]"
+        run: pip install maturin==1.8.2
 
       - name: Build Python packages
         run: maturin build --release -m pyadb_client/Cargo.toml --compatibility manylinux_2_25 --auditwheel=skip
@@ -36,10 +36,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Python build dependencies
-        run: pip install ".[build]"
+        run: pip install maturin==1.8.2
 
       - name: Publish Python packages
-        run: maturin publish --non-interactive --compatibility manylinux_2_25 --auditwheel=skip
+        run: maturin publish -m pyadb_client/Cargo.toml --non-interactive --compatibility manylinux_2_25 --auditwheel=skip
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 
