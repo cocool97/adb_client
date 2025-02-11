@@ -9,7 +9,7 @@ name = "pyadb_client"
 requires-python = ">= 3.7"
 
 [project.optional-dependencies]
-build = ["maturin", "patchelf"]
+build = ["maturin==1.8.2", "patchelf==0.17.2.1"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

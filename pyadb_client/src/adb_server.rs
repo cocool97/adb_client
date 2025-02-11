@@ -22,7 +22,7 @@ impl PyADBServer {
         Ok(ADBServer::new(address).into())
     }
 
-    /// List available devices 
+    /// List available devices
     pub fn devices(&mut self) -> Result<Vec<PyDeviceShort>> {
         Ok(self.0.devices()?.into_iter().map(|v| v.into()).collect())
     }
