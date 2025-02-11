@@ -1,26 +1,30 @@
 [package]
-name = "pyadb_client"
-description = "Python wrapper for adb_client library"
 authors.workspace = true
+description = "Python wrapper for adb_client library"
 edition.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 license.workspace = true
+name = "pyadb_client"
+readme = "README.md"
 repository.workspace = true
 version.workspace = true
-readme = "README.md"
 
 [lib]
-name = "pyadb_client"
 crate-type = ["cdylib", "rlib"]
+name = "pyadb_client"
 
 [[bin]]
-name = "stub_gen"
 doc = false
+name = "stub_gen"
 
 [dependencies]
+adb_client = { path = "../adb_client" }
 anyhow = { version = "1.0.95" }
-adb_client = { version = "2.1.5" }
-pyo3 = { version = "0.23.4", features = ["extension-module", "anyhow", "abi3-py37"] }
+pyo3 = { version = "0.23.4", features = [
+    "abi3-py37",
+    "anyhow",
+    "extension-module",
+] }
 pyo3-stub-gen = "0.7.0"
 pyo3-stub-gen-derive = "0.7.0"

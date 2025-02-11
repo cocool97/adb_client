@@ -25,7 +25,7 @@ jobs:
         run: pip install maturin==1.8.2
 
       - name: Build Python packages
-        run: maturin build --release -m pyadb_client/Cargo.toml --compatibility manylinux_2_25 --auditwheel=skip
+        run: maturin build --sdist --release -m pyadb_client/Cargo.toml
 
   publish-python-packages:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
         run: pip install maturin==1.8.2
 
       - name: Publish Python packages
-        run: maturin publish -m pyadb_client/Cargo.toml --non-interactive --compatibility manylinux_2_25 --auditwheel=skip
+        run: maturin publish -m pyadb_client/Cargo.toml --non-interactive
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 
