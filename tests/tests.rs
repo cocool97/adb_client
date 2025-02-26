@@ -42,7 +42,10 @@ mod tests {
 
     #[test]
     fn test_static_devices_long() {
-        let inputs = ["7a5158f05122195aa       device 1-5 product:gts210vewifixx model:SM_T813 device:gts210vewifi transport_id:4"];
+        let inputs = ["7a5158f05122195aa       device 1-5 product:gts210vewifixx model:SM_T813 device:gts210vewifi transport_id:4",
+        "n311r05e               device usb:0-1.5 product:alioth model:M2012K11AC device:alioth transport_id:58",
+        "192.168.100.192:5555   device product:alioth model:M2012K11AC device:alioth transport_id:97",
+        "emulator-5554          device product:sdk_gphone64_arm64 model:sdk_gphone64_arm64 device:emu64a transport_id:101"];
         for input in inputs {
             DeviceLong::try_from(input.as_bytes().to_vec())
                 .expect(&format!("cannot parse input: '{input}'"));
