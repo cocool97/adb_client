@@ -6,7 +6,7 @@ use crate::{DeviceState, RustADBError};
 use regex::bytes::Regex;
 
 static DEVICES_LONG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new("^(?P<identifier>\\S+)\\s+(?P<state>\\w+) ((usb:(?P<usb1>.*)|(?P<usb2>\\d-\\d)) )?(product:(?P<product>\\w+) model:(?P<model>\\w+) device:(?P<device>\\w+) )?transport_id:(?P<transport_id>\\d+)$").expect("cannot build devices long regex")
+    Regex::new(r"^(?P<identifier>\S+)\s+(?P<state>\w+)\s+(usb:(?P<usb1>\S+)|(?P<usb2>\S+))?\s*(product:(?P<product>\w+)\s+model:(?P<model>\w+)\s+device:(?P<device>\w+)\s+)?transport_id:(?P<transport_id>\d+)$").expect("cannot build devices long regex")
 });
 
 /// Represents a new device with more informations.
