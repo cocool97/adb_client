@@ -38,18 +38,26 @@ impl ADBTcpDevice {
 
         self.get_transport_mut().write_message(message)?;
 
-        // At this point, we should have received a STLS command indicating that the device wants to upgrade connection with TLS
-        self.get_transport_mut()
-            .read_message()
-            .and_then(|message| message.assert_command(MessageCommand::Stls))?;
+        let message = self.get_transport_mut().read_message()?;
 
-        self.get_transport_mut()
-            .write_message(ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]))?;
-
-        // Upgrade TCP connection to TLS
-        self.get_transport_mut().upgrade_connection()?;
-
-        log::debug!("Connection successfully upgraded from TCP to TLS");
+        // Check if client is requesting a secure connection and upgrade it if necessary
+        match message.header().command() {
+            MessageCommand::Stls => {
+                self.get_transport_mut()
+                    .write_message(ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]))?;
+                self.get_transport_mut().upgrade_connection()?;
+                log::debug!("Connection successfully upgraded from TCP to TLS");
+            }
+            MessageCommand::Cnxn => {
+                log::debug!("Unencrypted connection established");
+            }
+            _ => {
+                return Err(crate::RustADBError::WrongResponseReceived(
+                    "Expected CNXN or STLS command".to_string(),
+                    message.header().command().to_string(),
+                ));
+            }
+        }
 
         Ok(())
     }
