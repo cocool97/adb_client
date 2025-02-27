@@ -40,10 +40,11 @@ impl ADBTcpDevice {
 
         let message = self.get_transport_mut().read_message()?;
 
-        /// Check if client is requesting a secure connection and upgrade it if necessary
+        // Check if client is requesting a secure connection and upgrade it if necessary
         match message.header().command() {
             MessageCommand::Stls => {
-                self.get_transport_mut().write_message(ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]))?;
+                self.get_transport_mut()
+                    .write_message(ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]))?;
                 self.get_transport_mut().upgrade_connection()?;
                 log::debug!("Connection successfully upgraded from TCP to TLS");
             }
@@ -57,7 +58,7 @@ impl ADBTcpDevice {
                 ));
             }
         }
-    
+
         Ok(())
     }
 
