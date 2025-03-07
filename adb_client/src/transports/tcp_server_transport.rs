@@ -113,6 +113,11 @@ impl TCPServerTransport {
         self.get_raw_connection()?
             .write_all(adb_request.as_bytes())?;
 
+        self.read_adb_response()
+    }
+
+    /// Read a response from ADB server
+    pub(crate) fn read_adb_response(&mut self) -> Result<()> {
         // Reads returned status code from ADB server
         let mut request_status = [0; 4];
         self.get_raw_connection()?.read_exact(&mut request_status)?;

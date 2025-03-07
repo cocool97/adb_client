@@ -1,6 +1,13 @@
 use std::net::SocketAddrV4;
 
+use adb_client::{RustADBError, WaitForDeviceTransport};
 use clap::Parser;
+
+fn parse_wait_for_device_device_transport(
+    value: &str,
+) -> Result<WaitForDeviceTransport, RustADBError> {
+    WaitForDeviceTransport::try_from(value)
+}
 
 #[derive(Parser, Debug)]
 pub enum HostCommand {
@@ -28,6 +35,12 @@ pub enum HostCommand {
     },
     /// Display server status
     ServerStatus,
+    /// Wait for a device, on optionally given transport
+    WaitForDevice {
+        /// Transport on which wait for devices
+        #[clap(short = 't', long = "transport", value_parser = parse_wait_for_device_device_transport)]
+        transport: Option<WaitForDeviceTransport>,
+    },
 }
 
 #[derive(Parser, Debug)]

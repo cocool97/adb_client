@@ -7,3 +7,4 @@ mod pair;
 mod reconnect;
 mod server_status;
 mod version;
+mod wait_for_device;

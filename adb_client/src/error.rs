@@ -117,6 +117,9 @@ pub enum RustADBError {
     /// An error occurred while sending data to channel
     #[error(transparent)]
     SendError(#[from] std::sync::mpsc::SendError<crate::MDNSDevice>),
+    /// An unknown transport has been provided
+    #[error("unknown transport: {0}")]
+    UnknownTransport(String),
 }
 
 impl<T> From<std::sync::PoisonError<T>> for RustADBError {
