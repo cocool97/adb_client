@@ -1,4 +1,4 @@
-use adb_client::{ADBServer, DeviceShort, MDNSBackend, Result};
+use adb_client::{ADBServer, DeviceShort, MDNSBackend, Result, WaitForDeviceState};
 
 use crate::models::{HostCommand, MdnsCommand, ServerCommand};
 
@@ -71,6 +71,10 @@ pub fn handle_host_commands(server_command: ServerCommand<HostCommand>) -> Resul
         },
         HostCommand::ServerStatus => {
             log::info!("{}", adb_server.server_status()?);
+        }
+        HostCommand::WaitForDevice { transport } => {
+            log::info!("waiting for device to be connected...");
+            adb_server.wait_for_device(WaitForDeviceState::Device, transport)?;
         }
     }
 

@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::{WaitForDeviceState, WaitForDeviceTransport};
+
 use super::RebootType;
 use std::net::SocketAddrV4;
 
@@ -22,6 +24,7 @@ pub(crate) enum AdbServerCommand {
     ReconnectOffline,
     Uninstall(String),
     Install(u64),
+    WaitForDevice(WaitForDeviceState, WaitForDeviceTransport),
     // Local commands
     ShellCommand(String),
     Shell,
@@ -86,6 +89,12 @@ impl Display for AdbServerCommand {
             AdbServerCommand::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
             AdbServerCommand::Uninstall(package) => {
                 write!(f, "exec:cmd package 'uninstall' {package}")
+            }
+            AdbServerCommand::WaitForDevice(wait_for_device_state, wait_for_device_transport) => {
+                write!(
+                    f,
+                    "host:wait-for-{wait_for_device_transport}-{wait_for_device_state}"
+                )
             }
         }
     }
