@@ -13,9 +13,7 @@ impl ADBServerDevice {
 
         let file_size = apk_file.metadata()?.len();
 
-        let serial: String = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         self.transport
             .send_adb_request(AdbServerCommand::Install(file_size))?;

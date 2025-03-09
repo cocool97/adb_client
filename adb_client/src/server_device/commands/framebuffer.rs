@@ -11,9 +11,7 @@ use crate::{
 impl ADBServerDevice {
     /// Inner method requesting framebuffer from Android device
     pub(crate) fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
-        let serial: String = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         self.transport
             .send_adb_request(AdbServerCommand::FrameBuffer)?;

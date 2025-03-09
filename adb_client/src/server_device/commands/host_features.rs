@@ -6,9 +6,7 @@ use crate::{
 impl ADBServerDevice {
     /// Lists available ADB server features.
     pub fn host_features(&mut self) -> Result<Vec<HostFeatures>> {
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         let features = self
             .transport

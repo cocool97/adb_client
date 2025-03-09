@@ -71,9 +71,7 @@ impl<R: Read> Read for ADBRecvCommandReader<R> {
 impl ADBServerDevice {
     /// Receives path to stream from the device.
     pub fn pull(&mut self, path: &dyn AsRef<str>, stream: &mut dyn Write) -> Result<()> {
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         // Set device in SYNC mode
         self.transport.send_adb_request(AdbServerCommand::Sync)?;
