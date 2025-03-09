@@ -36,6 +36,13 @@ impl ADBServer {
             command.env(env_k, env_v);
         }
 
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            // Do not show a prompt on Windows
+            command.creation_flags(0x08000000);
+        }
+
         let child = command.spawn();
         match child {
             Ok(mut child) => {
