@@ -3,9 +3,7 @@ use crate::{models::AdbServerCommand, ADBServerDevice, Result};
 impl ADBServerDevice {
     /// Reconnect device
     pub fn reconnect(&mut self) -> Result<()> {
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         self.transport
             .proxy_connection(AdbServerCommand::Reconnect, false)

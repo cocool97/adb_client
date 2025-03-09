@@ -27,6 +27,26 @@ impl ADBServer {
         }
     }
 
+    /// Start an instance of `adb-server`
+    pub fn start(envs: &HashMap<String, String>) {
+        // ADB Server is local, we start it if not already running
+        let mut command = Command::new("adb");
+        command.arg("start-server");
+        for (env_k, env_v) in envs.iter() {
+            command.env(env_k, env_v);
+        }
+
+        let child = command.spawn();
+        match child {
+            Ok(mut child) => {
+                if let Err(e) = child.wait() {
+                    log::error!("error while starting adb server: {e}")
+                }
+            }
+            Err(e) => log::error!("error while starting adb server: {e}"),
+        }
+    }
+
     /// Returns the current selected transport
     pub(crate) fn get_transport(&mut self) -> Result<&mut TCPServerTransport> {
         self.transport
@@ -52,22 +72,7 @@ impl ADBServer {
         };
 
         if is_local_ip {
-            // ADB Server is local, we start it if not already running
-            let mut command = Command::new("adb");
-            command.arg("start-server");
-            for (env_k, env_v) in self.envs.iter() {
-                command.env(env_k, env_v);
-            }
-
-            let child = command.spawn();
-            match child {
-                Ok(mut child) => {
-                    if let Err(e) = child.wait() {
-                        log::error!("error while starting adb server: {e}")
-                    }
-                }
-                Err(e) => log::error!("error while starting adb server: {e}"),
-            }
+            Self::start(&self.envs);
         }
 
         transport.connect()?;

@@ -11,9 +11,7 @@ use std::{
 impl ADBServerDevice {
     /// Lists files in path on the device.
     pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<()> {
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         // Set device in SYNC mode
         self.transport.send_adb_request(AdbServerCommand::Sync)?;

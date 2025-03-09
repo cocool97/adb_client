@@ -20,9 +20,8 @@ impl ADBDeviceExt for ADBServerDevice {
             return Err(RustADBError::ADBShellNotSupported);
         }
 
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
+
         self.transport
             .send_adb_request(AdbServerCommand::ShellCommand(command.join(" ")))?;
 
@@ -59,9 +58,7 @@ impl ADBDeviceExt for ADBServerDevice {
             return Err(RustADBError::ADBShellNotSupported);
         }
 
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
         self.transport.send_adb_request(AdbServerCommand::Shell)?;
 
         let mut read_stream = self.transport.get_raw_connection()?.try_clone()?;

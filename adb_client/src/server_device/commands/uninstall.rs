@@ -5,9 +5,7 @@ use crate::{models::AdbServerCommand, server_device::ADBServerDevice, Result};
 impl ADBServerDevice {
     /// Uninstall a package from device
     pub fn uninstall(&mut self, package_name: &str) -> Result<()> {
-        let serial: String = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         self.transport
             .send_adb_request(AdbServerCommand::Uninstall(package_name.to_string()))?;

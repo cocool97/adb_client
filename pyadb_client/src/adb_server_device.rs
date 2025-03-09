@@ -14,7 +14,7 @@ pub struct PyADBServerDevice(pub ADBServerDevice);
 impl PyADBServerDevice {
     #[getter]
     /// Device identifier
-    pub fn identifier(&self) -> String {
+    pub fn identifier(&self) -> Option<String> {
         self.0.identifier.clone()
     }
 

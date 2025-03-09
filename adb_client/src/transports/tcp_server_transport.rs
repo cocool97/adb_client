@@ -33,6 +33,14 @@ impl TCPServerTransport {
         }
     }
 
+    /// Instantiate a new instance of [TCPServerTransport] using given address, or default if not specified.
+    pub fn new_or_default(socket_addr: Option<SocketAddrV4>) -> Self {
+        match socket_addr {
+            Some(s) => Self::new(s),
+            None => Self::default(),
+        }
+    }
+
     /// Get underlying [SocketAddrV4]
     pub fn get_socketaddr(&self) -> SocketAddrV4 {
         self.socket_addr

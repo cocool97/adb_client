@@ -7,12 +7,15 @@ mod handlers;
 mod models;
 mod utils;
 
-use adb_client::{ADBDeviceExt, ADBServer, ADBTcpDevice, ADBUSBDevice, MDNSDiscoveryService};
+use adb_client::{
+    ADBDeviceExt, ADBServer, ADBServerDevice, ADBTcpDevice, ADBUSBDevice, MDNSDiscoveryService,
+};
 use adb_termios::ADBTermios;
 use anyhow::Result;
 use clap::Parser;
 use handlers::{handle_emulator_commands, handle_host_commands, handle_local_commands};
 use models::{DeviceCommands, LocalCommand, MainCommand, Opts};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -30,11 +33,15 @@ fn main() -> Result<()> {
         MainCommand::Host(server_command) => return Ok(handle_host_commands(server_command)?),
         MainCommand::Emu(emulator_command) => return handle_emulator_commands(emulator_command),
         MainCommand::Local(server_command) => {
-            let mut adb_server = ADBServer::new(server_command.address);
+            // Must start server to communicate with device, but only if this is a local one.
+            let server_address_ip = server_command.address.ip();
+            if server_address_ip.is_loopback() || server_address_ip.is_unspecified() {
+                ADBServer::start(&HashMap::default());
+            }
 
             let device = match server_command.serial {
-                Some(serial) => adb_server.get_device_by_name(&serial)?,
-                None => adb_server.get_device()?,
+                Some(serial) => ADBServerDevice::new(serial, Some(server_command.address)),
+                None => ADBServerDevice::autodetect(Some(server_command.address)),
             };
 
             match server_command.command {

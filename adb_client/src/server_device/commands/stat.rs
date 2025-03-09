@@ -39,9 +39,7 @@ impl ADBServerDevice {
 
     /// Stat file given as path on the device.
     pub fn stat<A: AsRef<str>>(&mut self, path: A) -> Result<AdbStatResponse> {
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         // Set device in SYNC mode
         self.transport.send_adb_request(AdbServerCommand::Sync)?;

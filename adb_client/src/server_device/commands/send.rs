@@ -45,9 +45,7 @@ impl ADBServerDevice {
     /// Send stream to path on the device.
     pub fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
         log::info!("Sending data to {}", path.as_ref());
-        let serial = self.identifier.clone();
-        self.connect()?
-            .send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+        self.set_serial_transport()?;
 
         // Set device in SYNC mode
         self.transport.send_adb_request(AdbServerCommand::Sync)?;
