@@ -41,7 +41,7 @@ use std::net::{SocketAddrV4, Ipv4Addr};
 let server_ip = Ipv4Addr::new(127, 0, 0, 1);
 let server_port = 5037;
 
-let mut server = ADBServer::new(SocketAddrV4::new(server_ip, server_port), None);
+let mut server = ADBServer::new(SocketAddrV4::new(server_ip, server_port));
 server.devices();
 ```
 
