@@ -68,11 +68,6 @@ impl ADBServer {
         }
     }
 
-    /// Set adb_path
-    pub fn set_adb_path(&mut self, adb_path: Option<String>) {
-        self.adb_path = adb_path;
-    }
-
     /// Returns the current selected transport
     pub(crate) fn get_transport(&mut self) -> Result<&mut TCPServerTransport> {
         self.transport
