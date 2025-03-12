@@ -36,7 +36,7 @@ fn main() -> Result<()> {
             // Must start server to communicate with device, but only if this is a local one.
             let server_address_ip = server_command.address.ip();
             if server_address_ip.is_loopback() || server_address_ip.is_unspecified() {
-                ADBServer::start(&HashMap::default());
+                ADBServer::start(&HashMap::default(), &None);
             }
 
             let device = match server_command.serial {

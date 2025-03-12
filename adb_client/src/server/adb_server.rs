@@ -15,6 +15,9 @@ pub struct ADBServer {
     pub(crate) socket_addr: Option<SocketAddrV4>,
     /// adb-server start envs
     pub(crate) envs: HashMap<String, String>,
+    /// Path to adb binary
+    /// If not set, will use adb from PATH
+    pub(crate) adb_path: Option<String>,
 }
 
 impl ADBServer {
@@ -24,13 +27,14 @@ impl ADBServer {
             transport: None,
             socket_addr: Some(address),
             envs: HashMap::new(),
+            adb_path: None,
         }
     }
 
     /// Start an instance of `adb-server`
-    pub fn start(envs: &HashMap<String, String>) {
+    pub fn start(envs: &HashMap<String, String>, adb_path: &Option<String>) {
         // ADB Server is local, we start it if not already running
-        let mut command = Command::new("adb");
+        let mut command = Command::new(adb_path.as_deref().unwrap_or("adb"));
         command.arg("start-server");
         for (env_k, env_v) in envs.iter() {
             command.env(env_k, env_v);
@@ -79,7 +83,7 @@ impl ADBServer {
         };
 
         if is_local_ip {
-            Self::start(&self.envs);
+            Self::start(&self.envs, &self.adb_path);
         }
 
         transport.connect()?;
