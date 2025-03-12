@@ -19,7 +19,7 @@ impl PyADBServer {
     /// Instantiate a new PyADBServer instance
     pub fn new(address: String) -> PyResult<Self> {
         let address = address.parse::<SocketAddrV4>()?;
-        Ok(ADBServer::new(address).into())
+        Ok(ADBServer::new(address, None).into())
     }
 
     /// List available devices

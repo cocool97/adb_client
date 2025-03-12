@@ -3,7 +3,7 @@ use adb_client::{ADBServer, DeviceShort, MDNSBackend, Result, WaitForDeviceState
 use crate::models::{HostCommand, MdnsCommand, ServerCommand};
 
 pub fn handle_host_commands(server_command: ServerCommand<HostCommand>) -> Result<()> {
-    let mut adb_server = ADBServer::new(server_command.address);
+    let mut adb_server = ADBServer::new(server_command.address, None);
 
     match server_command.command {
         HostCommand::Version => {

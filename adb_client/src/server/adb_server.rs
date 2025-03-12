@@ -22,12 +22,12 @@ pub struct ADBServer {
 
 impl ADBServer {
     /// Instantiates a new [ADBServer]
-    pub fn new(address: SocketAddrV4) -> Self {
+    pub fn new(address: SocketAddrV4, adb_path: Option<String>) -> Self {
         Self {
             transport: None,
             socket_addr: Some(address),
             envs: HashMap::new(),
-            adb_path: None,
+            adb_path,
         }
     }
 
@@ -56,6 +56,11 @@ impl ADBServer {
             }
             Err(e) => log::error!("error while starting adb server: {e}"),
         }
+    }
+
+    /// Set adb_path
+    pub fn set_adb_path(&mut self, adb_path: Option<String>) {
+        self.adb_path = adb_path;
     }
 
     /// Returns the current selected transport
