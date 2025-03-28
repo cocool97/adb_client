@@ -33,7 +33,7 @@ serde = { version = "1.0.216", features = ["derive"] }
 serde_repr = { version = "0.1.19" }
 sha1 = { version = "0.10.6", features = ["oid"] }
 thiserror = { version = "2.0.7" }
-reqwest = { version = "0.12.15", features = ["blocking", "json"] }
+reqwest = { version = "0.12.15", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 
 [dev-dependencies]
 anyhow = { version = "1.0.93" }
