@@ -32,3 +32,4 @@ jobs:
         with:
           RUSTTARGET: ${{ matrix.target }}
           SRC_DIR: "adb_cli"
+          TOOLCHAIN_VERSION: stable
