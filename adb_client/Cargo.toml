@@ -27,7 +27,7 @@ rcgen = { version = "0.13.1" }
 regex = { version = "1.11.1", features = ["perf", "std", "unicode"] }
 rsa = { version = "0.9.7" }
 rusb = { version = "0.9.4", features = ["vendored"] }
-rustls = { version = "0.23.25" }
+rustls = { version = "0.23.25", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 rustls-pki-types = "1.11.0"
 serde = { version = "1.0.216", features = ["derive"] }
 serde_repr = { version = "0.1.19" }
