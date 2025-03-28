@@ -3,6 +3,7 @@ name: Rust - Release creation
 on:
   release:
     types: [created]
+  workflow_dispatch:
 
 jobs:
   create-release:
@@ -30,3 +31,4 @@ jobs:
           EXTRA_COMMAND_FLAGS: "--bin adb_cli"
         with:
           RUSTTARGET: ${{ matrix.target }}
+          SRC_DIR: "adb_cli"
