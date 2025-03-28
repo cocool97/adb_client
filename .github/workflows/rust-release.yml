@@ -7,7 +7,7 @@ on:
 
 jobs:
   create-release:
-    name: Build ${{ matrix.target }}
+    name: ${{ matrix.platform.target }}
     strategy:
       fail-fast: false
       matrix:
@@ -33,5 +33,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Binaries
-          path: target
+          name: ${{ matrix.platform.target }}
+          path: target/${{ matrix.platform.target }}/release/adb_cli
