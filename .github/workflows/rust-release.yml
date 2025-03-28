@@ -33,4 +33,4 @@ jobs:
           SRC_DIR: "adb_cli"
           EXTRA_COMMAND_FLAGS: "--bin adb_cli"
           TOOLCHAIN_VERSION: stable
-          PRE_BUILD: /.github/workflows/install-deps.sh
+          PRE_BUILD: .github/workflows/install-deps.sh
