@@ -2,10 +2,10 @@
 
 A custom `adb` implementation based on [`adb_client`](https://github.com/cocool97/adb_client) to provide remote authentication support through a custom API. See [`adb_signer`](https://github.com/openaipin/adb_signer) for the compatible server implementation.
 
-The intended usage of this variant of ADB is to allow access to locked down Android devices where the certificates cannot be safely distributed. To connect to the Humane Ai Pin using the openPin signing server, you can add `--remote-auth-url https://signing.openpin.org` to your commands:
+The intended usage of this variant of ADB is to allow access to locked down Android devices where the certificates cannot be safely distributed. To connect to the Humane Ai Pin using the openPin signing server, you can add `--remote-auth-url https://adb.openpinsigning.workers.dev` to your commands:
 
 ```bash
-adb_remote_auth usb --remote-auth-url https://signing.openpin.org shell ls
+adb_remote_auth usb --remote-auth-url https://adb.openpinsigning.workers.dev shell ls
 ```
 
 
@@ -38,8 +38,8 @@ Options:
   -h, --help                               Print help
 ```
 
-Append `--remote-auth-url` to the middle of your command string to bypass local certificates and use a remote signing server. For the Humane Ai Pin, add `--remote-auth-url https://signing.openpin.org` to your commands:
+Append `--remote-auth-url` to the middle of your command string to bypass local certificates and use a remote signing server. For the Humane Ai Pin, add `--remote-auth-url https://adb.openpinsigning.workers.dev` to your commands:
 
 ```bash
-adb_remote_auth usb --remote-auth-url https://signing.openpin.org shell ls
+adb_remote_auth usb --remote-auth-url https://adb.openpinsigning.workers.dev shell ls
 ```
