@@ -10,7 +10,6 @@ mod utils;
 use adb_client::{
     ADBDeviceExt, ADBServer, ADBServerDevice, ADBTcpDevice, ADBUSBDevice, MDNSDiscoveryService,
 };
-use adb_termios::ADBTermios;
 use anyhow::Result;
 use clap::Parser;
 use handlers::{handle_emulator_commands, handle_host_commands, handle_local_commands};
@@ -112,14 +111,14 @@ fn execute(opts: Opts) -> Result<()> {
                 // Using a scope here would call drop() too early..
                 #[cfg(any(target_os = "linux", target_os = "macos"))]
                 {
-                    let mut adb_termios = ADBTermios::new(std::io::stdin())?;
+                    let mut adb_termios = adb_termios::ADBTermios::new(std::io::stdin())?;
                     adb_termios.set_adb_termios()?;
                     device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
                 }
 
                 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
                 {
-                    device.shell(std::io::stdin(), std::io::stdout())?;
+                    device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
                 }
             } else {
                 let commands: Vec<&str> = commands.iter().map(|v| v.as_str()).collect();
