@@ -28,12 +28,9 @@ jobs:
         uses: rust-build/rust-build.action@v1.4.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Lowered due to old toolchain requirement
-          MACOSX_DEPLOYMENT_TARGET: 10.10.0
         with:
           RUSTTARGET: ${{ matrix.target }}
           SRC_DIR: "adb_cli"
           EXTRA_COMMAND_FLAGS: "--bin adb_cli"
-          # Toolchains above 1.74 are broken for macOS
-          TOOLCHAIN_VERSION: 1.74
+          TOOLCHAIN_VERSION: stable
           PRE_BUILD: /.github/workflows/install-deps.sh
