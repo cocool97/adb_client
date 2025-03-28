@@ -13,6 +13,9 @@ adb_remote_auth usb --remote-auth-url https://signing.openpin.org shell ls
 
 Usage is quite simple, and tends to look like `adb`:
 
+> [!WARNING]  
+> macOS users probably need to run `adb_remote_auth` with `sudo` due to permission issues.
+
 ```bash
 $ adb_remote_auth usb --help
 Device commands via USB, no server needed
