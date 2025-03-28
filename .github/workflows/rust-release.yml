@@ -23,18 +23,17 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get -y install libmagic-dev
-
       - name: Compile
         id: compile
         uses: rust-build/rust-build.action@v1.4.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Lowered due to old toolchain requirement
           MACOSX_DEPLOYMENT_TARGET: 10.10.0
         with:
           RUSTTARGET: ${{ matrix.target }}
           SRC_DIR: "adb_cli"
           EXTRA_COMMAND_FLAGS: "--bin adb_cli"
-          TOOLCHAIN_VERSION: stable
+          # Toolchains above 1.74 are broken for macOS
+          TOOLCHAIN_VERSION: 1.74
+          PRE_BUILD: /.github/workflows/install-deps.sh
