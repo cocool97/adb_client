@@ -28,9 +28,9 @@ jobs:
         uses: rust-build/rust-build.action@v1.4.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EXTRA_COMMAND_FLAGS: "--bin adb_cli"
           CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER: /opt/osxcross/target/bin/o64-clang
         with:
           RUSTTARGET: ${{ matrix.target }}
           SRC_DIR: "adb_cli"
+          EXTRA_COMMAND_FLAGS: "--bin adb_cli"
           TOOLCHAIN_VERSION: stable
