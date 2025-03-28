@@ -24,13 +24,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Compile
-        id: compile
-        uses: rust-build/rust-build.action@v1.4.5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: houseabsolute/actions-rust-cross@v1
         with:
-          RUSTTARGET: ${{ matrix.target }}
-          SRC_DIR: "adb_cli"
-          EXTRA_COMMAND_FLAGS: "--bin adb_cli"
-          TOOLCHAIN_VERSION: stable
-          PRE_BUILD: .github/workflows/install-deps.sh
+          target: ${{ matrix.target }}
+          args: "--bin adb_cli --release"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Binaries
+          path: target
