@@ -6,44 +6,26 @@ on:
 
 jobs:
   create-release:
+    name: Build ${{ matrix.target }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          [
+            x86_64-pc-windows-gnu,
+            x86_64-unknown-linux-musl,
+            x86_64-apple-darwin,
+          ]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout this repo
+        uses: actions/checkout@v4
 
-      - name: "Set up Rust"
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: "Install dependencies"
-        run: |
-          sudo apt update
-          sudo apt install -y rpm
-          cargo install cargo-deb
-          cargo install cargo-generate-rpm
-
-      - name: "Publish crates"
-        run: |
-          cargo publish -p adb_client --token ${CRATES_IO_TOKEN}
-          cargo publish -p adb_cli --token ${CRATES_IO_TOKEN}
+      - name: Compile
+        id: compile
+        uses: rust-build/rust-build.action@v1.4.5
         env:
-          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-
-      - name: "build-release"
-        run: cargo build --all-features --release
-
-      - name: "Build DEB package"
-        run: cargo deb -p adb_cli
-
-      - name: "Build RPM package"
-        run: cargo generate-rpm -p adb_cli
-
-      - name: "Publish GitHub artefacts"
-        uses: softprops/action-gh-release@v2
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: |
-            target/debian/*.deb
-            target/generate-rpm/*.rpm
-            target/release/adb_cli
+          RUSTTARGET: ${{ matrix.target }}
