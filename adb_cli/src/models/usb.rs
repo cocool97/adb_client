@@ -20,6 +20,9 @@ pub struct UsbCommand {
     /// Path to a custom private key to use for authentication
     #[clap(short = 'k', long = "private-key")]
     pub path_to_private_key: Option<PathBuf>,
+    /// URL for remote ADB authentication
+    #[clap(short = 'a', long = "remote-auth-url")]
+    pub remote_auth_url: Option<String>,
     #[clap(subcommand)]
     pub commands: DeviceCommands,
 }

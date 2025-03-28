@@ -13,6 +13,8 @@ use super::adb_message_device::ADBMessageDevice;
 use super::models::MessageCommand;
 use super::{ADBRsaKey, ADBTransportMessage};
 use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
+use crate::device::perform_remote_auth;
+use crate::device::SignResponse;
 use crate::ADBDeviceExt;
 use crate::ADBMessageTransport;
 use crate::ADBTransport;
@@ -98,14 +100,20 @@ pub fn get_default_adb_key_path() -> Result<PathBuf> {
 /// Represent a device reached and available over USB.
 #[derive(Debug)]
 pub struct ADBUSBDevice {
-    private_key: ADBRsaKey,
     inner: ADBMessageDevice<USBTransport>,
+    private_key: ADBRsaKey,
+    remote_auth_url: Option<String>,
 }
 
 impl ADBUSBDevice {
     /// Instantiate a new [`ADBUSBDevice`]
-    pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
-        Self::new_with_custom_private_key(vendor_id, product_id, get_default_adb_key_path()?)
+    pub fn new(vendor_id: u16, product_id: u16, remote_auth_url: Option<String>) -> Result<Self> {
+        Self::new_with_custom_private_key(
+            vendor_id,
+            product_id,
+            get_default_adb_key_path()?,
+            remote_auth_url,
+        )
     }
 
     /// Instantiate a new [`ADBUSBDevice`] using a custom private key path
@@ -113,35 +121,43 @@ impl ADBUSBDevice {
         vendor_id: u16,
         product_id: u16,
         private_key_path: PathBuf,
+        remote_auth_url: Option<String>,
     ) -> Result<Self> {
-        Self::new_from_transport_inner(USBTransport::new(vendor_id, product_id)?, private_key_path)
+        Self::new_from_transport_inner(
+            USBTransport::new(vendor_id, product_id)?,
+            private_key_path,
+            remote_auth_url,
+        )
     }
 
     /// Instantiate a new [`ADBUSBDevice`] from a [`USBTransport`] and an optional private key path.
     pub fn new_from_transport(
         transport: USBTransport,
         private_key_path: Option<PathBuf>,
+        remote_auth_url: Option<String>,
     ) -> Result<Self> {
         let private_key_path = match private_key_path {
             Some(private_key_path) => private_key_path,
             None => get_default_adb_key_path()?,
         };
 
-        Self::new_from_transport_inner(transport, private_key_path)
+        Self::new_from_transport_inner(transport, private_key_path, remote_auth_url)
     }
 
     fn new_from_transport_inner(
         transport: USBTransport,
         private_key_path: PathBuf,
+        remote_auth_url: Option<String>,
     ) -> Result<Self> {
-        let private_key = match read_adb_private_key(private_key_path)? {
-            Some(pk) => pk,
-            None => ADBRsaKey::new_random()?,
+        let private_key = match read_adb_private_key(private_key_path) {
+            Ok(Some(pk)) => pk,
+            _ => ADBRsaKey::new_random()?,
         };
 
         let mut s = Self {
             private_key,
             inner: ADBMessageDevice::new(transport),
+            remote_auth_url,
         };
 
         s.connect()?;
@@ -150,16 +166,22 @@ impl ADBUSBDevice {
     }
 
     /// autodetect connected ADB devices and establish a connection with the first device found
-    pub fn autodetect() -> Result<Self> {
-        Self::autodetect_with_custom_private_key(get_default_adb_key_path()?)
+    pub fn autodetect(remote_auth_url: Option<String>) -> Result<Self> {
+        Self::autodetect_with_custom_private_key(get_default_adb_key_path()?, remote_auth_url)
     }
 
     /// autodetect connected ADB devices and establish a connection with the first device found using a custom private key path
-    pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
+    pub fn autodetect_with_custom_private_key(
+        private_key_path: PathBuf,
+        remote_auth_url: Option<String>,
+    ) -> Result<Self> {
         match search_adb_devices()? {
-            Some((vendor_id, product_id)) => {
-                ADBUSBDevice::new_with_custom_private_key(vendor_id, product_id, private_key_path)
-            }
+            Some((vendor_id, product_id)) => ADBUSBDevice::new_with_custom_private_key(
+                vendor_id,
+                product_id,
+                private_key_path,
+                remote_auth_url,
+            ),
             _ => Err(RustADBError::DeviceNotFound(
                 "cannot find USB devices matching the signature of an ADB device".into(),
             )),
@@ -192,9 +214,26 @@ impl ADBUSBDevice {
             }
         };
 
-        let sign = self.private_key.sign(auth_message.into_payload())?;
+        let sign_response = if let Some(ref remote_auth_url) = self.remote_auth_url {
+            perform_remote_auth(auth_message.into_payload(), remote_auth_url)?
+        } else {
+            let token = self.private_key.sign(auth_message.into_payload())?;
+            let mut public_key = self
+                .private_key
+                .android_pubkey_encode()
+                .unwrap()
+                .into_bytes();
+            public_key.push(b'\0');
 
-        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign);
+            SignResponse { token, public_key }
+        };
+
+        let message = ADBTransportMessage::new(
+            MessageCommand::Auth,
+            AUTH_SIGNATURE,
+            0,
+            &sign_response.token,
+        );
 
         self.get_transport_mut().write_message(message)?;
 
@@ -208,20 +247,29 @@ impl ADBUSBDevice {
             return Ok(());
         }
 
-        let mut pubkey = self.private_key.android_pubkey_encode()?.into_bytes();
-        pubkey.push(b'\0');
-
-        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey);
+        let message = ADBTransportMessage::new(
+            MessageCommand::Auth,
+            AUTH_RSAPUBLICKEY,
+            0,
+            &sign_response.public_key,
+        );
 
         self.get_transport_mut().write_message(message)?;
 
-        let response = self
+        let response = match self
             .get_transport_mut()
             .read_message_with_timeout(Duration::from_secs(10))
             .and_then(|message| {
                 message.assert_command(MessageCommand::Cnxn)?;
                 Ok(message)
-            })?;
+            }) {
+            Ok(response) => response,
+            Err(err) => {
+                return Err(RustADBError::ADBRequestFailed(format!(
+                    "Authentication failed. {err:?}"
+                )))
+            }
+        };
 
         log::info!(
             "Authentication OK, device info {}",

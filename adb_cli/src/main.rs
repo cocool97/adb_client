@@ -21,11 +21,18 @@ use std::io::Write;
 use std::path::Path;
 use utils::setup_logger;
 
-fn main() -> Result<()> {
+fn main() -> () {
     let opts = Opts::parse();
 
     setup_logger(opts.debug);
 
+    match execute(opts) {
+        Ok(_) => (),
+        Err(err) => println!("{err:?}"),
+    }
+}
+
+fn execute(opts: Opts) -> Result<()> {
     // Directly handling methods / commands that aren't linked to [`ADBDeviceExt`] trait.
     // Other methods just have to create a concrete [`ADBDeviceExt`] instance, and return it.
     // This instance will then be used to execute desired command.
@@ -54,12 +61,20 @@ fn main() -> Result<()> {
         MainCommand::Usb(usb_command) => {
             let device = match (usb_command.vendor_id, usb_command.product_id) {
                 (Some(vid), Some(pid)) => match usb_command.path_to_private_key {
-                    Some(pk) => ADBUSBDevice::new_with_custom_private_key(vid, pid, pk)?,
-                    None => ADBUSBDevice::new(vid, pid)?,
+                    Some(pk) => ADBUSBDevice::new_with_custom_private_key(
+                        vid,
+                        pid,
+                        pk,
+                        usb_command.remote_auth_url,
+                    )?,
+                    None => ADBUSBDevice::new(vid, pid, usb_command.remote_auth_url)?,
                 },
                 (None, None) => match usb_command.path_to_private_key {
-                    Some(pk) => ADBUSBDevice::autodetect_with_custom_private_key(pk)?,
-                    None => ADBUSBDevice::autodetect()?,
+                    Some(pk) => ADBUSBDevice::autodetect_with_custom_private_key(
+                        pk,
+                        usb_command.remote_auth_url,
+                    )?,
+                    None => ADBUSBDevice::autodetect(usb_command.remote_auth_url)?,
                 },
                 _ => {
                     anyhow::bail!("please either supply values for both the --vendor-id and --product-id flags or none.");
