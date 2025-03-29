@@ -113,7 +113,9 @@ fn execute(opts: Opts) -> Result<()> {
                 {
                     let mut adb_termios = adb_termios::ADBTermios::new(std::io::stdin())?;
                     adb_termios.set_adb_termios()?;
-                    device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
+                    let result = device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()));
+                    adb_termios.restore_adb_termios()?;
+                    result?;
                 }
 
                 #[cfg(not(any(target_os = "linux", target_os = "macos")))]

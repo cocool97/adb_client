@@ -30,6 +30,10 @@ impl ADBTermios {
     pub fn set_adb_termios(&mut self) -> Result<()> {
         Ok(tcsetattr(self.fd, TCSANOW, &self.new_termios)?)
     }
+
+    pub fn restore_adb_termios(&mut self) -> Result<()> {
+        Ok(tcsetattr(self.fd, TCSANOW, &self.old_termios)?)
+    }
 }
 
 impl Drop for ADBTermios {
