@@ -23,6 +23,12 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
+      - name: Install dependencies on Linux
+        if: ${{ matrix.platform.target == 'x86_64-unknown-linux-musl' }}
+        run: |
+          sudo apt-get update --yes
+          sudo apt-get install --yes musl-tools linux-libc-dev
+
       - name: Compile
         uses: houseabsolute/actions-rust-cross@v1
         with:
