@@ -4,7 +4,7 @@ use std::path::Path;
 use image::{ImageBuffer, ImageFormat, Rgba};
 
 use crate::models::AdbStatResponse;
-use crate::{RebootType, Result};
+use crate::{ADBListItem, RebootType, Result};
 
 /// Trait representing all features available on both [`crate::ADBServerDevice`] and [`crate::ADBUSBDevice`]
 pub trait ADBDeviceExt {
@@ -23,6 +23,9 @@ pub trait ADBDeviceExt {
 
     /// Push `stream` to `path` on the device.
     fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()>;
+
+    /// List the items in a directory on the device
+    fn list(&mut self, path: &str) -> Result<Vec<ADBListItem>>;
 
     /// Reboot the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;

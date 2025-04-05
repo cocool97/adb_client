@@ -123,6 +123,9 @@ pub enum RustADBError {
     /// An unknown transport has been provided
     #[error("unknown transport: {0}")]
     UnknownTransport(String),
+    /// An unknown file mode was encountered in list
+    #[error("Unknown file type {0}")]
+    UnknownFileMode(u32),
 }
 
 impl<T> From<std::sync::PoisonError<T>> for RustADBError {

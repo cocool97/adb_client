@@ -42,4 +42,8 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.framebuffer_inner()
     }
+
+    fn list(&mut self, path: &str) -> Result<Vec<crate::ADBListItem>> {
+        self.list(path)
+    }
 }
