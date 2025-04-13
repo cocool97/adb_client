@@ -1,4 +1,4 @@
-use crate::{device::adb_message_device::ADBMessageDevice, ADBMessageTransport, Result};
+use crate::{ADBMessageTransport, Result, device::adb_message_device::ADBMessageDevice};
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn uninstall(&mut self, package_name: &str) -> Result<()> {

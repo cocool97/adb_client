@@ -1,7 +1,7 @@
 use adb_client::ADBServer;
 use anyhow::Result;
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use rand::{rng, Rng};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use rand::{Rng, rng};
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;

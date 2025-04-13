@@ -1,7 +1,6 @@
 use crate::{
-    constants,
+    ADBServerDevice, Result, constants,
     models::{AdbServerCommand, SyncCommand},
-    ADBServerDevice, Result,
 };
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{BufReader, BufWriter, Read, Write};

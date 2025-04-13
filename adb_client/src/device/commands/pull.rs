@@ -1,11 +1,11 @@
 use std::io::Write;
 
 use crate::{
-    device::{
-        adb_message_device::ADBMessageDevice, models::MessageSubcommand, ADBTransportMessage,
-        MessageCommand,
-    },
     ADBMessageTransport, Result, RustADBError,
+    device::{
+        ADBTransportMessage, MessageCommand, adb_message_device::ADBMessageDevice,
+        models::MessageSubcommand,
+    },
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {

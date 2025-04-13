@@ -1,7 +1,6 @@
 use crate::{
-    constants,
+    ADBServerDevice, Result, RustADBError, constants,
     models::{AdbRequestStatus, AdbServerCommand, SyncCommand},
-    ADBServerDevice, Result, RustADBError,
 };
 use std::{
     convert::TryInto,

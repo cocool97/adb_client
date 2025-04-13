@@ -7,7 +7,7 @@ use std::{
 use homedir::my_home;
 
 use super::ADBTransport;
-use crate::{emulator_device::ADBEmulatorCommand, Result, RustADBError};
+use crate::{Result, RustADBError, emulator_device::ADBEmulatorCommand};
 
 /// Emulator transport running on top on TCP.
 #[derive(Debug)]

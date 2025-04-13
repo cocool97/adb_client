@@ -2,9 +2,9 @@ use std::io::Write;
 use std::path::Path;
 use std::{io::Read, net::SocketAddr};
 
+use super::ADBTransportMessage;
 use super::adb_message_device::ADBMessageDevice;
 use super::models::MessageCommand;
-use super::ADBTransportMessage;
 use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, Result, TcpTransport};
 
 /// Represent a device reached and available over USB.

@@ -4,9 +4,9 @@ use std::{
 };
 
 use crate::{
+    ADBDeviceExt, Result, RustADBError,
     constants::BUFFER_SIZE,
     models::{AdbServerCommand, AdbStatResponse, HostFeatures},
-    ADBDeviceExt, Result, RustADBError,
 };
 
 use super::ADBServerDevice;

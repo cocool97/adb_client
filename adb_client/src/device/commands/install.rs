@@ -3,9 +3,9 @@ use std::{fs::File, path::Path};
 use rand::Rng;
 
 use crate::{
-    device::{adb_message_device::ADBMessageDevice, MessageWriter},
-    utils::check_extension_is_apk,
     ADBMessageTransport, Result,
+    device::{MessageWriter, adb_message_device::ADBMessageDevice},
+    utils::check_extension_is_apk,
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {

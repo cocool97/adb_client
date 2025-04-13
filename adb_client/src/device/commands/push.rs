@@ -1,11 +1,11 @@
 use std::io::Read;
 
 use crate::{
-    device::{
-        adb_message_device::ADBMessageDevice, ADBTransportMessage, MessageCommand,
-        MessageSubcommand,
-    },
     ADBMessageTransport, Result, RustADBError,
+    device::{
+        ADBTransportMessage, MessageCommand, MessageSubcommand,
+        adb_message_device::ADBMessageDevice,
+    },
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {

@@ -1,5 +1,5 @@
 use crate::{
-    device::adb_message_device::ADBMessageDevice, ADBMessageTransport, AdbStatResponse, Result,
+    ADBMessageTransport, AdbStatResponse, Result, device::adb_message_device::ADBMessageDevice,
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {

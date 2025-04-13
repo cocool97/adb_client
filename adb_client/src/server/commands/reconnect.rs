@@ -1,4 +1,4 @@
-use crate::{models::AdbServerCommand, ADBServer, Result};
+use crate::{ADBServer, Result, models::AdbServerCommand};
 
 impl ADBServer {
     /// Reconnect the device

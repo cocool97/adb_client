@@ -4,9 +4,9 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use image::{ImageBuffer, Rgba};
 
 use crate::{
-    device::{adb_message_device::ADBMessageDevice, MessageCommand},
-    models::{FrameBufferInfoV1, FrameBufferInfoV2},
     ADBMessageTransport, Result, RustADBError,
+    device::{MessageCommand, adb_message_device::ADBMessageDevice},
+    models::{FrameBufferInfoV1, FrameBufferInfoV2},
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {

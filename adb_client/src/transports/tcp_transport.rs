@@ -1,16 +1,16 @@
 use rcgen::{CertificateParams, KeyPair, PKCS_RSA_SHA256};
 use rustls::{
-    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-    pki_types::{pem::PemObject, CertificateDer, PrivatePkcs8KeyDer},
     ClientConfig, ClientConnection, KeyLogFile, SignatureScheme, StreamOwned,
+    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+    pki_types::{CertificateDer, PrivatePkcs8KeyDer, pem::PemObject},
 };
 
 use super::{ADBMessageTransport, ADBTransport};
 use crate::{
-    device::{
-        get_default_adb_key_path, ADBTransportMessage, ADBTransportMessageHeader, MessageCommand,
-    },
     Result, RustADBError,
+    device::{
+        ADBTransportMessage, ADBTransportMessageHeader, MessageCommand, get_default_adb_key_path,
+    },
 };
 use std::{
     fs::read_to_string,
@@ -125,7 +125,7 @@ impl TcpTransport {
             None => {
                 return Err(RustADBError::UpgradeError(
                     "cannot upgrade a non-existing connection...".into(),
-                ))
+                ));
             }
         };
 
@@ -162,7 +162,7 @@ impl TcpTransport {
                 CurrentConnection::Tls(_) => {
                     return Err(RustADBError::UpgradeError(
                         "cannot upgrade a TLS connection...".into(),
-                    ))
+                    ));
                 }
             }
         }

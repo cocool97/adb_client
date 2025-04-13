@@ -1,6 +1,6 @@
 use crate::{
-    models::{AdbServerCommand, SyncCommand},
     ADBServerDevice, Result,
+    models::{AdbServerCommand, SyncCommand},
 };
 use byteorder::{ByteOrder, LittleEndian};
 use std::{
