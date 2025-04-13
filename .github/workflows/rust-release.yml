@@ -4,46 +4,101 @@ on:
   release:
     types: [created]
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  create-release:
+  release-linux:
+    name: Linux - Build and Publish
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: "Set up Rust"
+      - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
 
-      - name: "Install dependencies"
+      - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y rpm
           cargo install cargo-deb
           cargo install cargo-generate-rpm
 
-      - name: "Publish crates"
+      - name: Publish crates
         run: |
           cargo publish -p adb_client --token ${CRATES_IO_TOKEN}
           cargo publish -p adb_cli --token ${CRATES_IO_TOKEN}
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
-      - name: "build-release"
+      - name: Build release
         run: cargo build --all-features --release
 
-      - name: "Build DEB package"
+      - name: Rename binary
+        run: mv target/release/adb_cli target/release/adb_cli-linux
+
+      - name: Build DEB package
         run: cargo deb -p adb_cli
 
-      - name: "Build RPM package"
+      - name: Build RPM package
         run: cargo generate-rpm -p adb_cli
 
-      - name: "Publish GitHub artefacts"
+      - name: Upload Linux artifacts
         uses: softprops/action-gh-release@v2
         with:
           files: |
             target/debian/*.deb
             target/generate-rpm/*.rpm
-            target/release/adb_cli
+            target/release/adb_cli-linux
+
+  release-macos:
+    name: macOS - Build Binary
+    runs-on: macos-13
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build release
+        run: cargo build --all-features --release
+
+      - name: Rename binary
+        run: mv target/release/adb_cli target/release/adb_cli-macos
+
+      - name: Upload macOS binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/adb_cli-macos
+
+  release-windows:
+    name: Windows - Build Binary
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build release
+        run: cargo build --all-features --release
+
+      - name: Rename binary
+        run: Rename-Item -Path target/release/adb_cli.exe -NewName adb_cli-windows.exe
+
+      - name: Upload Windows binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/adb_cli-windows.exe
