@@ -14,8 +14,6 @@ pub enum LocalCommand {
 pub enum LocalDeviceCommand {
     /// List available server features.
     HostFeatures,
-    /// List a directory on device
-    List { path: String },
     /// Get logs of device
     Logcat {
         /// Path to output file (created if not exists)
