@@ -21,25 +21,6 @@ pub fn handle_local_commands(
 
             Ok(())
         }
-        LocalDeviceCommand::List { path } => {
-            let dirs = device.list(path)?;
-            for dir in dirs {
-                let list_item_type = match dir.item_type {
-                    ADBListItemType::File => "File".to_string(),
-                    ADBListItemType::Directory => "Dir".to_string(),
-                    ADBListItemType::Symlink => "Symlink".to_string(),
-                };
-                log::info!(
-                    "type: {}, name: {}, time: {}, size: {}, permissions: {:#o}",
-                    list_item_type,
-                    dir.name,
-                    dir.time,
-                    dir.size,
-                    dir.permissions
-                );
-            }
-            Ok(())
-        }
         LocalDeviceCommand::Logcat { path } => {
             let writer: Box<dyn Write> = if let Some(path) = path {
                 let f = File::create(path)?;
