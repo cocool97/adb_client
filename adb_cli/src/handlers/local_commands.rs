@@ -1,7 +1,7 @@
 use std::{fs::File, io::Write};
 
 use adb_client::ADBServerDevice;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 
 use crate::models::LocalDeviceCommand;
 

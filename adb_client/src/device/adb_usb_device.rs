@@ -1,7 +1,7 @@
-use rusb::constants::LIBUSB_CLASS_VENDOR_SPEC;
 use rusb::Device;
 use rusb::DeviceDescriptor;
 use rusb::UsbContext;
+use rusb::constants::LIBUSB_CLASS_VENDOR_SPEC;
 use std::fs::read_to_string;
 use std::io::Read;
 use std::io::Write;
@@ -12,10 +12,10 @@ use std::time::Duration;
 use super::adb_message_device::ADBMessageDevice;
 use super::models::MessageCommand;
 use super::{ADBRsaKey, ADBTransportMessage};
-use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
 use crate::ADBDeviceExt;
 use crate::ADBMessageTransport;
 use crate::ADBTransport;
+use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
 use crate::{Result, RustADBError, USBTransport};
 
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
@@ -188,7 +188,7 @@ impl ADBUSBDevice {
             v => {
                 return Err(RustADBError::ADBRequestFailed(format!(
                     "Received AUTH message with type != 1 ({v})"
-                )))
+                )));
             }
         };
 

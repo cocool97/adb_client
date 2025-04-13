@@ -6,7 +6,7 @@ pub fn setup_logger(debug: bool) {
             false => "info",
         };
 
-        std::env::set_var("RUST_LOG", level);
+        unsafe { std::env::set_var("RUST_LOG", level) };
     }
 
     env_logger::init();

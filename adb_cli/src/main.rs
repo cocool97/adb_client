@@ -50,7 +50,7 @@ fn main() -> Result<()> {
             match server_command.command {
                 LocalCommand::DeviceCommands(device_commands) => (device.boxed(), device_commands),
                 LocalCommand::LocalDeviceCommand(local_device_command) => {
-                    return handle_local_commands(device, local_device_command)
+                    return handle_local_commands(device, local_device_command);
                 }
             }
         }
@@ -65,7 +65,9 @@ fn main() -> Result<()> {
                     None => ADBUSBDevice::autodetect()?,
                 },
                 _ => {
-                    anyhow::bail!("please either supply values for both the --vendor-id and --product-id flags or none.");
+                    anyhow::bail!(
+                        "please either supply values for both the --vendor-id and --product-id flags or none."
+                    );
                 }
             };
             (device.boxed(), usb_command.commands)

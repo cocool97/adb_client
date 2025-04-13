@@ -1,6 +1,6 @@
 use crate::{
-    device::{adb_message_device::ADBMessageDevice, MessageCommand},
     ADBMessageTransport, RebootType, Result,
+    device::{MessageCommand, adb_message_device::ADBMessageDevice},
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {

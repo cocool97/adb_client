@@ -1,6 +1,6 @@
 use crate::{
-    models::{AdbServerCommand, HostFeatures},
     ADBServerDevice, Result,
+    models::{AdbServerCommand, HostFeatures},
 };
 
 impl ADBServerDevice {

@@ -1,14 +1,14 @@
 use std::{sync::Arc, time::Duration};
 
 use rusb::{
-    constants::LIBUSB_CLASS_VENDOR_SPEC, Device, DeviceHandle, Direction, GlobalContext,
-    TransferType,
+    Device, DeviceHandle, Direction, GlobalContext, TransferType,
+    constants::LIBUSB_CLASS_VENDOR_SPEC,
 };
 
 use super::{ADBMessageTransport, ADBTransport};
 use crate::{
-    device::{ADBTransportMessage, ADBTransportMessageHeader, MessageCommand},
     Result, RustADBError,
+    device::{ADBTransportMessage, ADBTransportMessageHeader, MessageCommand},
 };
 
 #[derive(Clone, Debug)]

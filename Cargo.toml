@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 authors = ["Corentin LIAUD"]
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/cocool97/adb_client"
 keywords = ["adb", "android", "tcp", "usb"]
 license = "MIT"

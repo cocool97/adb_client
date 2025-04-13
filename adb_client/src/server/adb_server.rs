@@ -105,7 +105,7 @@ impl ADBServer {
 
 impl Drop for ADBServer {
     fn drop(&mut self) {
-        if let Some(ref mut transport) = &mut self.transport {
+        if let Some(transport) = &mut self.transport {
             let _ = transport.disconnect();
         }
     }

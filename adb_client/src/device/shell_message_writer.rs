@@ -2,7 +2,7 @@ use std::io::Write;
 
 use crate::ADBMessageTransport;
 
-use super::{models::MessageCommand, ADBTransportMessage};
+use super::{ADBTransportMessage, models::MessageCommand};
 
 /// [`Write`] trait implementation to hide underlying ADB protocol write logic for shell commands.
 pub struct ShellMessageWriter<T: ADBMessageTransport> {

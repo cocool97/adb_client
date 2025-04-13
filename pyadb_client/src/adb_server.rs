@@ -2,7 +2,7 @@ use std::net::SocketAddrV4;
 
 use adb_client::ADBServer;
 use anyhow::Result;
-use pyo3::{pyclass, pymethods, PyResult};
+use pyo3::{PyResult, pyclass, pymethods};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::{PyADBServerDevice, PyDeviceShort};

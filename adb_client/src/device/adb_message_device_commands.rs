@@ -1,4 +1,4 @@
-use crate::{models::AdbStatResponse, ADBDeviceExt, ADBMessageTransport, RebootType, Result};
+use crate::{ADBDeviceExt, ADBMessageTransport, RebootType, Result, models::AdbStatResponse};
 use std::{
     io::{Read, Write},
     path::Path,

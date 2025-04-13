@@ -1,4 +1,4 @@
-use crate::{models::AdbServerCommand, ADBServerDevice, Result};
+use crate::{ADBServerDevice, Result, models::AdbServerCommand};
 
 impl ADBServerDevice {
     /// Set adb daemon to tcp/ip mode

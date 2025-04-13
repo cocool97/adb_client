@@ -1,4 +1,4 @@
-use crate::{emulator_device::ADBEmulatorCommand, ADBEmulatorDevice, Result};
+use crate::{ADBEmulatorDevice, Result, emulator_device::ADBEmulatorCommand};
 
 impl ADBEmulatorDevice {
     /// Send a SMS to this emulator with given content with given phone number

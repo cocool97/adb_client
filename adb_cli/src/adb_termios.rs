@@ -2,7 +2,7 @@
 
 use std::os::unix::prelude::{AsRawFd, RawFd};
 
-use termios::{tcsetattr, Termios, TCSANOW, VMIN, VTIME};
+use termios::{TCSANOW, Termios, VMIN, VTIME, tcsetattr};
 
 use crate::Result;
 

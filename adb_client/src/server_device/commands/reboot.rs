@@ -1,6 +1,6 @@
 use crate::{
-    models::{AdbServerCommand, RebootType},
     ADBServerDevice, Result,
+    models::{AdbServerCommand, RebootType},
 };
 
 impl ADBServerDevice {

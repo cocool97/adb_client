@@ -1,10 +1,10 @@
 use std::io::{ErrorKind, Read, Write};
 
-use crate::device::ShellMessageWriter;
 use crate::Result;
+use crate::device::ShellMessageWriter;
 use crate::{
-    device::{ADBMessageDevice, ADBTransportMessage, MessageCommand},
     ADBMessageTransport, RustADBError,
+    device::{ADBMessageDevice, ADBTransportMessage, MessageCommand},
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {

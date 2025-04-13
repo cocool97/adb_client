@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use super::ADBTransport;
-use crate::{device::ADBTransportMessage, Result};
+use crate::{Result, device::ADBTransportMessage};
 
 const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(u64::MAX);
 const DEFAULT_WRITE_TIMEOUT: Duration = Duration::from_secs(2);
