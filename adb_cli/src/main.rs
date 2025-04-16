@@ -25,9 +25,15 @@ use std::path::Path;
 use utils::setup_logger;
 
 fn main() -> Result<()> {
+    // This depends on `clap`
     let opts = Opts::parse();
 
-    setup_logger(opts.debug);
+    // SAFETY:
+    // We are assuming the entire process is single-threaded
+    // at this point.
+    // This seems true for the current version of `clap`,
+    // but there's no guarantee for future updates
+    unsafe { setup_logger(opts.debug) };
 
     // Directly handling methods / commands that aren't linked to [`ADBDeviceExt`] trait.
     // Other methods just have to create a concrete [`ADBDeviceExt`] instance, and return it.
