@@ -1,9 +1,9 @@
 use crate::{
-    device::{
-        adb_message_device::ADBMessageDevice, ADBTransportMessage, MessageCommand,
-        MessageSubcommand,
-    },
     ADBListItem, ADBListItemType, ADBMessageTransport, Result, RustADBError,
+    device::{
+        ADBTransportMessage, MessageCommand, MessageSubcommand,
+        adb_message_device::ADBMessageDevice,
+    },
 };
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
@@ -12,7 +12,7 @@ use std::str;
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// List the entries in the given directory on the device.
     /// note: path uses internal file paths, so Documents is at /storage/emulated/0/Documents
-    pub(crate) fn list(&mut self, path: &str) -> Result<Vec<ADBListItem>> {
+    pub(crate) fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItem>> {
         self.begin_synchronization()?;
 
         let output = self.handle_list(path);
@@ -70,14 +70,14 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
     }
 
-    fn handle_list(&mut self, path: &str) -> Result<Vec<ADBListItem>> {
+    fn handle_list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItem>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
         let local_id = self.get_local_id()?;
         let remote_id = self.get_remote_id()?;
         {
             let mut len_buf = Vec::from([0_u8; 4]);
-            LittleEndian::write_u32(&mut len_buf, path.len() as u32);
+            LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
             let subcommand_data = MessageSubcommand::List; //.with_arg(path.len() as u32);
 
@@ -85,7 +85,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 bincode::serialize(&subcommand_data).map_err(|_e| RustADBError::ConversionError)?;
 
             serialized_message.append(&mut len_buf);
-            let mut path_bytes: Vec<u8> = Vec::from(path.as_bytes());
+            let mut path_bytes: Vec<u8> = Vec::from(path.as_ref().as_bytes());
             serialized_message.append(&mut path_bytes);
 
             let message = ADBTransportMessage::new(

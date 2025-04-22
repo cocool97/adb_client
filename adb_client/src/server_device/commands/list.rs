@@ -2,7 +2,7 @@ use crate::{
     ADBServerDevice, Result, RustADBError,
     models::{ADBListItem, ADBListItemType, AdbServerCommand, SyncCommand},
 };
-use byteorder::{ByteOrder, LittleEndian};
+use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use std::{
     io::{Read, Write},
     str,
@@ -23,7 +23,7 @@ impl ADBServerDevice {
         self.handle_list_command(path)
     }
 
-    fn handle_list_command<S: AsRef<str>>(&mut self, path: S) -> Result<Vec<ADBListItem>> {
+    fn handle_list_command<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItem>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
         let mut len_buf = [0_u8; 4];
@@ -47,21 +47,12 @@ impl ADBServerDevice {
                 .read_exact(&mut response)?;
             match str::from_utf8(response.as_ref())? {
                 "DENT" => {
-                    let mut mode = [0_u8; 4];
-                    let mut size = [0_u8; 4];
-                    let mut time = [0_u8; 4];
-                    let mut name_len = [0_u8; 4];
-
                     let mut connection = self.transport.get_raw_connection()?;
-                    connection.read_exact(&mut mode)?;
-                    connection.read_exact(&mut size)?;
-                    connection.read_exact(&mut time)?;
-                    connection.read_exact(&mut name_len)?;
 
-                    let mode = LittleEndian::read_u32(&mode);
-                    let size = LittleEndian::read_u32(&size);
-                    let time = LittleEndian::read_u32(&time);
-                    let name_len = LittleEndian::read_u32(&name_len);
+                    let mode = connection.read_u32::<LittleEndian>()?;
+                    let size = connection.read_u32::<LittleEndian>()?;
+                    let time = connection.read_u32::<LittleEndian>()?;
+                    let name_len = connection.read_u32::<LittleEndian>()?;
                     let mut name_buf = vec![0_u8; name_len as usize];
                     connection.read_exact(&mut name_buf)?;
                     let name = String::from_utf8(name_buf)?;
