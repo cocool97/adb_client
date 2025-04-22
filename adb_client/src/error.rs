@@ -124,7 +124,7 @@ pub enum RustADBError {
     #[error("unknown transport: {0}")]
     UnknownTransport(String),
     /// An unknown file mode was encountered in list
-    #[error("Unknown file type {0}")]
+    #[error("Unknown file mode {0}")]
     UnknownFileMode(u32),
 }
 

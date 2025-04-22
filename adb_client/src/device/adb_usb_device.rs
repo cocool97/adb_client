@@ -248,7 +248,7 @@ impl ADBDeviceExt for ADBUSBDevice {
         self.inner.framebuffer_inner()
     }
 
-    fn list(&mut self, path: &str) -> Result<Vec<crate::ADBListItem>> {
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<crate::ADBListItem>> {
         self.inner.list(path)
     }
 }

@@ -137,7 +137,7 @@ impl ADBDeviceExt for ADBTcpDevice {
         self.inner.framebuffer_inner()
     }
 
-    fn list(&mut self, path: &str) -> Result<Vec<crate::ADBListItem>> {
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<crate::ADBListItem>> {
         self.inner.list(path)
     }
 }

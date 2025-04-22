@@ -25,7 +25,7 @@ pub trait ADBDeviceExt {
     fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()>;
 
     /// List the items in a directory on the device
-    fn list(&mut self, path: &str) -> Result<Vec<ADBListItem>>;
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItem>>;
 
     /// Reboot the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
