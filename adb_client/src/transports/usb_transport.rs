@@ -161,6 +161,20 @@ impl ADBTransport for USBTransport {
     }
 }
 
+impl Drop for USBTransport {
+    fn drop(&mut self) {
+        if let Some(handle) = &self.handle {
+            let endpoint = self.read_endpoint.as_ref().or(self.write_endpoint.as_ref());
+
+            if let Some(endpoint) = &endpoint {
+                if let Err(e) = handle.release_interface(endpoint.iface) {
+                    log::error!("error while release interface: {e}");
+                }
+            }
+        }
+    }
+}
+
 impl ADBMessageTransport for USBTransport {
     fn write_message_with_timeout(
         &mut self,
