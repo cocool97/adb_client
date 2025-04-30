@@ -189,12 +189,10 @@ impl ADBTransport for USBTransport {
 
     fn disconnect(&mut self) -> crate::Result<()> {
         let message = ADBTransportMessage::new(MessageCommand::Clse, 0, 0, &[]);
-        self.write_message(message)
-    }
-}
+        if let Err(e) = self.write_message(message) {
+            log::error!("error while sending CLSE message: {e}");
+        }
 
-impl Drop for USBTransport {
-    fn drop(&mut self) {
         if let Some(handle) = &self.handle {
             let endpoint = self.read_endpoint.as_ref().or(self.write_endpoint.as_ref());
             if let Some(endpoint) = &endpoint {
@@ -204,6 +202,8 @@ impl Drop for USBTransport {
                 }
             }
         }
+
+        Ok(())
     }
 }
 
