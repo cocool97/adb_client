@@ -1,6 +1,16 @@
 # pyadb_client
 
-Python library to communicate with ADB devices. Built on top of Rust `adb_client` library.
+<p align="center">
+    <p align="center">Python library to communicate with ADB devices. Built on top of Rust adb_client library.</p>
+    <p align="center">
+        <a href="https://pypi.org/project/pyadb_client">
+            <img alt="pypi.org" src="https://img.shields.io/pypi/v/pyadb_client.svg" />
+        </a>
+        <a href="https://pypi.org/project/pyadb_client">
+            <img alt="downloads" src="https://static.pepy.tech/badge/pyadb_client" />
+        </a>
+    </p>
+</p>
 
 ## Installation
 
