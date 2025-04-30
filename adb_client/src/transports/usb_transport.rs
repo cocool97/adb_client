@@ -180,6 +180,12 @@ impl ADBMessageTransport for USBTransport {
             }
         }
 
+        log::trace!(
+            "Wrote header: {} bytes over {}",
+            total_written,
+            message_bytes.len()
+        );
+
         let payload = message.into_payload();
         if !payload.is_empty() {
             let mut total_written = 0;
@@ -190,6 +196,12 @@ impl ADBMessageTransport for USBTransport {
                     break;
                 }
             }
+
+            log::trace!(
+                "Wrote payload: {} bytes over {}",
+                total_written,
+                payload.len()
+            );
         }
 
         Ok(())
@@ -201,6 +213,12 @@ impl ADBMessageTransport for USBTransport {
 
         let mut data = [0; 24];
         let mut total_read = 0;
+
+        log::trace!(
+            "waiting for data to be readable: timeout={}s",
+            timeout.as_secs()
+        );
+
         loop {
             total_read += handle.read_bulk(endpoint.address, &mut data[total_read..], timeout)?;
             if total_read == data.len() {
