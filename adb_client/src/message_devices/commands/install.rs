@@ -4,7 +4,7 @@ use crate::{
     Result,
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
-        commands::utils::MessageWriter,
+        commands::utils::MessageWriter, message_commands::MessageCommand,
     },
     utils::check_extension_is_apk,
 };
@@ -34,6 +34,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     "APK file {} successfully installed",
                     apk_path.as_ref().display()
                 );
+                self.get_transport_mut()
+                    .read_message()?
+                    .assert_command(MessageCommand::Clse)?;
                 Ok(())
             }
             d => Err(crate::RustADBError::ADBRequestFailed(String::from_utf8(
