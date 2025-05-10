@@ -22,8 +22,14 @@ impl ADBDeviceExt for ADBServerDevice {
 
         self.set_serial_transport()?;
 
-        self.transport
-            .send_adb_request(AdbServerCommand::ShellCommand(command.join(" ")))?;
+        let cmd = command.join(" ");
+        let server_command = if supported_features.contains(&HostFeatures::ShellV2) {
+            AdbServerCommand::Shellv2Command(cmd)
+        } else {
+            AdbServerCommand::ShellCommand(cmd)
+        };
+
+        self.transport.send_adb_request(server_command)?;
 
         loop {
             let mut buffer = [0; BUFFER_SIZE];
