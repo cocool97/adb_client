@@ -36,7 +36,7 @@ impl ADBServer {
                 break;
             }
 
-            vec_devices.push(DeviceLong::try_from(device.to_vec())?);
+            vec_devices.push(DeviceLong::try_from(device)?);
         }
 
         Ok(vec_devices)

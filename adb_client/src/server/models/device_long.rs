@@ -44,12 +44,12 @@ impl Display for DeviceLong {
     }
 }
 
-impl TryFrom<Vec<u8>> for DeviceLong {
+impl TryFrom<&[u8]> for DeviceLong {
     type Error = RustADBError;
 
-    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let groups = DEVICES_LONG_REGEX
-            .captures(&value)
+            .captures(value)
             .ok_or(RustADBError::RegexParsingError)?;
 
         Ok(DeviceLong {
@@ -109,7 +109,6 @@ fn test_static_devices_long() {
         "QQ20131020250511       device 20-4 product:NOH-AN00 model:NOH_AN00 device:HWNOH transport_id:3",
     ];
     for input in inputs {
-        DeviceLong::try_from(input.as_bytes().to_vec())
-            .expect(&format!("cannot parse input: '{input}'"));
+        DeviceLong::try_from(input.as_bytes()).expect(&format!("cannot parse input: '{input}'"));
     }
 }
