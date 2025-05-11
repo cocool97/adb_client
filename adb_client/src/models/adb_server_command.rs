@@ -26,8 +26,7 @@ pub(crate) enum AdbServerCommand {
     Install(u64),
     WaitForDevice(WaitForDeviceState, WaitForDeviceTransport),
     // Local commands
-    ShellCommand(String),
-    Shellv2Command(String),
+    ShellCommand(Vec<String>, String),
     Shell,
     FrameBuffer,
     Sync,
@@ -52,14 +51,14 @@ impl Display for AdbServerCommand {
             AdbServerCommand::TrackDevices => write!(f, "host:track-devices"),
             AdbServerCommand::TransportAny => write!(f, "host:transport-any"),
             AdbServerCommand::TransportSerial(serial) => write!(f, "host:transport:{serial}"),
-            AdbServerCommand::ShellCommand(command) => match std::env::var("TERM") {
-                Ok(term) => write!(f, "shell,TERM={term},raw:{command}"),
-                Err(_) => write!(f, "shell,raw:{command}"),
-            },
-            AdbServerCommand::Shellv2Command(command) => match std::env::var("TERM") {
-                Ok(term) => write!(f, "shell,v2,TERM={term},raw:{command}"),
-                Err(_) => write!(f, "shell,raw:{command}"),
-            },
+            AdbServerCommand::ShellCommand(args, command) => {
+                let args_s = args.join(",");
+                write!(
+                    f,
+                    "shell{}{args_s},raw:{command}",
+                    if args.is_empty() { "" } else { "," }
+                )
+            }
             AdbServerCommand::Shell => match std::env::var("TERM") {
                 Ok(term) => write!(f, "shell,TERM={term},raw:"),
                 Err(_) => write!(f, "shell,raw:"),
