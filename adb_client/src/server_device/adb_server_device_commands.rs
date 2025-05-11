@@ -22,14 +22,23 @@ impl ADBDeviceExt for ADBServerDevice {
 
         self.set_serial_transport()?;
 
-        let cmd = command.join(" ");
-        let server_command = if supported_features.contains(&HostFeatures::ShellV2) {
-            AdbServerCommand::Shellv2Command(cmd)
-        } else {
-            AdbServerCommand::ShellCommand(cmd)
-        };
+        // Prepare shell command arguments
+        let mut args = Vec::new();
+        let command_string = command.join(" ");
 
-        self.transport.send_adb_request(server_command)?;
+        // Add v2 mode if supported
+        if supported_features.contains(&HostFeatures::ShellV2) {
+            args.push("v2".to_string());
+        }
+
+        // Include terminal information if available
+        if let Ok(term) = std::env::var("TERM") {
+            args.push(format!("TERM={term}"));
+        }
+
+        // Send the request
+        self.transport
+            .send_adb_request(AdbServerCommand::ShellCommand(args, command_string))?;
 
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {
