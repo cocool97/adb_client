@@ -38,7 +38,7 @@ impl ADBDeviceExt for ADBServerDevice {
 
         // Send the request
         self.transport
-            .send_adb_request(AdbServerCommand::ShellCommand(args, command_string))?;
+            .send_adb_request(AdbServerCommand::ShellCommand(command_string, args))?;
 
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {

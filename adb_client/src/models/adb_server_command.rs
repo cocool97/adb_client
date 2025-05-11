@@ -26,7 +26,7 @@ pub(crate) enum AdbServerCommand {
     Install(u64),
     WaitForDevice(WaitForDeviceState, WaitForDeviceTransport),
     // Local commands
-    ShellCommand(Vec<String>, String),
+    ShellCommand(String, Vec<String>),
     Shell,
     FrameBuffer,
     Sync,
@@ -51,7 +51,7 @@ impl Display for AdbServerCommand {
             AdbServerCommand::TrackDevices => write!(f, "host:track-devices"),
             AdbServerCommand::TransportAny => write!(f, "host:transport-any"),
             AdbServerCommand::TransportSerial(serial) => write!(f, "host:transport:{serial}"),
-            AdbServerCommand::ShellCommand(args, command) => {
+            AdbServerCommand::ShellCommand(command, args) => {
                 let args_s = args.join(",");
                 write!(
                     f,
