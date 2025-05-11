@@ -6,7 +6,7 @@ use crate::{DeviceState, RustADBError};
 use regex::bytes::Regex;
 
 static DEVICES_LONG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(?P<identifier>\S+)\s+(?P<state>\w+)\s+(usb:(?P<usb1>\S+)|(?P<usb2>\S+))?\s*(product:(?P<product>\w+)\s+model:(?P<model>\w+)\s+device:(?P<device>\w+)\s+)?transport_id:(?P<transport_id>\d+)$").expect("cannot build devices long regex")
+    Regex::new(r"^(?P<identifier>\S+)\s+(?P<state>\w+)\s+(usb:(?P<usb1>\S+)|(?P<usb2>\S+))?\s*(product:(?P<product>\S+)\s+model:(?P<model>\w+)\s+device:(?P<device>\S+)\s+)?transport_id:(?P<transport_id>\d+)$").expect("cannot build devices long regex")
 });
 
 /// Represents a new device with more informations.
@@ -44,12 +44,12 @@ impl Display for DeviceLong {
     }
 }
 
-impl TryFrom<Vec<u8>> for DeviceLong {
+impl TryFrom<&[u8]> for DeviceLong {
     type Error = RustADBError;
 
-    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let groups = DEVICES_LONG_REGEX
-            .captures(&value)
+            .captures(value)
             .ok_or(RustADBError::RegexParsingError)?;
 
         Ok(DeviceLong {
@@ -96,5 +96,19 @@ impl TryFrom<Vec<u8>> for DeviceLong {
                 16,
             )?,
         })
+    }
+}
+
+#[test]
+fn test_static_devices_long() {
+    let inputs = [
+        "7a5158f05122195aa       device 1-5 product:gts210vewifixx model:SM_T813 device:gts210vewifi transport_id:4",
+        "n311r05e               device usb:0-1.5 product:alioth model:M2012K11AC device:alioth transport_id:58",
+        "192.168.100.192:5555   device product:alioth model:M2012K11AC device:alioth transport_id:97",
+        "emulator-5554          device product:sdk_gphone64_arm64 model:sdk_gphone64_arm64 device:emu64a transport_id:101",
+        "QQ20131020250511       device 20-4 product:NOH-AN00 model:NOH_AN00 device:HWNOH transport_id:3",
+    ];
+    for input in inputs {
+        DeviceLong::try_from(input.as_bytes()).expect(&format!("cannot parse input: '{input}'"));
     }
 }
