@@ -13,6 +13,8 @@ pub enum RebootType {
     Sideload,
     /// Same as `Sideload` but reboots after sideloading
     SideloadAutoReboot,
+    /// Reboots to fastboot
+    Fastboot,
 }
 
 impl Display for RebootType {
@@ -23,6 +25,7 @@ impl Display for RebootType {
             RebootType::Recovery => write!(f, "recovery"),
             RebootType::Sideload => write!(f, "sideload"),
             RebootType::SideloadAutoReboot => write!(f, "sideload-auto-reboot"),
+            RebootType::Fastboot => write!(f, "fastboot"),
         }
     }
 }

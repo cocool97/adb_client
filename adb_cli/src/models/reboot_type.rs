@@ -8,6 +8,7 @@ pub enum RebootTypeCommand {
     Recovery,
     Sideload,
     SideloadAutoReboot,
+    Fastboot,
 }
 
 impl From<RebootTypeCommand> for RebootType {
@@ -18,6 +19,7 @@ impl From<RebootTypeCommand> for RebootType {
             RebootTypeCommand::Recovery => RebootType::Recovery,
             RebootTypeCommand::Sideload => RebootType::Sideload,
             RebootTypeCommand::SideloadAutoReboot => RebootType::SideloadAutoReboot,
+            RebootTypeCommand::Fastboot => RebootType::Fastboot,
         }
     }
 }
