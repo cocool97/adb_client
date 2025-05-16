@@ -1,14 +1,20 @@
-use std::{
-    net::{Ipv4Addr, SocketAddrV4},
-    sync::LazyLock,
-};
+use std::net::{Ipv4Addr, SocketAddrV4};
 
 use crate::{ADBServerDevice, ADBTransport, Result, RustADBError, TCPEmulatorTransport};
-use regex::Regex;
 
-static EMULATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new("^emulator-(?P<port>\\d+)$").expect("wrong syntax for emulator regex")
-});
+#[must_use]
+fn get_emulator_port(id: &str) -> Option<&str> {
+    const PREFIX: &str = "emulator-";
+    if id.len() <= PREFIX.len() || !id.starts_with(PREFIX) {
+        return None;
+    }
+    // bounds-check already done above
+    let suffix = &id[PREFIX.len()..];
+    if suffix.bytes().all(|c| c.is_ascii_digit()) {
+        return Some(suffix);
+    }
+    None
+}
 
 /// Represents an emulator connected to the ADB server.
 #[derive(Debug)]
@@ -27,17 +33,20 @@ impl ADBEmulatorDevice {
             None => Ipv4Addr::new(127, 0, 0, 1),
         };
 
-        let groups = EMULATOR_REGEX
-            .captures(&identifier)
+        let port = identifier
+            .lines()
+            .find_map(|id| {
+                const PREFIX: &str = "emulator-";
+                if id.len() <= PREFIX.len() || !id.starts_with(PREFIX) {
+                    return None;
+                }
+                // bounds-check already done above
+                Some(&id[PREFIX.len()..])
+            })
             .ok_or(RustADBError::DeviceNotFound(format!(
                 "Device {} is likely not an emulator",
                 identifier
-            )))?;
-
-        let port = groups
-            .name("port")
-            .ok_or(RustADBError::RegexParsingError)?
-            .as_str()
+            )))?
             .parse::<u16>()?;
 
         let socket_addr = SocketAddrV4::new(ip_address, port);
