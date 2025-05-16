@@ -1,13 +1,7 @@
 use std::str::FromStr;
-use std::sync::LazyLock;
 use std::{fmt::Display, str};
 
 use crate::{DeviceState, RustADBError};
-use regex::bytes::Regex;
-
-static DEVICES_LONG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(?P<identifier>\S+)\s+(?P<state>\w+)\s+(usb:(?P<usb1>\S+)|(?P<usb2>\S+))?\s*(product:(?P<product>\S+)\s+model:(?P<model>\w+)\s+device:(?P<device>\S+)\s+)?transport_id:(?P<transport_id>\d+)$").expect("cannot build devices long regex")
-});
 
 /// Represents a new device with more informations.
 #[derive(Debug)]
@@ -48,53 +42,68 @@ impl TryFrom<&[u8]> for DeviceLong {
     type Error = RustADBError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        let groups = DEVICES_LONG_REGEX
-            .captures(value)
-            .ok_or(RustADBError::RegexParsingError)?;
+        let value = str::from_utf8(value)?;
+        let mut it = value.split_whitespace();
+
+        let id = it.next().ok_or(Self::Error::RegexParsingError)?;
+        let stat = DeviceState::from_str(
+            it.next()
+                .ok_or(Self::Error::UnknownDeviceState(String::new()))?,
+        )?;
+
+        let mut comp = it.next().ok_or(Self::Error::RegexParsingError)?;
+
+        let mut usb = match comp.strip_prefix("usb:") {
+            Some(usb) => {
+                comp = it.next().ok_or(Self::Error::RegexParsingError)?;
+                Some(usb)
+            }
+            _ => None,
+        };
+
+        let prod = match comp.strip_prefix("product:") {
+            Some(prod) => {
+                comp = it.next().ok_or(Self::Error::RegexParsingError)?;
+                Some(prod)
+            }
+            _ => {
+                usb = Some(comp);
+                comp = it.next().ok_or(Self::Error::RegexParsingError)?;
+                comp.strip_prefix("product:")
+            }
+        };
+        if prod.is_some() {
+            comp = it.next().ok_or(Self::Error::RegexParsingError)?
+        }
+
+        let model = comp.strip_prefix("model:");
+        if model.is_some() {
+            comp = it.next().ok_or(Self::Error::RegexParsingError)?
+        }
+
+        let dev = comp.strip_prefix("device:");
+        if dev.is_some() {
+            comp = it.next().ok_or(Self::Error::RegexParsingError)?
+        }
+
+        if it.next().is_some() {
+            return Err(Self::Error::RegexParsingError);
+        }
+
+        let trans = comp
+            .strip_prefix("transport_id:")
+            .ok_or(Self::Error::UnknownTransport(String::new()))?;
 
         Ok(DeviceLong {
-            identifier: String::from_utf8(
-                groups
-                    .name("identifier")
-                    .ok_or(RustADBError::RegexParsingError)?
-                    .as_bytes()
-                    .to_vec(),
-            )?,
-            state: DeviceState::from_str(&String::from_utf8(
-                groups
-                    .name("state")
-                    .ok_or(RustADBError::RegexParsingError)?
-                    .as_bytes()
-                    .to_vec(),
-            )?)?,
-            usb: match groups.name("usb1") {
-                None => match groups.name("usb2") {
-                    None => "Unk".to_string(),
-                    Some(usb) => String::from_utf8(usb.as_bytes().to_vec())?,
-                },
-                Some(usb) => String::from_utf8(usb.as_bytes().to_vec())?,
-            },
-            product: match groups.name("product") {
-                None => "Unk".to_string(),
-                Some(product) => String::from_utf8(product.as_bytes().to_vec())?,
-            },
-            model: match groups.name("model") {
-                None => "Unk".to_string(),
-                Some(model) => String::from_utf8(model.as_bytes().to_vec())?,
-            },
-            device: match groups.name("device") {
-                None => "Unk".to_string(),
-                Some(device) => String::from_utf8(device.as_bytes().to_vec())?,
-            },
-            transport_id: u32::from_str_radix(
-                str::from_utf8(
-                    groups
-                        .name("transport_id")
-                        .ok_or(RustADBError::RegexParsingError)?
-                        .as_bytes(),
-                )?,
-                16,
-            )?,
+            identifier: id.to_string(),
+            state: stat,
+            usb: usb.unwrap_or("Unk").to_string(),
+            product: prod.unwrap_or("Unk").to_string(),
+            model: model.unwrap_or("Unk").to_string(),
+            device: dev.unwrap_or("Unk").to_string(),
+            transport_id: trans
+                .parse()
+                .map_err(|_| Self::Error::UnknownTransport(trans.to_string()))?,
         })
     }
 }
