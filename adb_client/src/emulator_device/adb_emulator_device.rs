@@ -30,7 +30,7 @@ impl ADBEmulatorDevice {
     pub fn new(identifier: String, ip_address: Option<Ipv4Addr>) -> Result<Self> {
         let ip_address = match ip_address {
             Some(ip_address) => ip_address,
-            None => Ipv4Addr::new(127, 0, 0, 1),
+            None => Ipv4Addr::LOCALHOST,
         };
 
         let port = identifier
