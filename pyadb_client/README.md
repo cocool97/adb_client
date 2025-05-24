@@ -47,7 +47,6 @@ usb_device.push("file.txt", "/data/local/tmp/file.txt")
 
 ```bash
 # Create Python virtual environment
-cd pyadb_client
 python3 -m venv .venv
 source .venv/bin/activate
 
