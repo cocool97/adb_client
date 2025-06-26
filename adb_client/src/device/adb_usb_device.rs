@@ -180,6 +180,11 @@ impl ADBUSBDevice {
         self.get_transport_mut().write_message(message)?;
 
         let message = self.get_transport_mut().read_message()?;
+        // If the device returned CNXN instead of AUTH it does not require authentication,
+        // so we can skip the auth steps.
+        if message.header().command() == MessageCommand::Cnxn {
+            return Ok(());
+        }
         message.assert_command(MessageCommand::Auth)?;
 
         // At this point, we should have receive an AUTH message with arg0 == 1
