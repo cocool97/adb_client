@@ -35,10 +35,10 @@ impl<T: ADBMessageTransport> Write for MessageWriter<T> {
             Ok(response) => {
                 response
                     .assert_command(MessageCommand::Okay)
-                    .map_err(|e| Error::new(ErrorKind::Other, e))?;
+                    .map_err(Error::other)?;
                 Ok(buf.len())
             }
-            Err(e) => Err(Error::new(ErrorKind::Other, e)),
+            Err(e) => Err(Error::other(e)),
         }
     }
 
