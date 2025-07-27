@@ -17,7 +17,7 @@ mod transports;
 mod utils;
 
 pub use adb_device_ext::ADBDeviceExt;
-pub use device::{ADBTcpDevice, ADBUSBDevice};
+pub use device::{ADBTcpDevice, ADBUSBDevice, is_adb_device, search_adb_devices};
 pub use emulator_device::ADBEmulatorDevice;
 pub use error::{Result, RustADBError};
 pub use mdns::*;

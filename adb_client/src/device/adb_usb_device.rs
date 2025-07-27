@@ -31,7 +31,7 @@ pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Optio
 }
 
 /// Search for adb devices with known interface class and subclass values
-fn search_adb_devices() -> Result<Option<(u16, u16)>> {
+pub fn search_adb_devices() -> Result<Option<(u16, u16)>> {
     let mut found_devices = vec![];
     for device in rusb::devices()?.iter() {
         let Ok(des) = device.device_descriptor() else {
@@ -57,7 +57,8 @@ fn search_adb_devices() -> Result<Option<(u16, u16)>> {
     }
 }
 
-fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> bool {
+/// Check whether a device with given descriptor is an ADB device
+pub fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> bool {
     const ADB_SUBCLASS: u8 = 0x42;
     const ADB_PROTOCOL: u8 = 0x1;
 
