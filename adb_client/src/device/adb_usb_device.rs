@@ -19,15 +19,20 @@ use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AU
 use crate::{Result, RustADBError, USBTransport};
 
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
-    Ok(read_to_string(private_key_path.as_ref()).map(|pk| {
-        match ADBRsaKey::new_from_pkcs8(&pk) {
-            Ok(pk) => Some(pk),
-            Err(e) => {
-                log::error!("Error while create RSA private key: {e}");
-                None
-            }
-        }
-    })?)
+    // Try to read the private key file from given path
+    // If the file is not found, return None
+    // If there is another error while reading the file, return this error
+    // Else, return the private key content
+    let pk = match read_to_string(private_key_path.as_ref()) {
+        Ok(pk) => pk,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(e.into()),
+    };
+
+    match ADBRsaKey::new_from_pkcs8(&pk) {
+        Ok(pk) => Ok(Some(pk)),
+        Err(e) => Err(e),
+    }
 }
 
 /// Search for adb devices with known interface class and subclass values
@@ -135,9 +140,15 @@ impl ADBUSBDevice {
         transport: USBTransport,
         private_key_path: PathBuf,
     ) -> Result<Self> {
-        let private_key = match read_adb_private_key(private_key_path)? {
+        let private_key = match read_adb_private_key(&private_key_path)? {
             Some(pk) => pk,
-            None => ADBRsaKey::new_random()?,
+            None => {
+                log::warn!(
+                    "No private key found at path {}. Using a temporary random one.",
+                    private_key_path.display()
+                );
+                ADBRsaKey::new_random()?
+            }
         };
 
         let mut s = Self {
