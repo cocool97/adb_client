@@ -2,7 +2,7 @@
 
 [![MIT licensed](https://img.shields.io/crates/l/adb_cli.svg)](./LICENSE-MIT)
 ![Crates.io Total Downloads](https://img.shields.io/crates/d/adb_cli)
-![MSRV](https://img.shields.io/crates/msrv/adb_cli/latest)
+![MSRV](https://img.shields.io/crates/msrv/adb_cli)
 
 Rust binary providing an improved version of `adb` CLI.
 

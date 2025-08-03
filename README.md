@@ -9,7 +9,7 @@
             <img alt="crates.io" src="https://img.shields.io/crates/v/adb_client.svg"/>
         </a>
         <a href="https://crates.io/crates/adb_client">
-            <img alt="msrv" src="https://img.shields.io/crates/msrv/adb_client/latest"/>
+            <img alt="msrv" src="https://img.shields.io/crates/msrv/adb_client"/>
         </a>
         <a href="https://github.com/cocool97/adb_client/actions">
             <img alt="ci status" src="https://github.com/cocool97/adb_client/actions/workflows/rust-build.yml/badge.svg"/>
