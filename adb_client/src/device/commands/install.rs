@@ -14,7 +14,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let file_size = apk_file.metadata()?.len();
 
-        self.open_session(format!("exec:cmd package 'install' -S {}\0", file_size).as_bytes())?;
+        self.open_session(format!("exec:cmd package 'install' -S {file_size}\0").as_bytes())?;
 
         let transport = self.get_transport().clone();
 

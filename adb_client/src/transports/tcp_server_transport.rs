@@ -99,13 +99,13 @@ impl TCPServerTransport {
     }
 
     /// Gets the body length from a LittleEndian value
-    pub(crate) fn get_body_length(&mut self) -> Result<u32> {
+    pub(crate) fn get_body_length(&self) -> Result<u32> {
         let length_buffer = self.read_body_length()?;
         Ok(LittleEndian::read_u32(&length_buffer))
     }
 
     /// Read 4 bytes representing body length
-    fn read_body_length(&mut self) -> Result<[u8; 4]> {
+    fn read_body_length(&self) -> Result<[u8; 4]> {
         let mut length_buffer = [0; 4];
         self.get_raw_connection()?.read_exact(&mut length_buffer)?;
 

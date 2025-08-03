@@ -63,8 +63,8 @@ impl Display for AdbServerCommand {
             AdbServerCommand::Reboot(reboot_type) => {
                 write!(f, "reboot:{reboot_type}")
             }
-            AdbServerCommand::Connect(addr) => write!(f, "host:connect:{}", addr),
-            AdbServerCommand::Disconnect(addr) => write!(f, "host:disconnect:{}", addr),
+            AdbServerCommand::Connect(addr) => write!(f, "host:connect:{addr}"),
+            AdbServerCommand::Disconnect(addr) => write!(f, "host:disconnect:{addr}"),
             AdbServerCommand::Pair(addr, code) => {
                 write!(f, "host:pair:{code}:{addr}")
             }

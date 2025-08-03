@@ -109,7 +109,7 @@ impl TcpTransport {
         })
     }
 
-    fn get_current_connection(&mut self) -> Result<Arc<Mutex<CurrentConnection>>> {
+    fn get_current_connection(&self) -> Result<Arc<Mutex<CurrentConnection>>> {
         self.current_connection
             .as_ref()
             .ok_or(RustADBError::IOError(std::io::Error::new(
@@ -175,8 +175,7 @@ impl TcpTransport {
                 Ok(())
             }
             c => Err(RustADBError::ADBRequestFailed(format!(
-                "Wrong command received {}",
-                c
+                "Wrong command received {c}"
             ))),
         }
     }

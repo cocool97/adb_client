@@ -10,6 +10,7 @@ keywords = ["adb", "android", "tcp", "usb"]
 license = "MIT"
 repository = "https://github.com/cocool97/adb_client"
 version = "2.1.15"
+rust-version = "1.85.1"
 
 # To build locally when working on a new release
 [patch.crates-io]

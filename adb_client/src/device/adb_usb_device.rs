@@ -56,8 +56,7 @@ pub fn search_adb_devices() -> Result<Option<(u16, u16)>> {
         (None, _) => Ok(None),
         (Some(identifiers), None) => Ok(Some(*identifiers)),
         (Some((vid1, pid1)), Some((vid2, pid2))) => Err(RustADBError::DeviceNotFound(format!(
-            "Found two Android devices {:04x}:{:04x} and {:04x}:{:04x}",
-            vid1, pid1, vid2, pid2
+            "Found two Android devices {vid1:04x}:{pid1:04x} and {vid2:04x}:{pid2:04x}",
         ))),
     }
 }

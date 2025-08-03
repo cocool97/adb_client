@@ -15,7 +15,7 @@ impl ADBServerDevice {
 
         match &data[0..read_amount] {
             b"Success\n" => {
-                log::info!("Package {} successfully uninstalled", package_name);
+                log::info!("Package {package_name} successfully uninstalled");
                 Ok(())
             }
             d => Err(crate::RustADBError::ADBRequestFailed(String::from_utf8(

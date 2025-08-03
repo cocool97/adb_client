@@ -40,8 +40,7 @@ impl USBTransport {
         }
 
         Err(RustADBError::DeviceNotFound(format!(
-            "cannot find USB device with vendor_id={} and product_id={}",
-            vendor_id, product_id
+            "cannot find USB device with vendor_id={vendor_id} and product_id={product_id}",
         )))
     }
 
@@ -151,12 +150,7 @@ impl USBTransport {
             let write_amount = handle.write_bulk(endpoint.address, &data[offset..end], timeout)?;
             offset += write_amount;
 
-            log::trace!(
-                "wrote chunk of size {} - {}/{}",
-                write_amount,
-                offset,
-                data_len
-            )
+            log::trace!("wrote chunk of size {write_amount} - {offset}/{data_len}",)
         }
 
         if offset % max_packet_size == 0 {
@@ -175,11 +169,11 @@ impl ADBTransport for USBTransport {
         let (read_endpoint, write_endpoint) = self.find_endpoints(&device)?;
 
         Self::configure_endpoint(&device, &read_endpoint)?;
-        log::debug!("got read endpoint: {:?}", read_endpoint);
+        log::debug!("got read endpoint: {read_endpoint:?}");
         self.read_endpoint = Some(read_endpoint);
 
         Self::configure_endpoint(&device, &write_endpoint)?;
-        log::debug!("got write endpoint: {:?}", write_endpoint);
+        log::debug!("got write endpoint: {write_endpoint:?}");
         self.write_endpoint = Some(write_endpoint);
 
         self.handle = Some(Arc::new(device));
@@ -197,7 +191,7 @@ impl ADBTransport for USBTransport {
             let endpoint = self.read_endpoint.as_ref().or(self.write_endpoint.as_ref());
             if let Some(endpoint) = &endpoint {
                 match handle.release_interface(endpoint.iface) {
-                    Ok(_) => log::debug!("succesfully released interface"),
+                    Ok(()) => log::debug!("succesfully released interface"),
                     Err(e) => log::error!("error while release interface: {e}"),
                 }
             }

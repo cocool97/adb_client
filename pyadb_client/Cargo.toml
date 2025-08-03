@@ -9,6 +9,7 @@ name = "pyadb_client"
 readme = "README.md"
 repository.workspace = true
 version.workspace = true
+rust-version.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]

@@ -144,8 +144,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         MessageCommand::Write => return Ok(()),
                         c => {
                             return Err(RustADBError::ADBRequestFailed(format!(
-                                "Wrong command received {}",
-                                c
+                                "Wrong command received {c}"
                             )));
                         }
                     }

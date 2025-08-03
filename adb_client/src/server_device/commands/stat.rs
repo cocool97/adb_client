@@ -31,8 +31,7 @@ impl ADBServerDevice {
                 Ok(data.into())
             }
             x => Err(RustADBError::UnknownResponseType(format!(
-                "Unknown response {}",
-                x
+                "Unknown response {x}"
             ))),
         }
     }

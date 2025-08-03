@@ -48,8 +48,7 @@ impl<R: Read> Read for ADBRecvCommandReader<R> {
                     )))
                 }
                 _ => Err(std::io::Error::other(format!(
-                    "Unknown response from device {:#?}",
-                    header
+                    "Unknown response from device {header:#?}"
                 ))),
             }
         } else {

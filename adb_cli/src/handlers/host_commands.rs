@@ -8,7 +8,7 @@ pub fn handle_host_commands(server_command: ServerCommand<HostCommand>) -> Resul
     match server_command.command {
         HostCommand::Version => {
             let version = adb_server.version()?;
-            log::info!("Android Debug Bridge version {}", version);
+            log::info!("Android Debug Bridge version {version}");
             log::info!("Package version {}-rust", std::env!("CARGO_PKG_VERSION"));
         }
         HostCommand::Kill => {
@@ -18,18 +18,18 @@ pub fn handle_host_commands(server_command: ServerCommand<HostCommand>) -> Resul
             if long {
                 log::info!("List of devices attached (extended)");
                 for device in adb_server.devices_long()? {
-                    log::info!("{}", device);
+                    log::info!("{device}");
                 }
             } else {
                 log::info!("List of devices attached");
                 for device in adb_server.devices()? {
-                    log::info!("{}", device);
+                    log::info!("{device}");
                 }
             }
         }
         HostCommand::TrackDevices => {
             let callback = |device: DeviceShort| {
-                log::info!("{}", device);
+                log::info!("{device}");
                 Ok(())
             };
             log::info!("Live list of devices attached");
@@ -65,7 +65,7 @@ pub fn handle_host_commands(server_command: ServerCommand<HostCommand>) -> Resul
             MdnsCommand::Services => {
                 log::info!("List of discovered mdns services");
                 for service in adb_server.mdns_services()? {
-                    log::info!("{}", service);
+                    log::info!("{service}");
                 }
             }
         },

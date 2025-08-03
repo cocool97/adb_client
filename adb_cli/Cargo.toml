@@ -7,6 +7,7 @@ license.workspace = true
 name = "adb_cli"
 readme = "README.md"
 repository.workspace = true
+rust-version.workspace = true
 version.workspace = true
 
 [dependencies]

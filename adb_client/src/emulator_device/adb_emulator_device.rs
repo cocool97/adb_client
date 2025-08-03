@@ -30,8 +30,7 @@ impl ADBEmulatorDevice {
         let groups = EMULATOR_REGEX
             .captures(&identifier)
             .ok_or(RustADBError::DeviceNotFound(format!(
-                "Device {} is likely not an emulator",
-                identifier
+                "Device {identifier} is likely not an emulator"
             )))?;
 
         let port = groups

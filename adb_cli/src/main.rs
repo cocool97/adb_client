@@ -132,10 +132,10 @@ fn main() -> Result<()> {
         }
         DeviceCommands::Stat { path } => {
             let stat_response = device.stat(&path)?;
-            println!("{}", stat_response);
+            println!("{stat_response}");
         }
         DeviceCommands::Reboot { reboot_type } => {
-            log::info!("Reboots device in mode {:?}", reboot_type);
+            log::info!("Reboots device in mode {reboot_type:?}");
             device.reboot(reboot_type.into())?
         }
         DeviceCommands::Push { filename, path } => {
@@ -152,7 +152,7 @@ fn main() -> Result<()> {
             device.install(&path)?;
         }
         DeviceCommands::Uninstall { package } => {
-            log::info!("Uninstalling the package {}...", package);
+            log::info!("Uninstalling the package {package}...");
             device.uninstall(&package)?;
         }
         DeviceCommands::Framebuffer { path } => {

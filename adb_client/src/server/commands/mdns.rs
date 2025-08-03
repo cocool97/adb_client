@@ -32,7 +32,7 @@ impl ADBServer {
                 Ok(service) => {
                     vec_services.push(MDNSServices::try_from(service.as_bytes())?);
                 }
-                Err(e) => log::error!("{}", e),
+                Err(e) => log::error!("{e}"),
             }
         }
 
