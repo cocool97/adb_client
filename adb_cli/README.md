@@ -2,6 +2,7 @@
 
 [![MIT licensed](https://img.shields.io/crates/l/adb_cli.svg)](./LICENSE-MIT)
 ![Crates.io Total Downloads](https://img.shields.io/crates/d/adb_cli)
+![MSRV](https://img.shields.io/crates/msrv/adb_cli/latest)
 
 Rust binary providing an improved version of `adb` CLI.
 
@@ -10,7 +11,7 @@ Rust binary providing an improved version of `adb` CLI.
 This crate provides a lightweight binary based on the `adb_client` crate. You can install it by running the following command :
 
 ```shell
-cargo install adb_cli 
+cargo install adb_cli
 ```
 
 Usage is quite simple, and tends to look like `adb`:
