@@ -93,7 +93,7 @@ impl TryFrom<&[u8]> for DeviceLong {
                         .ok_or(RustADBError::RegexParsingError)?
                         .as_bytes(),
                 )?,
-                16,
+                10,
             )?,
         })
     }
