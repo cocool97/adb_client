@@ -18,7 +18,9 @@ pub(crate) enum AdbServerCommand {
     Pair(SocketAddrV4, String),
     TransportAny,
     TransportSerial(String),
+    #[cfg(feature = "mdns")]
     MDNSCheck,
+    #[cfg(feature = "mdns")]
     MDNSServices,
     ServerStatus,
     ReconnectOffline,
@@ -77,7 +79,9 @@ impl Display for AdbServerCommand {
                 write!(f, "reverse:forward:{remote};{local}")
             }
             AdbServerCommand::ReverseRemoveAll => write!(f, "reverse:killforward-all"),
+            #[cfg(feature = "mdns")]
             AdbServerCommand::MDNSCheck => write!(f, "host:mdns:check"),
+            #[cfg(feature = "mdns")]
             AdbServerCommand::MDNSServices => write!(f, "host:mdns:services"),
             AdbServerCommand::ServerStatus => write!(f, "host:server-status"),
             AdbServerCommand::Reconnect => write!(f, "reconnect"),

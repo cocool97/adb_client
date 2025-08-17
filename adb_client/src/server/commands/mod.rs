@@ -2,6 +2,7 @@ mod connect;
 mod devices;
 mod disconnect;
 mod kill;
+#[cfg(feature = "mdns")]
 mod mdns;
 mod pair;
 mod reconnect;
