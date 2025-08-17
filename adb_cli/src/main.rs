@@ -12,7 +12,7 @@ use adb_client::mdns::MDNSDiscoveryService;
 use adb_client::server::ADBServer;
 use adb_client::server_device::ADBServerDevice;
 use adb_client::tcp::ADBTcpDevice;
-use adb_client::usb::ADBUSBDevice;
+use adb_client::usb::{ADBDeviceInfo, ADBUSBDevice, find_all_connected_adb_devices};
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use adb_termios::ADBTermios;
@@ -22,9 +22,10 @@ use handlers::{handle_emulator_commands, handle_host_commands, handle_local_comm
 use models::{DeviceCommands, LocalCommand, MainCommand, Opts};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::Write;
+use std::io::{Write, stdout};
 use std::path::Path;
 use std::process::ExitCode;
+use tabwriter::TabWriter;
 use utils::setup_logger;
 
 use crate::models::{ADBCliError, ADBCliResult};
@@ -140,6 +141,34 @@ fn inner_main() -> ADBCliResult<()> {
             }
         }
         MainCommand::Usb(usb_command) => {
+            if usb_command.list_devices {
+                let devices = find_all_connected_adb_devices()?;
+
+                let mut writer = TabWriter::new(stdout()).alignment(tabwriter::Alignment::Center);
+                writeln!(writer, "Index\tVendor ID\tProduct ID\tDevice Description")?;
+                writeln!(writer, "-----\t---------\t----------\t----------------")?;
+
+                for (
+                    index,
+                    ADBDeviceInfo {
+                        vendor_id,
+                        product_id,
+                        device_description,
+                    },
+                ) in devices.iter().enumerate()
+                {
+                    writeln!(
+                        writer,
+                        "#{}\t{}\t{}\t{}",
+                        index, vendor_id, product_id, device_description
+                    )?;
+                }
+
+                writer.flush()?;
+
+                return Ok(());
+            }
+
             let device = match (usb_command.vendor_id, usb_command.product_id) {
                 (Some(vid), Some(pid)) => match usb_command.path_to_private_key {
                     Some(pk) => ADBUSBDevice::new_with_custom_private_key(vid, pid, pk)?,
@@ -156,7 +185,12 @@ fn inner_main() -> ADBCliResult<()> {
                     ));
                 }
             };
-            (device.boxed(), usb_command.commands)
+
+            if let Some(command) = usb_command.commands {
+                (device.boxed(), command)
+            } else {
+                return Err(ADBCliError::Standard("no command specified".into()));
+            }
         }
         MainCommand::Tcp(tcp_command) => {
             let device = match tcp_command.path_to_private_key {
