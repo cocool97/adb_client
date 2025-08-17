@@ -12,7 +12,8 @@ use adb_message_device::ADBMessageDevice;
 pub use adb_tcp_device::ADBTcpDevice;
 pub use adb_transport_message::{ADBTransportMessage, ADBTransportMessageHeader};
 pub use adb_usb_device::{
-    ADBUSBDevice, get_default_adb_key_path, is_adb_device, search_adb_devices,
+    ADBDeviceInfo, ADBUSBDevice, find_all_connected_adb_devices, get_default_adb_key_path,
+    get_single_connected_adb_device, is_adb_device,
 };
 pub use message_writer::MessageWriter;
 pub use models::{ADBRsaKey, MessageCommand, MessageSubcommand};
