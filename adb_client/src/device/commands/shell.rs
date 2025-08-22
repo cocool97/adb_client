@@ -35,10 +35,31 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Input data is read from [reader] and write to [writer].
     pub(crate) fn shell(
         &mut self,
+        reader: &mut dyn Read,
+        writer: Box<(dyn Write + Send)>,
+    ) -> Result<()> {
+        self.bidi_session(b"shell:\0", reader, writer)
+    }
+
+    /// Runs `command` on the device.
+    /// Input data is read from [reader] and write to [writer].
+    pub(crate) fn exec(
+        &mut self,
+        command: &str,
+        reader: &mut dyn Read,
+        writer: Box<(dyn Write + Send)>,
+    ) -> Result<()> {
+        self.bidi_session(format!("exec:{}\0", command).as_bytes(), reader, writer)
+    }
+
+    /// Starts an bidirectional(interactive) session. This can be a shell or an exec session.
+    fn bidi_session(
+        &mut self,
+        session_data: &[u8],
         mut reader: &mut dyn Read,
         mut writer: Box<(dyn Write + Send)>,
     ) -> Result<()> {
-        self.open_session(b"shell:\0")?;
+        self.open_session(session_data)?;
 
         let mut transport = self.get_transport().clone();
 
