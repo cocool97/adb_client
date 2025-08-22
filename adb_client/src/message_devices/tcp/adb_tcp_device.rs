@@ -165,6 +165,16 @@ impl ADBDeviceExt for ADBTcpDevice {
     fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
         self.inner.list(path)
     }
+
+    #[inline]
+    fn exec(
+        &mut self,
+        command: &str,
+        reader: &mut dyn Read,
+        writer: Box<dyn Write + Send>,
+    ) -> Result<()> {
+        self.inner.exec(command, reader, writer)
+    }
 }
 
 impl Drop for ADBTcpDevice {
