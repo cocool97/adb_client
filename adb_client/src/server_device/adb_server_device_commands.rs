@@ -49,7 +49,7 @@ impl ADBDeviceExt for ADBServerDevice {
     fn shell(
         &mut self,
         mut reader: &mut dyn Read,
-        mut writer: Box<(dyn Write + Send)>,
+        mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)

@@ -16,6 +16,19 @@ Add `adb_client` crate as a dependency by simply adding it to your `Cargo.toml`:
 adb_client = "*"
 ```
 
+## Crate features
+
+|Feature|Description|Default?|
+|:-----:|:---------:|:-----:|
+|`mdns`|Enables mDNS device discovery on local network.|No|
+
+To deactivate some features you can use the `default-features = false` option in your `Cargo.toml` file and manually specify the features you want to activate:
+
+```toml
+[dependencies]
+adb_client = { version = "*", default-features = false, features=[""] }
+```
+
 ## Benchmarks
 
 Benchmarks run on `v2.0.6`, on a **Samsung S10 SM-G973F** device and an **Intel i7-1265U** CPU laptop

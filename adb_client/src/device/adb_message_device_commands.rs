@@ -11,7 +11,7 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
         self.shell_command(command, output)
     }
 
-    fn shell(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()> {
+    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
         self.shell(reader, writer)
     }
 
