@@ -4,8 +4,9 @@ use std::{io::Read, net::SocketAddr};
 
 use super::adb_message_device::ADBMessageDevice;
 use super::models::MessageCommand;
-use super::{ADBRsaKey, ADBTransportMessage, get_default_adb_key_path};
+use super::{ADBRsaKey, ADBTransportMessage};
 use crate::device::adb_usb_device::read_adb_private_key;
+use crate::utils::get_default_adb_key_path;
 use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, Result, TcpTransport};
 
 /// Represent a device reached and available over TCP.

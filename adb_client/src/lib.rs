@@ -27,7 +27,12 @@ mod transports;
 mod utils;
 
 pub use adb_device_ext::ADBDeviceExt;
-pub use device::{ADBTcpDevice, ADBUSBDevice, is_adb_device, search_adb_devices};
+pub use device::ADBTcpDevice;
+
+#[cfg(feature = "usb")]
+#[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
+pub use device::{ADBUSBDevice, is_adb_device, search_adb_devices};
+
 pub use emulator_device::ADBEmulatorDevice;
 pub use error::{Result, RustADBError};
 pub use models::{ADBListItem, ADBListItemType, AdbStatResponse, RebootType};

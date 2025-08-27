@@ -8,9 +8,8 @@ use rustls::{
 use super::{ADBMessageTransport, ADBTransport};
 use crate::{
     Result, RustADBError,
-    device::{
-        ADBTransportMessage, ADBTransportMessageHeader, MessageCommand, get_default_adb_key_path,
-    },
+    device::{ADBTransportMessage, ADBTransportMessageHeader, MessageCommand},
+    utils::get_default_adb_key_path,
 };
 use std::{
     fs::read_to_string,
