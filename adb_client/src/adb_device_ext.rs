@@ -13,7 +13,7 @@ pub trait ADBDeviceExt {
 
     /// Starts an interactive shell session on the device.
     /// Input data is read from reader and write to writer.
-    fn shell(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()>;
+    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()>;
 
     /// Display the stat information for a remote file
     fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse>;

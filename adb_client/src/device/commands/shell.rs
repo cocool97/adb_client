@@ -36,7 +36,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn shell(
         &mut self,
         mut reader: &mut dyn Read,
-        mut writer: Box<(dyn Write + Send)>,
+        mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         self.open_session(b"shell:\0")?;
 
