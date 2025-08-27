@@ -4,10 +4,6 @@ use crate::{Result, RustADBError};
 
 use super::models::MessageCommand;
 
-pub const AUTH_TOKEN: u32 = 1;
-pub const AUTH_SIGNATURE: u32 = 2;
-pub const AUTH_RSAPUBLICKEY: u32 = 3;
-
 #[derive(Debug)]
 pub struct ADBTransportMessage {
     header: ADBTransportMessageHeader,
