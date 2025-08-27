@@ -15,8 +15,12 @@ use super::{ADBRsaKey, ADBTransportMessage};
 use crate::ADBDeviceExt;
 use crate::ADBMessageTransport;
 use crate::ADBTransport;
-use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
+use crate::utils::get_default_adb_key_path;
 use crate::{Result, RustADBError, USBTransport};
+
+const AUTH_TOKEN: u32 = 1;
+const AUTH_SIGNATURE: u32 = 2;
+const AUTH_RSAPUBLICKEY: u32 = 3;
 
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     // Try to read the private key file from given path
@@ -90,14 +94,6 @@ pub fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) 
         }
     }
     false
-}
-
-pub fn get_default_adb_key_path() -> Result<PathBuf> {
-    homedir::my_home()
-        .ok()
-        .flatten()
-        .map(|home| home.join(".android").join("adbkey"))
-        .ok_or(RustADBError::NoHomeDirectory)
 }
 
 /// Represent a device reached and available over USB.
