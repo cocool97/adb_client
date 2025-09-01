@@ -1,4 +1,7 @@
-use adb_client::{ADBServer, DeviceShort, MDNSBackend, Result, WaitForDeviceState};
+use adb_client::{
+    Result,
+    server::{ADBServer, DeviceShort, MDNSBackend, WaitForDeviceState},
+};
 
 use crate::models::{HostCommand, MdnsCommand, ServerCommand};
 

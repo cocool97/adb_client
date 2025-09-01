@@ -3,8 +3,8 @@ use std::io::{Read, Write};
 use byteorder::{ByteOrder, LittleEndian};
 
 use crate::{
-    ADBServerDevice, Result, RustADBError,
-    models::{AdbServerCommand, AdbStatResponse, SyncCommand},
+    AdbStatResponse, Result, RustADBError, models::SyncCommand, server::AdbServerCommand,
+    server_device::ADBServerDevice,
 };
 
 impl ADBServerDevice {

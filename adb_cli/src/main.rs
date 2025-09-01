@@ -7,9 +7,12 @@ mod handlers;
 mod models;
 mod utils;
 
-use adb_client::{
-    ADBDeviceExt, ADBServer, ADBServerDevice, ADBTcpDevice, ADBUSBDevice, MDNSDiscoveryService,
-};
+use adb_client::ADBDeviceExt;
+use adb_client::mdns::MDNSDiscoveryService;
+use adb_client::server::ADBServer;
+use adb_client::server_device::ADBServerDevice;
+use adb_client::tcp::ADBTcpDevice;
+use adb_client::usb::ADBUSBDevice;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use adb_termios::ADBTermios;

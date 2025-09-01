@@ -1,4 +1,7 @@
-use crate::{ADBTransport, Result, TCPServerTransport, models::AdbServerCommand};
+use crate::{
+    ADBTransport, Result,
+    server::{AdbServerCommand, TCPServerTransport},
+};
 use std::net::SocketAddrV4;
 
 /// Represents a device connected to the ADB server.

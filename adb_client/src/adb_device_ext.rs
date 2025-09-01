@@ -6,7 +6,7 @@ use image::{ImageBuffer, ImageFormat, Rgba};
 use crate::models::AdbStatResponse;
 use crate::{RebootType, Result};
 
-/// Trait representing all features available on both [`crate::ADBServerDevice`] and [`crate::ADBUSBDevice`]
+/// Trait representing all features available on both [`crate::server_device::ADBServerDevice`] and [`crate::usb::ADBUSBDevice`]
 pub trait ADBDeviceExt {
     /// Runs command in a shell on the device, and write its output and error streams into output.
     fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()>;
