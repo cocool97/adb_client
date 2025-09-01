@@ -1,6 +1,7 @@
-use adb_client::{MDNSDevice, MDNSDiscoveryService};
 use std::sync::mpsc;
 use std::time::Duration;
+
+use adb_client::mdns::{MDNSDevice, MDNSDiscoveryService};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting mDNS device discovery...");
