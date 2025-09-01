@@ -1,7 +1,8 @@
 use std::io::BufRead;
 
 use crate::{
-    ADBServer, MDNSServices, Result, models::AdbServerCommand, server::models::MDNSBackend,
+    Result,
+    server::{ADBServer, AdbServerCommand, MDNSServices, models::MDNSBackend},
 };
 
 const OPENSCREEN_MDNS_BACKEND: &str = "ADB_MDNS_OPENSCREEN";

@@ -1,5 +1,6 @@
 use crate::{
-    ADBServer, Result, WaitForDeviceState, WaitForDeviceTransport, models::AdbServerCommand,
+    Result,
+    server::{ADBServer, AdbServerCommand, WaitForDeviceState, WaitForDeviceTransport},
 };
 
 impl ADBServer {

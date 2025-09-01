@@ -1,7 +1,7 @@
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::{sync::mpsc::Sender, thread::JoinHandle};
 
-use crate::{MDNSDevice, Result, RustADBError};
+use crate::{Result, RustADBError, mdns::MDNSDevice};
 
 const ADB_SERVICE_NAME: &str = "_adb-tls-connect._tcp.local.";
 
@@ -45,9 +45,9 @@ impl MDNSDiscoveryService {
                             continue;
                         }
                         ServiceEvent::ServiceResolved(service_info) => {
-                            if let Err(e) = sender.send(MDNSDevice::from(service_info)) {
-                                return Err(e.into());
-                            }
+                            return sender
+                                .send(MDNSDevice::from(service_info))
+                                .map_err(|_| RustADBError::SendError);
                         }
                     }
                 }

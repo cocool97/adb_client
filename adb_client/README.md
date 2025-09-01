@@ -49,7 +49,7 @@ Benchmarks run on `v2.0.6`, on a **Samsung S10 SM-G973F** device and an **Intel 
 ### Get available ADB devices
 
 ```rust no_run
-use adb_client::ADBServer;
+use adb_client::server::ADBServer;
 use std::net::{SocketAddrV4, Ipv4Addr};
 
 // A custom server address can be provided
@@ -65,7 +65,7 @@ server.devices();
 #### Launch a command on device
 
 ```rust no_run
-use adb_client::{ADBServer, ADBDeviceExt};
+use adb_client::{server::ADBServer, ADBDeviceExt};
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
@@ -75,7 +75,7 @@ device.shell_command(&["df", "-h"], &mut std::io::stdout());
 #### Push a file to the device
 
 ```rust no_run
-use adb_client::ADBServer;
+use adb_client::server::ADBServer;
 use std::net::Ipv4Addr;
 use std::fs::File;
 use std::path::Path;
@@ -91,7 +91,7 @@ device.push(&mut input, "/data/local/tmp");
 #### (USB) Launch a command on device
 
 ```rust no_run
-use adb_client::{ADBUSBDevice, ADBDeviceExt};
+use adb_client::{usb::ADBUSBDevice, ADBDeviceExt};
 
 let vendor_id = 0x04e8;
 let product_id = 0x6860;
@@ -102,7 +102,7 @@ device.shell_command(&["df", "-h"], &mut std::io::stdout());
 #### (USB) Push a file to the device
 
 ```rust no_run
-use adb_client::{ADBUSBDevice, ADBDeviceExt};
+use adb_client::{usb::ADBUSBDevice, ADBDeviceExt};
 use std::fs::File;
 use std::path::Path;
 
@@ -117,7 +117,7 @@ device.push(&mut input, &"/data/local/tmp");
 
 ```rust no_run
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
-use adb_client::{ADBTcpDevice, ADBDeviceExt};
+use adb_client::{tcp::ADBTcpDevice, ADBDeviceExt};
 
 let device_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 10));
 let device_port = 43210;

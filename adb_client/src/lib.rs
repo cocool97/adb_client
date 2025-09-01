@@ -10,36 +10,27 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod adb_device_ext;
-mod constants;
-mod device;
-mod emulator_device;
+mod adb_transport;
+/// Emulator-related definitions
+pub mod emulator;
 mod error;
-
-#[cfg(feature = "mdns")]
-#[cfg_attr(docsrs, doc(cfg(feature = "mdns")))]
-mod mdns;
-
+mod message_devices;
 mod models;
-mod server;
-mod server_device;
-mod transports;
+
+/// Server-related definitions
+pub mod server;
+
+/// Device reachable by the server related definitions
+pub mod server_device;
 mod utils;
 
-pub use adb_device_ext::ADBDeviceExt;
-pub use device::ADBTcpDevice;
-
-#[cfg(feature = "usb")]
-#[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
-pub use device::{ADBUSBDevice, is_adb_device, search_adb_devices};
-
-pub use emulator_device::ADBEmulatorDevice;
-pub use error::{Result, RustADBError};
-
+/// MDNS-related definitions
 #[cfg(feature = "mdns")]
 #[cfg_attr(docsrs, doc(cfg(feature = "mdns")))]
-pub use mdns::*;
+pub mod mdns;
 
-pub use models::{AdbStatResponse, RebootType};
-pub use server::*;
-pub use server_device::ADBServerDevice;
-pub use transports::*;
+pub use adb_device_ext::ADBDeviceExt;
+use adb_transport::ADBTransport;
+pub use error::{Result, RustADBError};
+pub use message_devices::*;
+pub use models::{AdbStatResponse, HostFeatures, RebootType};

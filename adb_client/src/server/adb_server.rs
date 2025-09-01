@@ -1,7 +1,7 @@
 use crate::ADBTransport;
 use crate::Result;
 use crate::RustADBError;
-use crate::TCPServerTransport;
+use crate::server::tcp_server_transport::TCPServerTransport;
 use std::collections::HashMap;
 use std::net::SocketAddrV4;
 use std::process::Command;

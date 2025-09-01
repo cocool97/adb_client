@@ -4,8 +4,10 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use image::{ImageBuffer, Rgba};
 
 use crate::{
-    ADBServerDevice, Result, RustADBError,
-    models::{AdbServerCommand, FrameBufferInfoV1, FrameBufferInfoV2},
+    Result, RustADBError,
+    models::{FrameBufferInfoV1, FrameBufferInfoV2},
+    server::AdbServerCommand,
+    server_device::ADBServerDevice,
 };
 
 impl ADBServerDevice {
