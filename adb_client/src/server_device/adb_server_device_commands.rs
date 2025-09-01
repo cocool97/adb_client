@@ -5,11 +5,13 @@ use std::{
 
 use crate::{
     ADBDeviceExt, Result, RustADBError,
-    constants::BUFFER_SIZE,
-    models::{AdbServerCommand, AdbStatResponse, HostFeatures},
+    models::{ADBListItem, AdbStatResponse, HostFeatures},
+    server::AdbServerCommand,
 };
 
 use super::ADBServerDevice;
+
+const BUFFER_SIZE: usize = 65535;
 
 impl ADBDeviceExt for ADBServerDevice {
     fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
@@ -136,7 +138,7 @@ impl ADBDeviceExt for ADBServerDevice {
         self.framebuffer_inner()
     }
 
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<crate::ADBListItem>> {
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItem>> {
         self.list(path)
     }
 }

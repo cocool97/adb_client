@@ -1,7 +1,4 @@
-use crate::{
-    ADBServerDevice, Result,
-    models::{AdbServerCommand, RebootType},
-};
+use crate::{Result, models::RebootType, server::AdbServerCommand, server_device::ADBServerDevice};
 
 impl ADBServerDevice {
     /// Reboots the device

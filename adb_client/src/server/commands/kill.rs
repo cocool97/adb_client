@@ -1,4 +1,7 @@
-use crate::{ADBServer, Result, models::AdbServerCommand};
+use crate::{
+    Result,
+    server::{ADBServer, AdbServerCommand},
+};
 
 impl ADBServer {
     /// Asks the ADB server to quit immediately.

@@ -1,6 +1,8 @@
 use crate::{
-    ADBServerDevice, Result, RustADBError,
-    models::{ADBListItem, ADBListItemType, AdbServerCommand, SyncCommand},
+    Result, RustADBError,
+    models::{ADBListItem, ADBListItemType, SyncCommand},
+    server::AdbServerCommand,
+    server_device::ADBServerDevice,
 };
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use std::{

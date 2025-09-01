@@ -1,4 +1,7 @@
-use crate::{ADBServer, Result, models::AdbServerCommand, server::models::ServerStatus};
+use crate::{
+    Result,
+    server::{ADBServer, AdbServerCommand, models::ServerStatus},
+};
 
 impl ADBServer {
     /// Check ADB server status

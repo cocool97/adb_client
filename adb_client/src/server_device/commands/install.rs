@@ -1,7 +1,7 @@
 use std::{fs::File, io::Read, path::Path};
 
 use crate::{
-    Result, models::AdbServerCommand, server_device::ADBServerDevice, utils::check_extension_is_apk,
+    Result, server::AdbServerCommand, server_device::ADBServerDevice, utils::check_extension_is_apk,
 };
 
 impl ADBServerDevice {
