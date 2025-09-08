@@ -25,7 +25,7 @@ impl<W: Write> Write for LogFilter<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.buffer.extend_from_slice(buf);
 
-        let mut lines = buf_clone.split_inclusive(|&byte| byte == b'\n');
+        let mut lines = self.buffer.split_inclusive(|&byte| byte == b'\n');
         let mut offset = 0;
         for line in lines {
             let is_line = self.buffer.last().unwrap() == &b'\n';
