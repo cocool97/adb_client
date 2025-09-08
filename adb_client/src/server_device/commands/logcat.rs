@@ -25,20 +25,20 @@ impl<W: Write> Write for LogFilter<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.buffer.extend_from_slice(buf);
 
-        let buf_clone = self.buffer.clone();
-        let mut lines = buf_clone.split_inclusive(|&byte| byte == b'\n').peekable();
-
-        while let Some(line) = lines.next() {
-            if lines.peek().is_some() {
+        let mut lines = buf_clone.split_inclusive(|&byte| byte == b'\n');
+        let mut offset = 0;
+        for line in lines {
+            let is_line = self.buffer.last().unwrap() == &b'\n';
+            if is_line {
+                offset += line.len();
                 if self.should_write(line) {
                     self.writer.write_all(line)?;
                 }
-            } else {
-                // This is the last (unfinished) element, we keep it for next round
-                self.buffer = line.to_vec();
-                break;
             }
         }
+
+        self.buffer.as_mut_slice().copy_within(offset.., 0);
+        self.buffer.truncate(self.buffer[offset..].len());
 
         Ok(buf.len())
     }
