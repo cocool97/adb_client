@@ -46,11 +46,53 @@ impl ADBDeviceExt for ADBServerDevice {
         self.stat(remote_path)
     }
 
-    fn shell(
+    fn exec(
         &mut self,
+        command: &str,
+        reader: &mut dyn Read,
+        writer: Box<(dyn Write + Send)>,
+    ) -> Result<()> {
+        self.bidi_session(AdbServerCommand::Exec(command.to_owned()), reader, writer)
+    }
+
+    fn shell(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()> {
+        self.bidi_session(AdbServerCommand::Shell, reader, writer)
+    }
+
+    fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
+        self.pull(source, &mut output)
+    }
+
+    fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
+        self.reboot(reboot_type)
+    }
+
+    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
+        self.push(stream, path)
+    }
+
+    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
+        self.install(apk_path)
+    }
+
+    fn uninstall(&mut self, package: &str) -> Result<()> {
+        self.uninstall(package)
+    }
+
+    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
+        self.framebuffer_inner()
+    }
+}
+
+impl ADBServerDevice {
+    fn bidi_session(
+        &mut self,
+        server_cmd: AdbServerCommand,
         mut reader: &mut dyn Read,
         mut writer: Box<(dyn Write + Send)>,
     ) -> Result<()> {
+        // TODO: Not sure if this feature check is neccecery if server_cmd is `AdbServerCommand::Exec(_)`.
+        //       If it isn't move this check to `<ADBServerDevice as ADBDeviceExt>::shell`.
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -59,7 +101,7 @@ impl ADBDeviceExt for ADBServerDevice {
         }
 
         self.set_serial_transport()?;
-        self.transport.send_adb_request(AdbServerCommand::Shell)?;
+        self.transport.send_adb_request(server_cmd)?;
 
         let mut read_stream = self.transport.get_raw_connection()?.try_clone()?;
 
@@ -94,29 +136,5 @@ impl ADBDeviceExt for ADBServerDevice {
         }
 
         Ok(())
-    }
-
-    fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
-        self.pull(source, &mut output)
-    }
-
-    fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
-        self.reboot(reboot_type)
-    }
-
-    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
-        self.push(stream, path)
-    }
-
-    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
-        self.install(apk_path)
-    }
-
-    fn uninstall(&mut self, package: &str) -> Result<()> {
-        self.uninstall(package)
-    }
-
-    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
-        self.framebuffer_inner()
     }
 }

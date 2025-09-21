@@ -265,6 +265,16 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
+    fn exec(
+        &mut self,
+        command: &str,
+        reader: &mut dyn Read,
+        writer: Box<(dyn Write + Send)>,
+    ) -> Result<()> {
+        self.inner.exec(command, reader, writer)
+    }
+
+    #[inline]
     fn stat(&mut self, remote_path: &str) -> Result<crate::AdbStatResponse> {
         self.inner.stat(remote_path)
     }
