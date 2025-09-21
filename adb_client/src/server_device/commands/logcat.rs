@@ -23,22 +23,27 @@ impl<W: Write> LogFilter<W> {
 
 impl<W: Write> Write for LogFilter<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        // Add newly received bytes to the internal buffer
         self.buffer.extend_from_slice(buf);
 
-        let mut lines = self.buffer.split_inclusive(|&byte| byte == b'\n');
-        let mut offset = 0;
-        for line in lines {
-            let is_line = self.buffer.last().unwrap() == &b'\n';
-            if is_line {
-                offset += line.len();
-                if self.should_write(line) {
-                    self.writer.write_all(line)?;
-                }
+        let mut processed = 0;
+        while let Some(pos) = self.buffer[processed..].iter().position(|&b| b == b'\n') {
+            // Found a newline, need to process it
+            let end = processed + pos + 1; // +1 to include the '\n'
+            let line = &self.buffer[processed..end];
+
+            if self.should_write(line) {
+                self.writer.write_all(line)?;
             }
+
+            processed = end;
         }
 
-        self.buffer.as_mut_slice().copy_within(offset.., 0);
-        self.buffer.truncate(self.buffer[offset..].len());
+        // Keep only remaining bytes after the last complete line
+        if processed > 0 {
+            self.buffer.copy_within(processed.., 0);
+            self.buffer.truncate(self.buffer.len() - processed);
+        }
 
         Ok(buf.len())
     }
