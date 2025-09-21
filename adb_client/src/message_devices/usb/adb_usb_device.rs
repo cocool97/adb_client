@@ -1,12 +1,6 @@
-use rusb::Device;
-use rusb::DeviceDescriptor;
-use rusb::UsbContext;
-use rusb::constants::LIBUSB_CLASS_VENDOR_SPEC;
-use std::fs::read_to_string;
 use std::io::Read;
 use std::io::Write;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::ADBDeviceExt;
@@ -18,92 +12,20 @@ use crate::message_devices::adb_message_transport::ADBMessageTransport;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::usb::adb_rsa_key::ADBRsaKey;
-use crate::usb::usb_transport::USBTransport;
+use crate::usb::backends::rusb_transport::RusbTransport;
+use crate::usb::{read_adb_private_key, search_adb_devices};
 use crate::utils::get_default_adb_key_path;
 
 const AUTH_TOKEN: u32 = 1;
 const AUTH_SIGNATURE: u32 = 2;
 const AUTH_RSAPUBLICKEY: u32 = 3;
 
-pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
-    // Try to read the private key file from given path
-    // If the file is not found, return None
-    // If there is another error while reading the file, return this error
-    // Else, return the private key content
-    let pk = match read_to_string(private_key_path.as_ref()) {
-        Ok(pk) => pk,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(e) => return Err(e.into()),
-    };
-
-    match ADBRsaKey::new_from_pkcs8(&pk) {
-        Ok(pk) => Ok(Some(pk)),
-        Err(e) => Err(e),
-    }
-}
-
-/// Search for adb devices with known interface class and subclass values
-pub fn search_adb_devices() -> Result<Option<(u16, u16)>> {
-    let mut found_devices = vec![];
-    for device in rusb::devices()?.iter() {
-        let Ok(des) = device.device_descriptor() else {
-            continue;
-        };
-        if is_adb_device(&device, &des) {
-            log::debug!(
-                "Autodetect device {:04x}:{:04x}",
-                des.vendor_id(),
-                des.product_id()
-            );
-            found_devices.push((des.vendor_id(), des.product_id()));
-        }
-    }
-
-    match (found_devices.first(), found_devices.get(1)) {
-        (None, _) => Ok(None),
-        (Some(identifiers), None) => Ok(Some(*identifiers)),
-        (Some((vid1, pid1)), Some((vid2, pid2))) => Err(RustADBError::DeviceNotFound(format!(
-            "Found two Android devices {vid1:04x}:{pid1:04x} and {vid2:04x}:{pid2:04x}",
-        ))),
-    }
-}
-
-/// Check whether a device with given descriptor is an ADB device
-pub fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) -> bool {
-    const ADB_SUBCLASS: u8 = 0x42;
-    const ADB_PROTOCOL: u8 = 0x1;
-
-    // Some devices require choosing the file transfer mode
-    // for usb debugging to take effect.
-    const BULK_CLASS: u8 = 0xdc;
-    const BULK_ADB_SUBCLASS: u8 = 2;
-
-    for n in 0..des.num_configurations() {
-        let Ok(config_des) = device.config_descriptor(n) else {
-            continue;
-        };
-        for interface in config_des.interfaces() {
-            for interface_des in interface.descriptors() {
-                let proto = interface_des.protocol_code();
-                let class = interface_des.class_code();
-                let subcl = interface_des.sub_class_code();
-                if proto == ADB_PROTOCOL
-                    && ((class == LIBUSB_CLASS_VENDOR_SPEC && subcl == ADB_SUBCLASS)
-                        || (class == BULK_CLASS && subcl == BULK_ADB_SUBCLASS))
-                {
-                    return true;
-                }
-            }
-        }
-    }
-    false
-}
-
+/// Implement Android USB device
 /// Represent a device reached and available over USB.
 #[derive(Debug)]
 pub struct ADBUSBDevice {
     private_key: ADBRsaKey,
-    inner: ADBMessageDevice<USBTransport>,
+    inner: ADBMessageDevice<RusbTransport>,
 }
 
 impl ADBUSBDevice {
@@ -118,12 +40,15 @@ impl ADBUSBDevice {
         product_id: u16,
         private_key_path: PathBuf,
     ) -> Result<Self> {
-        Self::new_from_transport_inner(USBTransport::new(vendor_id, product_id)?, &private_key_path)
+        Self::new_from_transport_inner(
+            RusbTransport::new(vendor_id, product_id)?,
+            &private_key_path,
+        )
     }
 
-    /// Instantiate a new [`ADBUSBDevice`] from a [`USBTransport`] and an optional private key path.
+    /// Instantiate a new [`ADBUSBDevice`] from a [`RusbTransport`] and an optional private key path.
     pub fn new_from_transport(
-        transport: USBTransport,
+        transport: RusbTransport,
         private_key_path: Option<PathBuf>,
     ) -> Result<Self> {
         let private_key_path = match private_key_path {
@@ -135,7 +60,7 @@ impl ADBUSBDevice {
     }
 
     fn new_from_transport_inner(
-        transport: USBTransport,
+        transport: RusbTransport,
         private_key_path: &PathBuf,
     ) -> Result<Self> {
         let private_key = if let Some(private_key) = read_adb_private_key(private_key_path)? {
@@ -246,7 +171,7 @@ impl ADBUSBDevice {
     }
 
     #[inline]
-    fn get_transport_mut(&mut self) -> &mut USBTransport {
+    fn get_transport_mut(&mut self) -> &mut RusbTransport {
         self.inner.get_transport_mut()
     }
 }

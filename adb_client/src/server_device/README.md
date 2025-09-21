@@ -20,6 +20,6 @@ use std::path::Path;
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
-let mut input = File::open(Path::new("/tmp/file.txt")).expect("Cannot open file");
+let mut input = File::open("/tmp/file.txt").expect("Cannot open file");
 device.push(&mut input, "/data/local/tmp");
 ```

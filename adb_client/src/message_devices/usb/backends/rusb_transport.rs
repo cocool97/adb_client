@@ -13,6 +13,7 @@ use crate::{
         adb_transport_message::{ADBTransportMessage, ADBTransportMessageHeader},
         message_commands::MessageCommand,
     },
+    usb::constants::class_codes::ADB_SUBCLASS,
 };
 
 #[derive(Clone, Debug)]
@@ -22,18 +23,18 @@ struct Endpoint {
     max_packet_size: usize,
 }
 
-/// Transport running on USB
+/// Transport running on USB using `rusb` as a backend.
 #[derive(Debug, Clone)]
-pub struct USBTransport {
+pub struct RusbTransport {
     device: Device<GlobalContext>,
     handle: Option<Arc<DeviceHandle<GlobalContext>>>,
     read_endpoint: Option<Endpoint>,
     write_endpoint: Option<Endpoint>,
 }
 
-impl USBTransport {
-    /// Instantiate a new [`USBTransport`].
-    /// Only the first device with given `vendor_id` and `product_id` is returned.
+impl RusbTransport {
+    /// Instantiate a new [`RusbTransport`].
+    /// Only the first device with given vendor_id and product_id is returned.
     pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
         for device in rusb::devices()?.iter() {
             if let Ok(descriptor) = device.device_descriptor() {
@@ -48,7 +49,7 @@ impl USBTransport {
         )))
     }
 
-    /// Instantiate a new [`USBTransport`] from a [`rusb::Device`].
+    /// Instantiate a new [`RusbTransport`] from a [`rusb::Device`].
     ///
     /// Devices can be enumerated using [`rusb::devices()`] and then filtered out to get desired device.
     pub fn new_from_device(rusb_device: rusb::Device<GlobalContext>) -> Self {
@@ -108,7 +109,7 @@ impl USBTransport {
                     for endpoint_desc in interface_desc.endpoint_descriptors() {
                         if endpoint_desc.transfer_type() == TransferType::Bulk
                             && interface_desc.class_code() == LIBUSB_CLASS_VENDOR_SPEC
-                            && interface_desc.sub_class_code() == 0x42
+                            && interface_desc.sub_class_code() == ADB_SUBCLASS
                             && interface_desc.protocol_code() == 0x01
                         {
                             let endpoint = Endpoint {
@@ -163,7 +164,7 @@ impl USBTransport {
     }
 }
 
-impl ADBTransport for USBTransport {
+impl ADBTransport for RusbTransport {
     fn connect(&mut self) -> crate::Result<()> {
         let device = self.device.open()?;
 
@@ -202,7 +203,7 @@ impl ADBTransport for USBTransport {
     }
 }
 
-impl ADBMessageTransport for USBTransport {
+impl ADBMessageTransport for RusbTransport {
     fn write_message_with_timeout(
         &mut self,
         message: ADBTransportMessage,

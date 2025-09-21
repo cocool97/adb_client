@@ -79,7 +79,7 @@ impl Write for CurrentConnection {
     }
 }
 
-/// Transport running on USB
+/// Transport running on TCP
 #[derive(Clone, Debug)]
 pub struct TcpTransport {
     address: SocketAddr,

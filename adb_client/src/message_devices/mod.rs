@@ -1,6 +1,4 @@
 /// USB-related definitions
-#[cfg(feature = "usb")]
-#[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
 pub mod usb;
 
 /// Device reachable over TCP related definition
