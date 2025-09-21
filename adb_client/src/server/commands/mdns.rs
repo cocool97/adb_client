@@ -6,6 +6,7 @@ use crate::{
 
 const OPENSCREEN_MDNS_BACKEND: &str = "ADB_MDNS_OPENSCREEN";
 
+#[cfg(feature = "mdns")]
 impl ADBServer {
     /// Check if mdns discovery is available
     pub fn mdns_check(&mut self) -> Result<bool> {

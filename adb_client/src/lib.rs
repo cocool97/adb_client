@@ -9,6 +9,7 @@ mod constants;
 mod device;
 mod emulator_device;
 mod error;
+#[cfg(feature = "mdns")]
 mod mdns;
 mod models;
 mod server;
@@ -20,6 +21,7 @@ pub use adb_device_ext::ADBDeviceExt;
 pub use device::{ADBTcpDevice, ADBUSBDevice, is_adb_device, search_adb_devices};
 pub use emulator_device::ADBEmulatorDevice;
 pub use error::{Result, RustADBError};
+#[cfg(feature = "mdns")]
 pub use mdns::*;
 pub use models::{AdbStatResponse, RebootType};
 pub use server::*;
