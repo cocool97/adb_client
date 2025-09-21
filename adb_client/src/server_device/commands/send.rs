@@ -1,6 +1,8 @@
 use crate::{
-    ADBServerDevice, Result, RustADBError, constants,
-    models::{AdbRequestStatus, AdbServerCommand, SyncCommand},
+    Result, RustADBError,
+    models::{AdbRequestStatus, SyncCommand},
+    server::AdbServerCommand,
+    server_device::ADBServerDevice,
 };
 use std::{
     convert::TryInto,
@@ -40,6 +42,8 @@ impl<W: Write> Write for ADBSendCommandWriter<W> {
     }
 }
 
+const BUFFER_SIZE: usize = 65535;
+
 impl ADBServerDevice {
     /// Send stream to path on the device.
     pub fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
@@ -71,8 +75,8 @@ impl ADBServerDevice {
         let writer = ADBSendCommandWriter::new(raw_connection);
 
         std::io::copy(
-            &mut BufReader::with_capacity(constants::BUFFER_SIZE, input),
-            &mut BufWriter::with_capacity(constants::BUFFER_SIZE, writer),
+            &mut BufReader::with_capacity(BUFFER_SIZE, input),
+            &mut BufWriter::with_capacity(BUFFER_SIZE, writer),
         )?;
 
         // Copy is finished, we can now notify as finished

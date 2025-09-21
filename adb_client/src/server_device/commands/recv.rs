@@ -1,6 +1,5 @@
 use crate::{
-    ADBServerDevice, Result, constants,
-    models::{AdbServerCommand, SyncCommand},
+    Result, models::SyncCommand, server::AdbServerCommand, server_device::ADBServerDevice,
 };
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{BufReader, BufWriter, Read, Write};
@@ -63,6 +62,8 @@ impl<R: Read> Read for ADBRecvCommandReader<R> {
     }
 }
 
+const BUFFER_SIZE: usize = 65535;
+
 impl ADBServerDevice {
     /// Receives path to stream from the device.
     pub fn pull(&mut self, path: &dyn AsRef<str>, stream: &mut dyn Write) -> Result<()> {
@@ -92,8 +93,8 @@ impl ADBServerDevice {
 
         let reader = ADBRecvCommandReader::new(raw_connection);
         std::io::copy(
-            &mut BufReader::with_capacity(constants::BUFFER_SIZE, reader),
-            &mut BufWriter::with_capacity(constants::BUFFER_SIZE, output),
+            &mut BufReader::with_capacity(BUFFER_SIZE, reader),
+            &mut BufWriter::with_capacity(BUFFER_SIZE, output),
         )?;
 
         // Connection should've been left in SYNC mode by now

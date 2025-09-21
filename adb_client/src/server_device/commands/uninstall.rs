@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use crate::{Result, models::AdbServerCommand, server_device::ADBServerDevice};
+use crate::{Result, server::AdbServerCommand, server_device::ADBServerDevice};
 
 impl ADBServerDevice {
     /// Uninstall a package from device

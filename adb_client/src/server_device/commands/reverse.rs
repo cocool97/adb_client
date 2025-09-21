@@ -1,4 +1,4 @@
-use crate::{ADBServerDevice, Result, models::AdbServerCommand};
+use crate::{Result, server::AdbServerCommand, server_device::ADBServerDevice};
 
 impl ADBServerDevice {
     /// Reverse socket connection

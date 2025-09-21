@@ -67,6 +67,8 @@ pub enum RustADBError {
     #[error("Cannot get home directory")]
     NoHomeDirectory,
     /// Generic USB error
+    #[cfg(feature = "usb")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error("USB Error: {0}")]
     UsbError(#[from] rusb::Error),
     /// USB device not found
@@ -85,6 +87,8 @@ pub enum RustADBError {
     #[error(transparent)]
     Base64EncodeError(#[from] base64::EncodeSliceError),
     /// An error occurred with RSA engine
+    #[cfg(feature = "usb")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error(transparent)]
     RSAError(#[from] rsa::errors::Error),
     /// Cannot convert given data from slice
@@ -94,6 +98,8 @@ pub enum RustADBError {
     #[error("wrong file extension: {0}")]
     WrongFileExtension(String),
     /// An error occurred with PKCS8 data
+    #[cfg(feature = "usb")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error("error with pkcs8: {0}")]
     RsaPkcs8Error(#[from] rsa::pkcs8::Error),
     /// Error during certificate generation
@@ -112,11 +118,13 @@ pub enum RustADBError {
     #[error("upgrade error: {0}")]
     UpgradeError(String),
     /// An error occurred while getting mdns devices
+    #[cfg(feature = "mdns")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "mdns")))]
     #[error(transparent)]
     MDNSError(#[from] mdns_sd::Error),
     /// An error occurred while sending data to channel
-    #[error(transparent)]
-    SendError(#[from] std::sync::mpsc::SendError<crate::MDNSDevice>),
+    #[error("error sending data to channel")]
+    SendError,
     /// An unknown transport has been provided
     #[error("unknown transport: {0}")]
     UnknownTransport(String),

@@ -5,11 +5,13 @@ use std::{
 
 use crate::{
     ADBDeviceExt, Result, RustADBError,
-    constants::BUFFER_SIZE,
-    models::{AdbServerCommand, AdbStatResponse, HostFeatures},
+    models::{AdbStatResponse, HostFeatures},
+    server::AdbServerCommand,
 };
 
 use super::ADBServerDevice;
+
+const BUFFER_SIZE: usize = 65535;
 
 impl ADBDeviceExt for ADBServerDevice {
     fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
@@ -49,7 +51,7 @@ impl ADBDeviceExt for ADBServerDevice {
     fn shell(
         &mut self,
         mut reader: &mut dyn Read,
-        mut writer: Box<(dyn Write + Send)>,
+        mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)

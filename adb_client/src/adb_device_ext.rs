@@ -6,14 +6,14 @@ use image::{ImageBuffer, ImageFormat, Rgba};
 use crate::models::AdbStatResponse;
 use crate::{RebootType, Result};
 
-/// Trait representing all features available on both [`crate::ADBServerDevice`] and [`crate::ADBUSBDevice`]
+/// Trait representing all features available on both [`crate::server_device::ADBServerDevice`] and [`crate::usb::ADBUSBDevice`]
 pub trait ADBDeviceExt {
     /// Runs command in a shell on the device, and write its output and error streams into output.
     fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()>;
 
     /// Starts an interactive shell session on the device.
     /// Input data is read from reader and write to writer.
-    fn shell(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()>;
+    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()>;
 
     /// Display the stat information for a remote file
     fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse>;

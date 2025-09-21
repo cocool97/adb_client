@@ -1,5 +1,7 @@
-use crate::models::AdbServerCommand;
-use crate::{ADBServer, Result, RustADBError};
+use crate::{
+    Result, RustADBError,
+    server::{ADBServer, AdbServerCommand},
+};
 use std::net::SocketAddrV4;
 
 impl ADBServer {
