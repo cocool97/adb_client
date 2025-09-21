@@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = []
 mdns = ["dep:mdns-sd"]
-usb = ["dep:rsa", "dep:rusb"]
+rusb = ["dep:rsa", "dep:rusb"]
 
 [dependencies]
 base64 = { version = "0.22.1" }
