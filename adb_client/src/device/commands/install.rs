@@ -2,7 +2,7 @@ use std::{fs::File, path::Path};
 
 use crate::{
     ADBMessageTransport, Result,
-    device::{MessageWriter, adb_message_device::ADBMessageDevice},
+    device::{MessageCommand, MessageWriter, adb_message_device::ADBMessageDevice},
     utils::check_extension_is_apk,
 };
 
@@ -30,6 +30,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     "APK file {} successfully installed",
                     apk_path.as_ref().display()
                 );
+                self.get_transport_mut()
+                    .read_message()?
+                    .assert_command(MessageCommand::Clse)?;
                 Ok(())
             }
             d => Err(crate::RustADBError::ADBRequestFailed(String::from_utf8(
