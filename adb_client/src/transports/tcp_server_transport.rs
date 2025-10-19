@@ -8,7 +8,7 @@ use crate::models::{AdbRequestStatus, SyncCommand};
 use crate::{ADBTransport, models::AdbServerCommand};
 use crate::{Result, RustADBError};
 
-const DEFAULT_SERVER_IP: Ipv4Addr = Ipv4Addr::new(127, 0, 0, 1);
+const DEFAULT_SERVER_IP: Ipv4Addr = Ipv4Addr::LOCALHOST;
 const DEFAULT_SERVER_PORT: u16 = 5037;
 
 /// Server transport running on top on TCP
@@ -25,7 +25,7 @@ impl Default for TCPServerTransport {
 }
 
 impl TCPServerTransport {
-    /// Instantiates a new instance of [TCPServerTransport]
+    /// Instantiates a new instance of [`TCPServerTransport`]
     pub fn new(socket_addr: SocketAddrV4) -> Self {
         Self {
             socket_addr,
@@ -33,7 +33,7 @@ impl TCPServerTransport {
         }
     }
 
-    /// Instantiate a new instance of [TCPServerTransport] using given address, or default if not specified.
+    /// Instantiate a new instance of [`TCPServerTransport`] using given address, or default if not specified.
     pub fn new_or_default(socket_addr: Option<SocketAddrV4>) -> Self {
         match socket_addr {
             Some(s) => Self::new(s),
@@ -41,7 +41,7 @@ impl TCPServerTransport {
         }
     }
 
-    /// Get underlying [SocketAddrV4]
+    /// Get underlying [`SocketAddrV4`]
     pub fn get_socketaddr(&self) -> SocketAddrV4 {
         self.socket_addr
     }
@@ -89,7 +89,7 @@ impl TCPServerTransport {
         )?)
     }
 
-    /// Send the given [SyncCommand] to ADB server, and checks that the request has been taken in consideration.
+    /// Send the given [`SyncCommand`] to ADB server, and checks that the request has been taken in consideration.
     pub(crate) fn send_sync_request(&mut self, command: SyncCommand) -> Result<()> {
         // First 4 bytes are the name of the command we want to send
         // (e.g. "SEND", "RECV", "STAT", "LIST")
@@ -98,7 +98,7 @@ impl TCPServerTransport {
             .write_all(command.to_string().as_bytes())?)
     }
 
-    /// Gets the body length from a LittleEndian value
+    /// Gets the body length from a `LittleEndian` value
     pub(crate) fn get_body_length(&self) -> Result<u32> {
         let length_buffer = self.read_body_length()?;
         Ok(LittleEndian::read_u32(&length_buffer))
@@ -112,8 +112,8 @@ impl TCPServerTransport {
         Ok(length_buffer)
     }
 
-    /// Send the given [AdbCommand] to ADB server, and checks that the request has been taken in consideration.
-    /// If an error occurred, a [RustADBError] is returned with the response error string.
+    /// Send the given [`AdbCommand`] to ADB server, and checks that the request has been taken in consideration.
+    /// If an error occurred, a [`RustADBError`] is returned with the response error string.
     pub(crate) fn send_adb_request(&mut self, command: AdbServerCommand) -> Result<()> {
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);

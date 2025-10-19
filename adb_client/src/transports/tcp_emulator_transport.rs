@@ -17,7 +17,7 @@ pub struct TCPEmulatorTransport {
 }
 
 impl TCPEmulatorTransport {
-    /// Instantiates a new instance of [TCPEmulatorTransport]
+    /// Instantiates a new instance of [`TCPEmulatorTransport`]
     pub fn new(socket_addr: SocketAddrV4) -> Self {
         Self {
             socket_addr,
@@ -34,11 +34,10 @@ impl TCPEmulatorTransport {
             )))
     }
 
-    /// Return authentication token stored in $HOME/.emulator_console_auth_token
+    /// Return authentication token stored in `$HOME/.emulator_console_auth_token`
     pub fn get_authentication_token(&mut self) -> Result<String> {
-        let home = match my_home()? {
-            Some(home) => home,
-            None => return Err(RustADBError::NoHomeDirectory),
+        let Some(home) = my_home()? else {
+            return Err(RustADBError::NoHomeDirectory);
         };
 
         let mut f = File::open(home.join(".emulator_console_auth_token"))?;
@@ -54,7 +53,7 @@ impl TCPEmulatorTransport {
         self.send_command(ADBEmulatorCommand::Authenticate(token))
     }
 
-    /// Send an [ADBEmulatorCommand] to this emulator
+    /// Send an [`ADBEmulatorCommand`] to this emulator
     pub(crate) fn send_command(&mut self, command: ADBEmulatorCommand) -> Result<()> {
         let mut connection = self.get_raw_connection()?;
 
@@ -80,10 +79,11 @@ impl TCPEmulatorTransport {
         let mut line = String::new();
         reader.read_line(&mut line)?;
 
-        match line.starts_with("OK") {
-            true => Ok(()),
-            false => Err(RustADBError::ADBRequestFailed(line)),
+        if line.starts_with("OK") {
+            return Ok(());
         }
+
+        Err(RustADBError::ADBRequestFailed(line))
     }
 }
 

@@ -48,11 +48,11 @@ impl Display for UsbBackend {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum MDNSBackend {
     #[default]
-    /// Unknown
+    /// `Unknown`
     Unknown = 0,
-    /// Bonjour
+    /// `Bonjour`
     Bonjour = 1,
-    /// OpenScreen
+    /// `OpenScreen`
     OpenScreen = 2,
 }
 

@@ -16,7 +16,7 @@ pub struct PyADBServer(ADBServer);
 #[pymethods]
 impl PyADBServer {
     #[new]
-    /// Instantiate a new PyADBServer instance
+    /// Instantiate a new `PyADBServer` instance
     pub fn new(address: String) -> PyResult<Self> {
         let address = address.parse::<SocketAddrV4>()?;
         Ok(ADBServer::new(address).into())
@@ -24,7 +24,12 @@ impl PyADBServer {
 
     /// List available devices
     pub fn devices(&mut self) -> Result<Vec<PyDeviceShort>> {
-        Ok(self.0.devices()?.into_iter().map(|v| v.into()).collect())
+        Ok(self
+            .0
+            .devices()?
+            .into_iter()
+            .map(std::convert::Into::into)
+            .collect())
     }
 
     /// Get a device, assuming that only one is currently connected

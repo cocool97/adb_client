@@ -29,7 +29,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             std::time::Duration::from_secs(4),
         )?;
 
-        let recv_buffer = MessageSubcommand::Recv.with_arg(source.len() as u32);
+        let recv_buffer = MessageSubcommand::Recv.with_arg(u32::try_from(source.len())?);
         let recv_buffer =
             bincode::serialize(&recv_buffer).map_err(|_e| RustADBError::ConversionError)?;
         self.send_and_expect_okay(ADBTransportMessage::new(

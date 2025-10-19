@@ -94,7 +94,7 @@ fn main() -> Result<()> {
                     "Found device {} with addresses {:?}",
                     device.fullname,
                     device.addresses
-                )
+                );
             }
 
             return Ok(service.shutdown()?);
@@ -108,7 +108,7 @@ fn main() -> Result<()> {
                 // Using a scope here would call drop() too early..
                 #[cfg(any(target_os = "linux", target_os = "macos"))]
                 {
-                    let mut adb_termios = ADBTermios::new(std::io::stdin())?;
+                    let mut adb_termios = ADBTermios::new(&std::io::stdin())?;
                     adb_termios.set_adb_termios()?;
                     device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
                 }
@@ -118,7 +118,7 @@ fn main() -> Result<()> {
                     device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
                 }
             } else {
-                let commands: Vec<&str> = commands.iter().map(|v| v.as_str()).collect();
+                let commands: Vec<&str> = commands.iter().map(String::as_str).collect();
                 device.shell_command(&commands, &mut std::io::stdout())?;
             }
         }
@@ -136,7 +136,7 @@ fn main() -> Result<()> {
         }
         DeviceCommands::Reboot { reboot_type } => {
             log::info!("Reboots device in mode {reboot_type:?}");
-            device.reboot(reboot_type.into())?
+            device.reboot(reboot_type.into())?;
         }
         DeviceCommands::Push { filename, path } => {
             let mut input = File::open(Path::new(&filename))?;

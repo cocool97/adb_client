@@ -69,12 +69,12 @@ impl ADBServer {
             .filter(|d| d.identifier.as_str() == name)
             .collect::<Vec<DeviceShort>>()
             .len();
-        if nb_devices != 1 {
+        if nb_devices == 1 {
+            Ok(ADBServerDevice::new(name.to_string(), self.socket_addr))
+        } else {
             Err(RustADBError::DeviceNotFound(format!(
                 "could not find device {name}"
             )))
-        } else {
-            Ok(ADBServerDevice::new(name.to_string(), self.socket_addr))
         }
     }
 

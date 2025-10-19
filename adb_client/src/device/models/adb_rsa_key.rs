@@ -6,6 +6,7 @@ use num_traits::cast::ToPrimitive;
 use rsa::pkcs8::DecodePrivateKey;
 use rsa::traits::PublicKeyParts;
 use rsa::{Pkcs1v15Sign, RsaPrivateKey};
+use std::fmt::Write;
 
 const ADB_PRIVATE_KEY_SIZE: usize = 2048;
 const ANDROID_PUBKEY_MODULUS_SIZE_WORDS: u32 = 64;
@@ -92,15 +93,16 @@ impl ADBRsaKey {
             .to_u32()
             .ok_or(RustADBError::ConversionError)?;
 
-        Ok(self.encode_public_key(adb_rsa_pubkey.into_bytes()))
+        Self::encode_public_key(adb_rsa_pubkey.into_bytes())
     }
 
-    fn encode_public_key(&self, pub_key: Vec<u8>) -> String {
+    fn encode_public_key(pub_key: Vec<u8>) -> Result<String> {
         let mut encoded = STANDARD.encode(pub_key);
         encoded.push(' ');
-        encoded.push_str(&format!("adb_client@{}", env!("CARGO_PKG_VERSION")));
+        write!(encoded, "adb_client@{}", env!("CARGO_PKG_VERSION"))
+            .map_err(|_| RustADBError::ConversionError)?;
 
-        encoded
+        Ok(encoded)
     }
 
     pub fn sign(&self, msg: impl AsRef<[u8]>) -> Result<Vec<u8>> {

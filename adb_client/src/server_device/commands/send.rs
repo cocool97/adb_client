@@ -9,7 +9,7 @@ use std::{
     time::SystemTime,
 };
 
-/// Internal structure wrapping a [std::io::Write] and hiding underlying protocol logic.
+/// Internal structure wrapping a [`std::io::Write`] and hiding underlying protocol logic.
 struct ADBSendCommandWriter<W: Write> {
     inner: W,
 }
@@ -64,7 +64,7 @@ impl ADBServerDevice {
         // The name of the command is already sent by get_transport()?.send_sync_request
         let to_as_bytes = to.as_bytes();
         let mut buffer = Vec::with_capacity(4 + to_as_bytes.len());
-        buffer.extend_from_slice(&(to.len() as u32).to_le_bytes());
+        buffer.extend_from_slice(&(u32::try_from(to.len())?).to_le_bytes());
         buffer.extend_from_slice(to_as_bytes);
         raw_connection.write_all(&buffer)?;
 
@@ -77,9 +77,10 @@ impl ADBServerDevice {
 
         // Copy is finished, we can now notify as finished
         // Have to send DONE + file mtime
-        let last_modified = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-            Ok(n) => n,
-            Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+        let Ok(last_modified) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) else {
+            return Err(RustADBError::ADBRequestFailed(
+                "SystemTime before UNIX EPOCH!".into(),
+            ));
         };
 
         let mut done_buffer = Vec::with_capacity(8);

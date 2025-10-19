@@ -58,12 +58,12 @@ impl ADBTransportMessageHeader {
     }
 
     pub(crate) fn compute_crc32(data: &[u8]) -> u32 {
-        data.iter().map(|&x| x as u32).sum()
+        data.iter().map(|&x| u32::from(x)).sum()
     }
 
     fn compute_magic(command: MessageCommand) -> u32 {
         let command_u32 = command as u32;
-        command_u32 ^ 0xFFFFFFFF
+        command_u32 ^ 0xFFFF_FFFF
     }
 
     pub fn as_bytes(&self) -> Result<Vec<u8>> {

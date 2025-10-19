@@ -86,15 +86,13 @@ impl TryFrom<&[u8]> for DeviceLong {
                 None => "Unk".to_string(),
                 Some(device) => String::from_utf8(device.as_bytes().to_vec())?,
             },
-            transport_id: u32::from_str_radix(
-                str::from_utf8(
-                    groups
-                        .name("transport_id")
-                        .ok_or(RustADBError::RegexParsingError)?
-                        .as_bytes(),
-                )?,
-                10,
-            )?,
+            transport_id: (str::from_utf8(
+                groups
+                    .name("transport_id")
+                    .ok_or(RustADBError::RegexParsingError)?
+                    .as_bytes(),
+            )?)
+            .parse::<u32>()?,
         })
     }
 }

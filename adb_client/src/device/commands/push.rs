@@ -14,7 +14,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let path_header = format!("{},0777", path.as_ref());
 
-        let send_buffer = MessageSubcommand::Send.with_arg(path_header.len() as u32);
+        let send_buffer = MessageSubcommand::Send.with_arg(u32::try_from(path_header.len())?);
         let mut send_buffer =
             bincode::serialize(&send_buffer).map_err(|_e| RustADBError::ConversionError)?;
         send_buffer.append(&mut path_header.as_bytes().to_vec());

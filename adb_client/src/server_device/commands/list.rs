@@ -26,7 +26,7 @@ impl ADBServerDevice {
     // 'DONE' directly without listing anything.
     fn handle_list_command<S: AsRef<str>>(&mut self, path: S) -> Result<()> {
         let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
+        LittleEndian::write_u32(&mut len_buf, u32::try_from(path.as_ref().len())?);
 
         // 4 bytes of command name is already sent by send_sync_request
         self.transport.get_raw_connection()?.write_all(&len_buf)?;

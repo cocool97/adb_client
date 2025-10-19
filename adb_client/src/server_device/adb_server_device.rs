@@ -6,12 +6,12 @@ use std::net::SocketAddrV4;
 pub struct ADBServerDevice {
     /// Unique device identifier.
     pub identifier: Option<String>,
-    /// Internal [TCPServerTransport]
+    /// Internal [`TCPServerTransport`]
     pub(crate) transport: TCPServerTransport,
 }
 
 impl ADBServerDevice {
-    /// Instantiates a new [ADBServerDevice], knowing its ADB identifier (as returned by `adb devices` command).
+    /// Instantiates a new [`ADBServerDevice`], knowing its ADB identifier (as returned by `adb devices` command).
     pub fn new(identifier: String, server_addr: Option<SocketAddrV4>) -> Self {
         let transport = TCPServerTransport::new_or_default(server_addr);
 
@@ -21,7 +21,7 @@ impl ADBServerDevice {
         }
     }
 
-    /// Instantiates a new [ADBServerDevice], assuming only one is currently connected.
+    /// Instantiates a new [`ADBServerDevice`], assuming only one is currently connected.
     pub fn autodetect(server_addr: Option<SocketAddrV4>) -> Self {
         let transport = TCPServerTransport::new_or_default(server_addr);
 

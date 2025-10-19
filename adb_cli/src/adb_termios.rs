@@ -13,7 +13,7 @@ pub struct ADBTermios {
 }
 
 impl ADBTermios {
-    pub fn new(fd: impl AsRawFd) -> Result<Self> {
+    pub fn new(fd: &impl AsRawFd) -> Result<Self> {
         let mut new_termios = Termios::from_fd(fd.as_raw_fd())?;
         let old_termios = new_termios; // Saves previous state
         new_termios.c_lflag = 0;
@@ -36,7 +36,7 @@ impl Drop for ADBTermios {
     fn drop(&mut self) {
         // Custom drop implementation, restores previous termios structure.
         if let Err(e) = tcsetattr(self.fd, TCSANOW, &self.old_termios) {
-            log::error!("Error while dropping ADBTermios: {e}")
+            log::error!("Error while dropping ADBTermios: {e}");
         }
     }
 }

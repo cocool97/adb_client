@@ -25,15 +25,14 @@ impl ADBDeviceExt for ADBServerDevice {
         self.transport
             .send_adb_request(AdbServerCommand::ShellCommand(command.join(" ")))?;
 
+        let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {
-            let mut buffer = [0; BUFFER_SIZE];
             match self.transport.get_raw_connection()?.read(&mut buffer) {
                 Ok(size) => {
                     if size == 0 {
                         return Ok(());
-                    } else {
-                        output.write_all(&buffer[..size])?;
                     }
+                    output.write_all(&buffer[..size])?;
                 }
                 Err(e) => {
                     return Err(RustADBError::IOError(e));
@@ -49,7 +48,7 @@ impl ADBDeviceExt for ADBServerDevice {
     fn shell(
         &mut self,
         mut reader: &mut dyn Read,
-        mut writer: Box<(dyn Write + Send)>,
+        mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
@@ -67,8 +66,9 @@ impl ADBDeviceExt for ADBServerDevice {
 
         // Reading thread, reads response from adb-server
         std::thread::spawn(move || -> Result<()> {
+            let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
+
             loop {
-                let mut buffer = [0; BUFFER_SIZE];
                 match read_stream.read(&mut buffer) {
                     Ok(0) => {
                         read_stream.shutdown(std::net::Shutdown::Both)?;

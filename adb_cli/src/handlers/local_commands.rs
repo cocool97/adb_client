@@ -14,7 +14,7 @@ pub fn handle_local_commands(
             let features = device
                 .host_features()?
                 .iter()
-                .map(|v| v.to_string())
+                .map(ToString::to_string)
                 .reduce(|a, b| format!("{a},{b}"))
                 .ok_or(anyhow!("cannot list features"))?;
             log::info!("Available host features: {features}");

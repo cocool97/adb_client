@@ -36,7 +36,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn shell(
         &mut self,
         mut reader: &mut dyn Read,
-        mut writer: Box<(dyn Write + Send)>,
+        mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         self.open_session(b"shell:\0")?;
 
@@ -60,7 +60,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         writer.write_all(&message.into_payload())?;
                         writer.flush()?;
                     }
-                    MessageCommand::Okay => continue,
+                    MessageCommand::Okay => {}
                     _ => return Err(RustADBError::ADBShellNotSupported),
                 }
             }

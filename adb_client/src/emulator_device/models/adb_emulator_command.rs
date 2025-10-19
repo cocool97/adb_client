@@ -24,8 +24,7 @@ impl ADBEmulatorCommand {
     pub(crate) fn skip_response_lines(&self) -> u8 {
         match self {
             ADBEmulatorCommand::Authenticate(_) => 1,
-            ADBEmulatorCommand::Sms(_, _) => 0,
-            ADBEmulatorCommand::Rotate => 0,
+            ADBEmulatorCommand::Sms(_, _) | ADBEmulatorCommand::Rotate => 0,
         }
     }
 }

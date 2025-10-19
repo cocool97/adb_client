@@ -5,7 +5,7 @@ use crate::{
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{BufReader, BufWriter, Read, Write};
 
-/// Internal structure wrapping a [std::io::Read] and hiding underlying protocol logic.
+/// Internal structure wrapping a [`std::io::Read`] and hiding underlying protocol logic.
 struct ADBRecvCommandReader<R: Read> {
     inner: R,
     remaining_data_bytes_to_read: usize,
@@ -86,7 +86,7 @@ impl ADBServerDevice {
 
         let from_as_bytes = from.as_ref().as_bytes();
         let mut buffer = Vec::with_capacity(4 + from_as_bytes.len());
-        buffer.extend_from_slice(&(from.as_ref().len() as u32).to_le_bytes());
+        buffer.extend_from_slice(&(u32::try_from(from.as_ref().len())?).to_le_bytes());
         buffer.extend_from_slice(from_as_bytes);
         raw_connection.write_all(&buffer)?;
 

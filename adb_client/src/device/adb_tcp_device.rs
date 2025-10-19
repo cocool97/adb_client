@@ -31,8 +31,8 @@ impl ADBTcpDevice {
 
         let message = ADBTransportMessage::new(
             MessageCommand::Cnxn,
-            0x01000000,
-            1048576,
+            0x0100_0000,
+            1_048_576,
             format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
         );
 
@@ -75,7 +75,7 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
-    fn shell(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()> {
+    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
         self.inner.shell(reader, writer)
     }
 

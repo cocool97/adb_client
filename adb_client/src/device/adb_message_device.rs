@@ -70,7 +70,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 match len.take() {
                     Some(0) | None => {
                         rdr.seek_relative(4)?;
-                        len.replace(rdr.read_u32::<LittleEndian>()? as u64);
+                        len.replace(u64::from(rdr.read_u32::<LittleEndian>()?));
                     }
                     Some(length) => {
                         let remaining_bytes = payload.len() as u64 - rdr.position();
@@ -101,9 +101,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         remote_id: u32,
         mut reader: R,
     ) -> std::result::Result<(), RustADBError> {
-        let mut buffer = [0; BUFFER_SIZE];
+        let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         let amount_read = reader.read(&mut buffer)?;
-        let subcommand_data = MessageSubcommand::Data.with_arg(amount_read as u32);
+        let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(amount_read)?);
 
         let mut serialized_message =
             bincode::serialize(&subcommand_data).map_err(|_e| RustADBError::ConversionError)?;
@@ -119,7 +119,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         self.send_and_expect_okay(message)?;
 
         loop {
-            let mut buffer = [0; BUFFER_SIZE];
+            let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
 
             match reader.read(&mut buffer) {
                 Ok(0) => {
@@ -150,7 +150,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     }
                 }
                 Ok(size) => {
-                    let subcommand_data = MessageSubcommand::Data.with_arg(size as u32);
+                    let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(size)?);
 
                     let mut serialized_message = bincode::serialize(&subcommand_data)
                         .map_err(|_e| RustADBError::ConversionError)?;
@@ -178,7 +178,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     pub(crate) fn stat_with_explicit_ids(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
-        let stat_buffer = MessageSubcommand::Stat.with_arg(remote_path.len() as u32);
+        let stat_buffer = MessageSubcommand::Stat.with_arg(u32::try_from(remote_path.len())?);
         let message = ADBTransportMessage::new(
             MessageCommand::Write,
             self.get_local_id()?,

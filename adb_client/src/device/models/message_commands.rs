@@ -6,32 +6,32 @@ use std::fmt::Display;
 #[repr(u32)]
 pub enum MessageCommand {
     /// Connect to a device
-    Cnxn = 0x4E584E43,
+    Cnxn = 0x4E58_4E43,
     /// Close connection to a device
-    Clse = 0x45534C43,
+    Clse = 0x4553_4C43,
     /// Device ask for authentication
-    Auth = 0x48545541,
+    Auth = 0x4854_5541,
     /// Open a data connection
-    Open = 0x4E45504F,
+    Open = 0x4E45_504F,
     /// Write data to connection
-    Write = 0x45545257,
+    Write = 0x4554_5257,
     /// Server understood the message
-    Okay = 0x59414B4F,
+    Okay = 0x5941_4B4F,
     /// Start a connection using TLS
-    Stls = 0x534C5453,
+    Stls = 0x534C_5453,
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Serialize_repr, Deserialize_repr)]
 #[repr(u32)]
 pub enum MessageSubcommand {
-    Stat = 0x54415453,
-    Send = 0x444E4553,
-    Recv = 0x56434552,
-    Quit = 0x54495551,
-    Fail = 0x4C494146,
-    Done = 0x454E4F44,
-    Data = 0x41544144,
-    List = 0x5453494C,
+    Stat = 0x5441_5453,
+    Send = 0x444E_4553,
+    Recv = 0x5643_4552,
+    Quit = 0x5449_5551,
+    Fail = 0x4C49_4146,
+    Done = 0x454E_4F44,
+    Data = 0x4154_4144,
+    List = 0x5453_494C,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

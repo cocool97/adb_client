@@ -9,7 +9,7 @@ use std::process::Command;
 /// Represents an ADB Server
 #[derive(Debug, Default)]
 pub struct ADBServer {
-    /// Internal [TcpStream], lazily initialized
+    /// Internal [`TcpStream`], lazily initialized
     pub(crate) transport: Option<TCPServerTransport>,
     /// Address to connect to
     pub(crate) socket_addr: Option<SocketAddrV4>,
@@ -21,7 +21,7 @@ pub struct ADBServer {
 }
 
 impl ADBServer {
-    /// Instantiates a new [ADBServer]
+    /// Instantiates a new [`ADBServer`]
     pub fn new(address: SocketAddrV4) -> Self {
         Self {
             transport: None,
@@ -31,7 +31,7 @@ impl ADBServer {
         }
     }
 
-    /// Instantiates a new [ADBServer] with a custom adb path
+    /// Instantiates a new [`ADBServer`] with a custom adb path
     pub fn new_from_path(address: SocketAddrV4, adb_path: Option<String>) -> Self {
         Self {
             transport: None,
@@ -46,7 +46,7 @@ impl ADBServer {
         // ADB Server is local, we start it if not already running
         let mut command = Command::new(adb_path.as_deref().unwrap_or("adb"));
         command.arg("start-server");
-        for (env_k, env_v) in envs.iter() {
+        for (env_k, env_v) in envs {
             command.env(env_k, env_v);
         }
 
@@ -61,7 +61,7 @@ impl ADBServer {
         match child {
             Ok(mut child) => {
                 if let Err(e) = child.wait() {
-                    log::error!("error while starting adb server: {e}")
+                    log::error!("error while starting adb server: {e}");
                 }
             }
             Err(e) => log::error!("error while starting adb server: {e}"),

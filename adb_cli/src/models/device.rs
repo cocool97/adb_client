@@ -19,7 +19,7 @@ pub enum DeviceCommands {
         /// The package whose activity is to be invoked
         #[clap(short = 'p', long = "package")]
         package: String,
-        /// The activity to be invoked itself, Usually it is MainActivity
+        /// The activity to be invoked itself, Usually it is `MainActivity`
         #[clap(short = 'a', long = "activity")]
         activity: String,
     },

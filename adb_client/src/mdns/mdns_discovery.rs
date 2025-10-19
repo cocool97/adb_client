@@ -42,7 +42,6 @@ impl MDNSDiscoveryService {
                         | ServiceEvent::ServiceFound(_, _)
                         | ServiceEvent::SearchStopped(_) => {
                             // Ignoring these events. We are only interesting in found devices
-                            continue;
                         }
                         ServiceEvent::ServiceResolved(service_info) => {
                             if let Err(e) = sender.send(MDNSDevice::from(service_info)) {

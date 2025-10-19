@@ -119,7 +119,7 @@ impl ADBUSBDevice {
         product_id: u16,
         private_key_path: PathBuf,
     ) -> Result<Self> {
-        Self::new_from_transport_inner(USBTransport::new(vendor_id, product_id)?, private_key_path)
+        Self::new_from_transport_inner(USBTransport::new(vendor_id, product_id)?, &private_key_path)
     }
 
     /// Instantiate a new [`ADBUSBDevice`] from a [`USBTransport`] and an optional private key path.
@@ -132,22 +132,21 @@ impl ADBUSBDevice {
             None => get_default_adb_key_path()?,
         };
 
-        Self::new_from_transport_inner(transport, private_key_path)
+        Self::new_from_transport_inner(transport, &private_key_path)
     }
 
     fn new_from_transport_inner(
         transport: USBTransport,
-        private_key_path: PathBuf,
+        private_key_path: &PathBuf,
     ) -> Result<Self> {
-        let private_key = match read_adb_private_key(&private_key_path)? {
-            Some(pk) => pk,
-            None => {
-                log::warn!(
-                    "No private key found at path {}. Using a temporary random one.",
-                    private_key_path.display()
-                );
-                ADBRsaKey::new_random()?
-            }
+        let private_key = if let Some(private_key) = read_adb_private_key(private_key_path)? {
+            private_key
+        } else {
+            log::warn!(
+                "No private key found at path {}. Using a temporary random one.",
+                private_key_path.display()
+            );
+            ADBRsaKey::new_random()?
         };
 
         let mut s = Self {
@@ -183,8 +182,8 @@ impl ADBUSBDevice {
 
         let message = ADBTransportMessage::new(
             MessageCommand::Cnxn,
-            0x01000000,
-            1048576,
+            0x0100_0000,
+            1_048_576,
             format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
         );
 
@@ -260,7 +259,7 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
-    fn shell<'a>(&mut self, reader: &mut dyn Read, writer: Box<(dyn Write + Send)>) -> Result<()> {
+    fn shell<'a>(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
         self.inner.shell(reader, writer)
     }
 

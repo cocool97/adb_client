@@ -42,6 +42,9 @@ pub enum RustADBError {
     /// Indicates that an error occurred when converting a value.
     #[error("Conversion error")]
     ConversionError,
+    /// Indicates an error with the integer conversion.
+    #[error(transparent)]
+    IntegerConversionError(#[from] std::num::TryFromIntError),
     /// Remote ADB server does not support shell feature.
     #[error("Remote ADB server does not support shell feature")]
     ADBShellNotSupported,

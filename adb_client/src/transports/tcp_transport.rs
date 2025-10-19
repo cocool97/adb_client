@@ -16,7 +16,6 @@ use std::{
     fs::read_to_string,
     io::{Read, Write},
     net::{Shutdown, SocketAddr, TcpStream},
-    ops::{Deref, DerefMut},
     path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
@@ -120,18 +119,15 @@ impl TcpTransport {
     }
 
     pub(crate) fn upgrade_connection(&mut self) -> Result<()> {
-        let current_connection = match self.current_connection.clone() {
-            Some(current_connection) => current_connection,
-            None => {
-                return Err(RustADBError::UpgradeError(
-                    "cannot upgrade a non-existing connection...".into(),
-                ));
-            }
+        let Some(current_connection) = self.current_connection.clone() else {
+            return Err(RustADBError::UpgradeError(
+                "cannot upgrade a non-existing connection...".into(),
+            ));
         };
 
         {
             let mut current_conn_locked = current_connection.lock()?;
-            match current_conn_locked.deref() {
+            match &*current_conn_locked {
                 CurrentConnection::Tcp(tcp_stream) => {
                     // TODO: Check if we cannot be more precise
 
@@ -192,7 +188,7 @@ impl ADBTransport for TcpTransport {
         log::debug!("disconnecting...");
         if let Some(current_connection) = &self.current_connection {
             let mut lock = current_connection.lock()?;
-            match lock.deref_mut() {
+            match &mut *lock {
                 CurrentConnection::Tcp(tcp_stream) => {
                     let _ = tcp_stream.shutdown(Shutdown::Both);
                 }

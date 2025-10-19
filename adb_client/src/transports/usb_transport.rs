@@ -29,7 +29,7 @@ pub struct USBTransport {
 
 impl USBTransport {
     /// Instantiate a new [`USBTransport`].
-    /// Only the first device with given vendor_id and product_id is returned.
+    /// Only the first device with given `vendor_id` and `product_id` is returned.
     pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
         for device in rusb::devices()?.iter() {
             if let Ok(descriptor) = device.device_descriptor() {
@@ -90,14 +90,13 @@ impl USBTransport {
         Ok(())
     }
 
-    fn find_endpoints(&self, handle: &DeviceHandle<GlobalContext>) -> Result<(Endpoint, Endpoint)> {
+    fn find_endpoints(handle: &DeviceHandle<GlobalContext>) -> Result<(Endpoint, Endpoint)> {
         let mut read_endpoint: Option<Endpoint> = None;
         let mut write_endpoint: Option<Endpoint> = None;
 
         for n in 0..handle.device().device_descriptor()?.num_configurations() {
-            let config_desc = match handle.device().config_descriptor(n) {
-                Ok(c) => c,
-                Err(_) => continue,
+            let Ok(config_desc) = handle.device().config_descriptor(n) else {
+                continue;
             };
 
             for interface in config_desc.interfaces() {
@@ -117,16 +116,14 @@ impl USBTransport {
                                 Direction::In => {
                                     if let Some(write_endpoint) = write_endpoint {
                                         return Ok((endpoint, write_endpoint));
-                                    } else {
-                                        read_endpoint = Some(endpoint);
                                     }
+                                    read_endpoint = Some(endpoint);
                                 }
                                 Direction::Out => {
                                     if let Some(read_endpoint) = read_endpoint {
                                         return Ok((read_endpoint, endpoint));
-                                    } else {
-                                        write_endpoint = Some(endpoint);
                                     }
+                                    write_endpoint = Some(endpoint);
                                 }
                             }
                         }
@@ -150,7 +147,7 @@ impl USBTransport {
             let write_amount = handle.write_bulk(endpoint.address, &data[offset..end], timeout)?;
             offset += write_amount;
 
-            log::trace!("wrote chunk of size {write_amount} - {offset}/{data_len}",)
+            log::trace!("wrote chunk of size {write_amount} - {offset}/{data_len}",);
         }
 
         if offset % max_packet_size == 0 {
@@ -166,7 +163,7 @@ impl ADBTransport for USBTransport {
     fn connect(&mut self) -> crate::Result<()> {
         let device = self.device.open()?;
 
-        let (read_endpoint, write_endpoint) = self.find_endpoints(&device)?;
+        let (read_endpoint, write_endpoint) = Self::find_endpoints(&device)?;
 
         Self::configure_endpoint(&device, &read_endpoint)?;
         log::debug!("got read endpoint: {read_endpoint:?}");

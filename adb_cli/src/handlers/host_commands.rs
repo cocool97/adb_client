@@ -53,12 +53,15 @@ pub fn handle_host_commands(server_command: ServerCommand<HostCommand>) -> Resul
                 let server_status = adb_server.server_status()?;
                 match server_status.mdns_backend {
                     MDNSBackend::Unknown => log::info!("unknown mdns backend..."),
-                    MDNSBackend::Bonjour => match check {
-                        true => log::info!("mdns daemon version [Bonjour]"),
-                        false => log::info!("ERROR: mdns daemon unavailable"),
-                    },
+                    MDNSBackend::Bonjour => {
+                        if check {
+                            log::info!("mdns daemon version [Bonjour]");
+                        } else {
+                            log::info!("ERROR: mdns daemon unavailable");
+                        }
+                    }
                     MDNSBackend::OpenScreen => {
-                        log::info!("mdns daemon version [Openscreen discovery 0.0.0]")
+                        log::info!("mdns daemon version [Openscreen discovery 0.0.0]");
                     }
                 }
             }

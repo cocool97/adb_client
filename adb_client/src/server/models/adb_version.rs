@@ -15,7 +15,7 @@ pub struct AdbVersion {
 }
 
 impl AdbVersion {
-    /// Instantiates a new [AdbVersion].
+    /// Instantiates a new [`AdbVersion`].
     pub fn new(minor: u32, revision: u32) -> Self {
         Self {
             major: 1,

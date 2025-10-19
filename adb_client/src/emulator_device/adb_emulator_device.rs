@@ -15,16 +15,16 @@ static EMULATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 pub struct ADBEmulatorDevice {
     /// Unique device identifier.
     pub identifier: String,
-    /// Internal [TCPEmulatorTransport]
+    /// Internal [`TCPEmulatorTransport`]
     transport: TCPEmulatorTransport,
 }
 
 impl ADBEmulatorDevice {
-    /// Instantiates a new [ADBEmulatorDevice]
+    /// Instantiates a new [`ADBEmulatorDevice`]
     pub fn new(identifier: String, ip_address: Option<Ipv4Addr>) -> Result<Self> {
         let ip_address = match ip_address {
             Some(ip_address) => ip_address,
-            None => Ipv4Addr::new(127, 0, 0, 1),
+            None => Ipv4Addr::LOCALHOST,
         };
 
         let groups = EMULATOR_REGEX
