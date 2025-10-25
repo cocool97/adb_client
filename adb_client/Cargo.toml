@@ -25,10 +25,7 @@ num-bigint = { version = "0.8.4", package = "num-bigint-dig" }
 num-traits = { version = "0.2.19" }
 quick-protobuf = { version = "0.8.1" }
 rand = { version = "0.9.2" }
-rcgen = { version = "0.13.2", default-features = false, features = [
-    "aws_lc_rs",
-    "pem",
-] }
+rcgen = { version = "0.13.2" }
 regex = { version = "1.12.2", features = ["perf", "std", "unicode"] }
 rsa = { version = "0.9.8" }
 rusb = { version = "0.9.4", features = ["vendored"] }
