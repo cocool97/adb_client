@@ -1,10 +1,10 @@
+use super::{ADBRsaKey, ADBTransportMessage, MessageCommand, models::MessageSubcommand};
+use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
+use crate::{ADBMessageTransport, AdbStatResponse, Result, RustADBError, constants::BUFFER_SIZE};
 use byteorder::{LittleEndian, ReadBytesExt};
 use rand::Rng;
 use std::io::{Cursor, Read, Seek};
-
-use crate::{ADBMessageTransport, AdbStatResponse, Result, RustADBError, constants::BUFFER_SIZE};
-
-use super::{ADBTransportMessage, MessageCommand, models::MessageSubcommand};
+use std::time::Duration;
 
 /// Generic structure representing an ADB device reachable over an [`ADBMessageTransport`].
 /// Structure is totally agnostic over which transport is truly used.
@@ -31,6 +31,66 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn get_transport_mut(&mut self) -> &mut T {
         &mut self.transport
+    }
+
+    pub(crate) fn auth_handshake(
+        &mut self,
+        message: ADBTransportMessage,
+        private_key: &ADBRsaKey,
+    ) -> Result<()> {
+        match message.header().command() {
+            MessageCommand::Auth => {
+                log::debug!("Authentication required");
+            }
+            _ => return Ok(()),
+        }
+
+        // At this point, we should have received an AUTH message with arg0 == 1
+        let auth_message = match message.header().arg0() {
+            AUTH_TOKEN => message,
+            v => {
+                return Err(RustADBError::ADBRequestFailed(format!(
+                    "Received AUTH message with type != 1 ({v})"
+                )));
+            }
+        };
+
+        let sign = private_key.sign(auth_message.into_payload())?;
+
+        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign);
+
+        self.get_transport_mut().write_message(message)?;
+
+        let received_response = self.get_transport_mut().read_message()?;
+
+        if received_response.header().command() == MessageCommand::Cnxn {
+            log::info!(
+                "Authentication OK, device info {}",
+                String::from_utf8(received_response.into_payload())?
+            );
+            return Ok(());
+        }
+
+        let mut pubkey = private_key.android_pubkey_encode()?.into_bytes();
+        pubkey.push(b'\0');
+
+        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey);
+
+        self.get_transport_mut().write_message(message)?;
+
+        let response = self
+            .get_transport_mut()
+            .read_message_with_timeout(Duration::from_secs(10))
+            .and_then(|message| {
+                message.assert_command(MessageCommand::Cnxn)?;
+                Ok(message)
+            })?;
+
+        log::info!(
+            "Authentication OK, device info {}",
+            String::from_utf8(response.into_payload())?
+        );
+        Ok(())
     }
 
     /// Receive a message and acknowledge it by replying with an `OKAY` command
