@@ -48,6 +48,9 @@ impl MDNSDiscoveryService {
                                 return Err(e.into());
                             }
                         }
+                        e => {
+                            log::warn!("received unknown event type {:?}", e);
+                        }
                     }
                 }
             }
