@@ -3,7 +3,8 @@ use std::io::Write;
 use crate::{
     ADBMessageTransport, Result, RustADBError,
     device::{
-        ADBTransportMessage, MessageCommand, adb_message_device::ADBMessageDevice,
+        ADBTransportMessage, MessageCommand,
+        adb_message_device::{self, ADBMessageDevice},
         models::MessageSubcommand,
     },
 };
@@ -30,8 +31,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         )?;
 
         let recv_buffer = MessageSubcommand::Recv.with_arg(u32::try_from(source.len())?);
-        let recv_buffer =
-            bincode::serialize(&recv_buffer).map_err(|_e| RustADBError::ConversionError)?;
+        let recv_buffer = adb_message_device::bincode_serialize_to_vec(&recv_buffer)?;
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
             self.get_local_id()?,

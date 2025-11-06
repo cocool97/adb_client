@@ -1,10 +1,26 @@
 use super::{ADBRsaKey, ADBTransportMessage, MessageCommand, models::MessageSubcommand};
 use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
 use crate::{ADBMessageTransport, AdbStatResponse, Result, RustADBError, constants::BUFFER_SIZE};
-use byteorder::{LittleEndian, ReadBytesExt};
+use bincode::config::{Configuration, Fixint, LittleEndian, NoLimit};
+use byteorder::ReadBytesExt;
 use rand::Rng;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::io::{Cursor, Read, Seek};
 use std::time::Duration;
+
+const BINCODE_CONFIG: Configuration<LittleEndian, Fixint, NoLimit> = bincode::config::legacy();
+
+pub(crate) fn bincode_serialize_to_vec<E: Serialize>(val: E) -> Result<Vec<u8>> {
+    bincode::serde::encode_to_vec(val, BINCODE_CONFIG).map_err(|_e| RustADBError::ConversionError)
+}
+
+pub(crate) fn bincode_deserialize_from_slice<D: DeserializeOwned>(data: &[u8]) -> Result<D> {
+    let (response, _) = bincode::serde::decode_from_slice(data, BINCODE_CONFIG)
+        .map_err(|_e| RustADBError::ConversionError)?;
+
+    Ok(response)
+}
 
 /// Generic structure representing an ADB device reachable over an [`ADBMessageTransport`].
 /// Structure is totally agnostic over which transport is truly used.
@@ -130,7 +146,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 match len.take() {
                     Some(0) | None => {
                         rdr.seek_relative(4)?;
-                        len.replace(u64::from(rdr.read_u32::<LittleEndian>()?));
+                        len.replace(u64::from(rdr.read_u32::<byteorder::LittleEndian>()?));
                     }
                     Some(length) => {
                         let remaining_bytes = payload.len() as u64 - rdr.position();
@@ -146,7 +162,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 }
             }
             if Cursor::new(&payload[(payload.len() - 8)..(payload.len() - 4)])
-                .read_u32::<LittleEndian>()?
+                .read_u32::<byteorder::LittleEndian>()?
                 == MessageSubcommand::Done as u32
             {
                 break;
@@ -165,8 +181,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let amount_read = reader.read(&mut buffer)?;
         let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(amount_read)?);
 
-        let mut serialized_message =
-            bincode::serialize(&subcommand_data).map_err(|_e| RustADBError::ConversionError)?;
+        let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
         serialized_message.append(&mut buffer[..amount_read].to_vec());
 
         let message = ADBTransportMessage::new(
@@ -186,9 +201,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     // Currently file mtime is not forwarded
                     let subcommand_data = MessageSubcommand::Done.with_arg(0);
 
-                    let serialized_message = bincode::serialize(&subcommand_data)
-                        .map_err(|_e| RustADBError::ConversionError)?;
-
+                    let serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
                     let message = ADBTransportMessage::new(
                         MessageCommand::Write,
                         local_id,
@@ -212,8 +225,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 Ok(size) => {
                     let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(size)?);
 
-                    let mut serialized_message = bincode::serialize(&subcommand_data)
-                        .map_err(|_e| RustADBError::ConversionError)?;
+                    let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
                     serialized_message.append(&mut buffer[..size].to_vec());
 
                     let message = ADBTransportMessage::new(
@@ -243,7 +255,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             MessageCommand::Write,
             self.get_local_id()?,
             self.get_remote_id()?,
-            &bincode::serialize(&stat_buffer).map_err(|_e| RustADBError::ConversionError)?,
+            &bincode_serialize_to_vec(&stat_buffer)?,
         );
         self.send_and_expect_okay(message)?;
         self.send_and_expect_okay(ADBTransportMessage::new(
@@ -255,8 +267,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let response = self.transport.read_message()?;
         // Skip first 4 bytes as this is the literal "STAT".
         // Interesting part starts right after
-        bincode::deserialize(&response.into_payload()[4..])
-            .map_err(|_e| RustADBError::ConversionError)
+
+        bincode_deserialize_from_slice(&response.into_payload()[4..])
     }
 
     pub(crate) fn end_transaction(&mut self) -> Result<()> {
@@ -265,7 +277,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             MessageCommand::Write,
             self.get_local_id()?,
             self.get_remote_id()?,
-            &bincode::serialize(&quit_buffer).map_err(|_e| RustADBError::ConversionError)?,
+            &bincode_serialize_to_vec(&quit_buffer)?,
         ))?;
         let _discard_close = self.transport.read_message()?;
         Ok(())
