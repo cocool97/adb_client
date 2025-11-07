@@ -1,6 +1,6 @@
 use std::{collections::HashSet, net::IpAddr};
 
-use mdns_sd::ResolvedService;
+use mdns_sd::{ResolvedService, ScopedIp};
 
 /// Represent a device found from mdns search
 #[derive(Debug)]
@@ -15,7 +15,7 @@ impl From<Box<ResolvedService>> for MDNSDevice {
     fn from(value: Box<ResolvedService>) -> Self {
         Self {
             fullname: value.fullname,
-            addresses: value.addresses.iter().map(|v| v.to_ip_addr()).collect(),
+            addresses: value.addresses.iter().map(ScopedIp::to_ip_addr).collect(),
         }
     }
 }

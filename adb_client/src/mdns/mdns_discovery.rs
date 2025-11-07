@@ -49,7 +49,7 @@ impl MDNSDiscoveryService {
                             }
                         }
                         e => {
-                            log::warn!("received unknown event type {:?}", e);
+                            log::warn!("received unknown event type {e:?}");
                         }
                     }
                 }

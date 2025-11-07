@@ -17,7 +17,7 @@ byteorder = { version = "1.5.0" }
 chrono = { version = "0.4.42", default-features = false, features = ["std"] }
 image = { version = "0.25.8", default-features = false }
 log = { version = "0.4.28" }
-mdns-sd = { version = "0.16.0", default-features = false, features = [
+mdns-sd = { version = "0.17.0", default-features = false, features = [
     "logging",
 ] }
 num-bigint = { version = "0.8.5", package = "num-bigint-dig" }
