@@ -12,7 +12,7 @@ use adb_client::mdns::MDNSDiscoveryService;
 use adb_client::server::ADBServer;
 use adb_client::server_device::ADBServerDevice;
 use adb_client::tcp::ADBTcpDevice;
-use adb_client::usb::ADBUSBDevice;
+use adb_client::usb::ADBRusbDevice;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use adb_termios::ADBTermios;
@@ -66,12 +66,12 @@ fn main() -> Result<()> {
         MainCommand::Usb(usb_command) => {
             let device = match (usb_command.vendor_id, usb_command.product_id) {
                 (Some(vid), Some(pid)) => match usb_command.path_to_private_key {
-                    Some(pk) => ADBUSBDevice::new_with_custom_private_key(vid, pid, pk)?,
-                    None => ADBUSBDevice::new(vid, pid)?,
+                    Some(pk) => ADBRusbDevice::new_with_custom_private_key(vid, pid, pk)?,
+                    None => ADBRusbDevice::new(vid, pid)?,
                 },
                 (None, None) => match usb_command.path_to_private_key {
-                    Some(pk) => ADBUSBDevice::autodetect_with_custom_private_key(pk)?,
-                    None => ADBUSBDevice::autodetect()?,
+                    Some(pk) => ADBRusbDevice::autodetect_with_custom_private_key(pk)?,
+                    None => ADBRusbDevice::autodetect()?,
                 },
                 _ => {
                     anyhow::bail!(

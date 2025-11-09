@@ -34,6 +34,9 @@ pub mod constants {
 mod adb_rsa_key;
 
 #[cfg(feature = "rusb")]
+mod adb_rusb_device;
+
+#[cfg(feature = "rusb")]
 mod adb_usb_device;
 
 mod backends;
@@ -42,7 +45,7 @@ mod utils;
 // Device implementations
 #[cfg(feature = "rusb")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rusb")))]
-pub use adb_usb_device::ADBUSBDevice;
+pub use adb_rusb_device::ADBRusbDevice;
 
 // Transport implementations
 #[cfg(feature = "rusb")]

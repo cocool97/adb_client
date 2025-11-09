@@ -1,6 +1,6 @@
 use std::{fs::File, path::PathBuf};
 
-use adb_client::{ADBDeviceExt, usb::ADBUSBDevice};
+use adb_client::{ADBDeviceExt, usb::ADBRusbDevice};
 use anyhow::Result;
 use pyo3::{pyclass, pymethods};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
@@ -8,7 +8,7 @@ use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 #[gen_stub_pyclass]
 #[pyclass]
 /// Represent a device directly reachable over USB.
-pub struct PyADBUSBDevice(ADBUSBDevice);
+pub struct PyADBUSBDevice(ADBRusbDevice);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -17,7 +17,7 @@ impl PyADBUSBDevice {
     /// Autodetect a device reachable over USB.
     /// This method raises an error if multiple devices or none are connected.
     pub fn autodetect() -> Result<Self> {
-        Ok(ADBUSBDevice::autodetect()?.into())
+        Ok(ADBRusbDevice::autodetect()?.into())
     }
 
     /// Run shell commands on device and return the output (stdout + stderr merged)
@@ -51,8 +51,8 @@ impl PyADBUSBDevice {
     }
 }
 
-impl From<ADBUSBDevice> for PyADBUSBDevice {
-    fn from(value: ADBUSBDevice) -> Self {
+impl From<ADBRusbDevice> for PyADBUSBDevice {
+    fn from(value: ADBRusbDevice) -> Self {
         Self(value)
     }
 }

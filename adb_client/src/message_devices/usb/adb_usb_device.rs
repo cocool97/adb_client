@@ -6,51 +6,28 @@ use std::time::Duration;
 use crate::ADBDeviceExt;
 use crate::Result;
 use crate::RustADBError;
-use crate::adb_transport::ADBTransport;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::message_devices::adb_message_transport::ADBMessageTransport;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::usb::adb_rsa_key::ADBRsaKey;
-use crate::usb::backends::rusb_transport::RusbTransport;
-use crate::usb::{read_adb_private_key, search_adb_devices};
+use crate::usb::read_adb_private_key;
 use crate::utils::get_default_adb_key_path;
 
 const AUTH_TOKEN: u32 = 1;
 const AUTH_SIGNATURE: u32 = 2;
 const AUTH_RSAPUBLICKEY: u32 = 3;
 
-/// Implement Android USB device
-/// Represent a device reached and available over USB.
+/// Private struct implementing Android USB device logic, depending on a `ADBMessageTransport`.
 #[derive(Debug)]
-pub struct ADBUSBDevice {
+pub(crate) struct ADBUSBDevice<T: ADBMessageTransport> {
     private_key: ADBRsaKey,
-    inner: ADBMessageDevice<RusbTransport>,
+    inner: ADBMessageDevice<T>,
 }
 
-impl ADBUSBDevice {
-    /// Instantiate a new [`ADBUSBDevice`]
-    pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
-        Self::new_with_custom_private_key(vendor_id, product_id, get_default_adb_key_path()?)
-    }
-
-    /// Instantiate a new [`ADBUSBDevice`] using a custom private key path
-    pub fn new_with_custom_private_key(
-        vendor_id: u16,
-        product_id: u16,
-        private_key_path: PathBuf,
-    ) -> Result<Self> {
-        Self::new_from_transport_inner(
-            RusbTransport::new(vendor_id, product_id)?,
-            &private_key_path,
-        )
-    }
-
+impl<T: ADBMessageTransport> ADBUSBDevice<T> {
     /// Instantiate a new [`ADBUSBDevice`] from a [`RusbTransport`] and an optional private key path.
-    pub fn new_from_transport(
-        transport: RusbTransport,
-        private_key_path: Option<PathBuf>,
-    ) -> Result<Self> {
+    pub fn new_from_transport(transport: T, private_key_path: Option<PathBuf>) -> Result<Self> {
         let private_key_path = match private_key_path {
             Some(private_key_path) => private_key_path,
             None => get_default_adb_key_path()?,
@@ -59,10 +36,7 @@ impl ADBUSBDevice {
         Self::new_from_transport_inner(transport, &private_key_path)
     }
 
-    fn new_from_transport_inner(
-        transport: RusbTransport,
-        private_key_path: &PathBuf,
-    ) -> Result<Self> {
+    fn new_from_transport_inner(transport: T, private_key_path: &PathBuf) -> Result<Self> {
         let private_key = if let Some(private_key) = read_adb_private_key(private_key_path)? {
             private_key
         } else {
@@ -81,23 +55,6 @@ impl ADBUSBDevice {
         s.connect()?;
 
         Ok(s)
-    }
-
-    /// autodetect connected ADB devices and establish a connection with the first device found
-    pub fn autodetect() -> Result<Self> {
-        Self::autodetect_with_custom_private_key(get_default_adb_key_path()?)
-    }
-
-    /// autodetect connected ADB devices and establish a connection with the first device found using a custom private key path
-    pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
-        match search_adb_devices()? {
-            Some((vendor_id, product_id)) => {
-                ADBUSBDevice::new_with_custom_private_key(vendor_id, product_id, private_key_path)
-            }
-            _ => Err(RustADBError::DeviceNotFound(
-                "cannot find USB devices matching the signature of an ADB device".into(),
-            )),
-        }
     }
 
     /// Send initial connect
@@ -171,12 +128,12 @@ impl ADBUSBDevice {
     }
 
     #[inline]
-    fn get_transport_mut(&mut self) -> &mut RusbTransport {
+    pub(crate) fn get_transport_mut(&mut self) -> &mut T {
         self.inner.get_transport_mut()
     }
 }
 
-impl ADBDeviceExt for ADBUSBDevice {
+impl<T: ADBMessageTransport> ADBDeviceExt for ADBUSBDevice<T> {
     #[inline]
     fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
         self.inner.shell_command(command, output)
@@ -223,7 +180,7 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 }
 
-impl Drop for ADBUSBDevice {
+impl<T: ADBMessageTransport> Drop for ADBUSBDevice<T> {
     fn drop(&mut self) {
         // Best effort here
         let _ = self.get_transport_mut().disconnect();
