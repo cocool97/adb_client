@@ -1,4 +1,4 @@
-use adb_client::ADBEmulatorDevice;
+use adb_client::emulator::ADBEmulatorDevice;
 
 use crate::models::{EmuCommand, EmulatorCommand};
 

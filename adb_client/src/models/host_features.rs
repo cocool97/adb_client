@@ -1,8 +1,11 @@
 use std::fmt::Display;
 
+/// Available host features.
 #[derive(Debug, PartialEq)]
 pub enum HostFeatures {
+    /// Shell version 2.
     ShellV2,
+    /// Command.
     Cmd,
 }
 

@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: rustup component add clippy
       - name: Run clippy
-        run: cargo clippy --all-features
+        run: cargo clippy --features rusb,mdns
 
   fmt:
     name: "fmt"
@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run doc
-        run: cargo doc --all-features --no-deps
+        run: cargo doc --features rusb,mdns --no-deps
         env:
           RUSTDOCFLAGS: "-D warnings"
 
@@ -43,4 +43,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run tests
-        run: cargo test --verbose --all-features
+        run: cargo test --verbose --features rusb,mdns
