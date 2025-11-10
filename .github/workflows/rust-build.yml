@@ -26,4 +26,4 @@ jobs:
           python-version: "3.10"
 
       - name: Build project
-        run: cargo build --release --all-features
+        run: cargo build --release --features rusb,mdns
