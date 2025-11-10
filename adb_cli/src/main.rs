@@ -82,7 +82,10 @@ fn main() -> Result<()> {
             (device.boxed(), usb_command.commands)
         }
         MainCommand::Tcp(tcp_command) => {
-            let device = ADBTcpDevice::new(tcp_command.address)?;
+            let device = match tcp_command.path_to_private_key {
+                Some(pk) => ADBTcpDevice::new_with_custom_private_key(tcp_command.address, pk)?,
+                None => ADBTcpDevice::new(tcp_command.address)?,
+            };
             (device.boxed(), tcp_command.commands)
         }
         MainCommand::Mdns => {

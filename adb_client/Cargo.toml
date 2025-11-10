@@ -22,7 +22,7 @@ webusb = ["dep:webusb-web", "dep:rsa"]
 
 [dependencies]
 base64 = { version = "0.22.1" }
-bincode = { version = "1.3.3" }
+bincode = { version = "2.0.1", features = ["serde"] }
 byteorder = { version = "1.5.0" }
 chrono = { version = "0.4.42", default-features = false, features = ["std"] }
 image = { version = "0.25.8", default-features = false }
@@ -45,7 +45,7 @@ thiserror = { version = "2.0.17" }
 
 #########
 # MDNS dependencies
-mdns-sd = { version = "0.13.11", default-features = false, features = [
+mdns-sd = { version = "0.17.0", default-features = false, features = [
     "logging",
 ], optional = true }
 #########
@@ -57,13 +57,13 @@ rusb = { version = "0.9.4", features = ["vendored"], optional = true }
 #########
 # webusb dependencies
 webusb-web = { version = "0.4.1", optional = true }
-getrandom = { version = "0.2.16", features = ["js"] }
-ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
+getrandom = { version = "0.2.16", features = ["js"], optional = true }
+ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"], optional = true }
 
 
 [dev-dependencies]
 anyhow = { version = "1.0.100" }
-criterion = { version = "0.6.0" } # Used for benchmarks
+criterion = { version = "0.7.0" } # Used for benchmarks
 
 [[bench]]
 harness = false

@@ -1,9 +1,9 @@
 use std::io::Read;
 
 use crate::{
-    Result, RustADBError,
+    Result,
     message_devices::{
-        adb_message_device::ADBMessageDevice,
+        adb_message_device::{self, ADBMessageDevice},
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::ADBTransportMessage,
         message_commands::{MessageCommand, MessageSubcommand},
@@ -17,8 +17,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let path_header = format!("{},0777", path.as_ref());
 
         let send_buffer = MessageSubcommand::Send.with_arg(u32::try_from(path_header.len())?);
-        let mut send_buffer =
-            bincode::serialize(&send_buffer).map_err(|_e| RustADBError::ConversionError)?;
+        let mut send_buffer = adb_message_device::bincode_serialize_to_vec(&send_buffer)?;
         send_buffer.append(&mut path_header.as_bytes().to_vec());
 
         self.send_and_expect_okay(ADBTransportMessage::new(

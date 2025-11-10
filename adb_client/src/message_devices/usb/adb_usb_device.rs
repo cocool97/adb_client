@@ -4,19 +4,18 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::ADBDeviceExt;
+use crate::AUTH_TOKEN;
 use crate::Result;
 use crate::RustADBError;
+use crate::message_devices::AUTH_RSAPUBLICKEY;
+use crate::message_devices::AUTH_SIGNATURE;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::message_devices::adb_message_transport::ADBMessageTransport;
+use crate::message_devices::adb_rsa_key::ADBRsaKey;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
-use crate::usb::adb_rsa_key::ADBRsaKey;
 use crate::usb::read_adb_private_key;
 use crate::utils::get_default_adb_key_path;
-
-const AUTH_TOKEN: u32 = 1;
-const AUTH_SIGNATURE: u32 = 2;
-const AUTH_RSAPUBLICKEY: u32 = 3;
 
 /// Private struct implementing Android USB device logic, depending on a `ADBMessageTransport`.
 #[derive(Debug)]

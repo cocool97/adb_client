@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{Result, RustADBError, message_devices::message_commands::MessageCommand};
+use crate::{
+    Result, RustADBError,
+    message_devices::{adb_message_device, message_commands::MessageCommand},
+};
 
 #[derive(Debug)]
 pub struct ADBTransportMessage {
@@ -61,7 +64,7 @@ impl ADBTransportMessageHeader {
     }
 
     pub fn as_bytes(&self) -> Result<Vec<u8>> {
-        bincode::serialize(&self).map_err(|_e| RustADBError::ConversionError)
+        adb_message_device::bincode_serialize_to_vec(self)
     }
 }
 
@@ -111,6 +114,6 @@ impl TryFrom<[u8; 24]> for ADBTransportMessageHeader {
     type Error = RustADBError;
 
     fn try_from(value: [u8; 24]) -> Result<Self> {
-        bincode::deserialize(&value).map_err(|_e| RustADBError::ConversionError)
+        adb_message_device::bincode_deserialize_from_slice(&value)
     }
 }

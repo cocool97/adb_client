@@ -66,9 +66,6 @@ mod backends;
 mod utils;
 
 #[cfg(any(feature = "rusb", feature = "webusb"))]
-mod adb_rsa_key;
-
-#[cfg(any(feature = "rusb", feature = "webusb"))]
 mod adb_usb_device;
 
 // Utility functions

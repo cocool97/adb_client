@@ -1,5 +1,7 @@
 use std::{collections::HashSet, net::IpAddr};
 
+use mdns_sd::{ResolvedService, ScopedIp};
+
 /// Represent a device found from mdns search
 #[derive(Debug)]
 pub struct MDNSDevice {
@@ -9,11 +11,11 @@ pub struct MDNSDevice {
     pub addresses: HashSet<IpAddr>,
 }
 
-impl From<mdns_sd::ServiceInfo> for MDNSDevice {
-    fn from(value: mdns_sd::ServiceInfo) -> Self {
+impl From<Box<ResolvedService>> for MDNSDevice {
+    fn from(value: Box<ResolvedService>) -> Self {
         Self {
-            fullname: value.get_fullname().to_string(),
-            addresses: value.get_addresses().to_owned(),
+            fullname: value.fullname,
+            addresses: value.addresses.iter().map(ScopedIp::to_ip_addr).collect(),
         }
     }
 }

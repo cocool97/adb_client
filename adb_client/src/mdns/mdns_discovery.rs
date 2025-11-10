@@ -48,6 +48,9 @@ impl MDNSDiscoveryService {
                                 .send(MDNSDevice::from(service_info))
                                 .map_err(|_| RustADBError::SendError);
                         }
+                        e => {
+                            log::warn!("received unknown event type {e:?}");
+                        }
                     }
                 }
             }

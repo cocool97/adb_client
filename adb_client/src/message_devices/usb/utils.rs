@@ -1,10 +1,9 @@
 //! USB utilities that are independent of specific transport implementations
 
+use crate::message_devices::adb_rsa_key::ADBRsaKey;
 use crate::{Result, RustADBError};
 use std::fs::read_to_string;
 use std::path::Path;
-
-use crate::usb::adb_rsa_key::ADBRsaKey;
 
 #[cfg(feature = "rusb")]
 use rusb::{Device, DeviceDescriptor, UsbContext};

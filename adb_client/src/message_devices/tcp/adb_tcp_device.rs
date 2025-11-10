@@ -1,24 +1,47 @@
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{io::Read, net::SocketAddr};
 
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::message_devices::adb_message_transport::ADBMessageTransport;
+use crate::message_devices::adb_rsa_key::ADBRsaKey;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::tcp::tcp_transport::TcpTransport;
+use crate::usb::read_adb_private_key;
+use crate::utils::get_default_adb_key_path;
 use crate::{ADBDeviceExt, ADBTransport, Result};
 
 /// Represent a device reached and available over USB.
 #[derive(Debug)]
 pub struct ADBTcpDevice {
+    private_key: ADBRsaKey,
     inner: ADBMessageDevice<TcpTransport>,
 }
 
 impl ADBTcpDevice {
     /// Instantiate a new [`ADBTcpDevice`]
     pub fn new(address: SocketAddr) -> Result<Self> {
+        Self::new_with_custom_private_key(address, get_default_adb_key_path()?)
+    }
+
+    /// Instantiate a new [`ADBTcpDevice`] using a custom private key path
+    pub fn new_with_custom_private_key(
+        address: SocketAddr,
+        private_key_path: PathBuf,
+    ) -> Result<Self> {
+        let private_key = if let Some(private_key) = read_adb_private_key(&private_key_path)? {
+            private_key
+        } else {
+            log::warn!(
+                "No private key found at path {}. Using a temporary random one.",
+                private_key_path.display()
+            );
+            ADBRsaKey::new_random()?
+        };
+
         let mut device = Self {
+            private_key,
             inner: ADBMessageDevice::new(TcpTransport::new(address)?),
         };
 
@@ -42,26 +65,28 @@ impl ADBTcpDevice {
 
         let message = self.get_transport_mut().read_message()?;
 
-        // Check if client is requesting a secure connection and upgrade it if necessary
+        // Check if a client is requesting a secure connection and upgrade it if necessary
         match message.header().command() {
             MessageCommand::Stls => {
                 self.get_transport_mut()
                     .write_message(ADBTransportMessage::new(MessageCommand::Stls, 1, 0, &[]))?;
                 self.get_transport_mut().upgrade_connection()?;
                 log::debug!("Connection successfully upgraded from TCP to TLS");
+                Ok(())
             }
             MessageCommand::Cnxn => {
                 log::debug!("Unencrypted connection established");
+                Ok(())
             }
-            _ => {
-                return Err(crate::RustADBError::WrongResponseReceived(
-                    "Expected CNXN or STLS command".to_string(),
-                    message.header().command().to_string(),
-                ));
+            MessageCommand::Auth => {
+                log::debug!("Authentication required");
+                self.inner.auth_handshake(message, &self.private_key)
             }
+            _ => Err(crate::RustADBError::WrongResponseReceived(
+                "Expected CNXN, STLS or AUTH command".to_string(),
+                message.header().command().to_string(),
+            )),
         }
-
-        Ok(())
     }
 
     #[inline]

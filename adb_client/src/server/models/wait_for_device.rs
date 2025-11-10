@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::RustADBError;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 /// List of available transports to wait for.
 pub enum WaitForDeviceTransport {
     /// USB transport
@@ -10,13 +10,8 @@ pub enum WaitForDeviceTransport {
     /// Local transport
     Local,
     /// Any transport (default value)
+    #[default]
     Any,
-}
-
-impl Default for WaitForDeviceTransport {
-    fn default() -> Self {
-        Self::Any
-    }
 }
 
 impl Display for WaitForDeviceTransport {
