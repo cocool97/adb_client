@@ -63,9 +63,6 @@ pub enum RustADBError {
     /// Unimplemented framebuffer image version
     #[error("Unimplemented framebuffer image version: {0}")]
     UnimplementedFramebufferImageVersion(u32),
-    /// An error occurred while getting user's home directory
-    #[error(transparent)]
-    HomeError(#[from] homedir::GetHomeError),
     /// Cannot get home directory
     #[error("Cannot get home directory")]
     NoHomeDirectory,
@@ -90,8 +87,8 @@ pub enum RustADBError {
     #[error(transparent)]
     Base64EncodeError(#[from] base64::EncodeSliceError),
     /// An error occurred with RSA engine
-    #[cfg(feature = "rusb")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rusb")))]
+    #[cfg(any(feature = "rusb", feature = "webusb"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "rusb", feature = "webusb"))))]
     #[error(transparent)]
     RSAError(#[from] rsa::errors::Error),
     /// Cannot convert given data from slice
@@ -101,8 +98,8 @@ pub enum RustADBError {
     #[error("wrong file extension: {0}")]
     WrongFileExtension(String),
     /// An error occurred with PKCS8 data
-    #[cfg(feature = "rusb")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rusb")))]
+    #[cfg(any(feature = "rusb", feature = "webusb"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "rusb", feature = "webusb"))))]
     #[error("error with pkcs8: {0}")]
     RsaPkcs8Error(#[from] rsa::pkcs8::Error),
     /// Error during certificate generation

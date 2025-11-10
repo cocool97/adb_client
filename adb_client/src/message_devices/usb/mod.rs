@@ -30,17 +30,10 @@ pub mod constants {
     }
 }
 
-#[cfg(feature = "rusb")]
-mod adb_rsa_key;
-
+// ###################################################
+// rusb specific modules
 #[cfg(feature = "rusb")]
 mod adb_rusb_device;
-
-#[cfg(feature = "rusb")]
-mod adb_usb_device;
-
-mod backends;
-mod utils;
 
 // Device implementations
 #[cfg(feature = "rusb")]
@@ -51,10 +44,36 @@ pub use adb_rusb_device::ADBRusbDevice;
 #[cfg(feature = "rusb")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rusb")))]
 pub use backends::rusb_transport::RusbTransport;
+// ###################################################
+
+// ###################################################
+// webusb specific modules
+#[cfg(feature = "webusb")]
+mod adb_webusb_device;
+
+// Device implementations
+#[cfg(feature = "webusb")]
+#[cfg_attr(docsrs, doc(cfg(feature = "webusb")))]
+pub use adb_webusb_device::ADBWebUsbDevice;
+
+// Transport implementations
+#[cfg(feature = "webusb")]
+#[cfg_attr(docsrs, doc(cfg(feature = "webusb")))]
+pub use backends::webusb_transport::WebUsbTransport;
+// ###################################################
+
+mod backends;
+mod utils;
+
+#[cfg(any(feature = "rusb", feature = "webusb"))]
+mod adb_rsa_key;
+
+#[cfg(any(feature = "rusb", feature = "webusb"))]
+mod adb_usb_device;
 
 // Utility functions
-#[cfg(feature = "rusb")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rusb")))]
+#[cfg(any(feature = "rusb", feature = "webusb"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "rusb", feature = "webusb"))))]
 pub use utils::read_adb_private_key;
 
 #[cfg(feature = "rusb")]

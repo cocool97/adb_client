@@ -1,5 +1,4 @@
 use byteorder::{LittleEndian, ReadBytesExt};
-use rand::Rng;
 use std::io::{Cursor, Read, Seek};
 
 use crate::{
@@ -219,11 +218,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     pub(crate) fn open_session(&mut self, data: &[u8]) -> Result<ADBTransportMessage> {
-        let mut rng = rand::rng();
-
         let message = ADBTransportMessage::new(
             MessageCommand::Open,
-            rng.random(), // Our 'local-id'
+            rand::random::<u32>(), // Our 'local-id'
             0,
             data,
         );

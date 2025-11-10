@@ -16,7 +16,7 @@ pub struct ADBRusbDevice {
 }
 
 impl ADBRusbDevice {
-    /// Instantiate a new [`ADBRusb`]
+    /// Instantiate a new [`ADBRusbDevice`]
     pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
         Self::new_with_custom_private_key(vendor_id, product_id, get_default_adb_key_path()?)
     }

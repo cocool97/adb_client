@@ -4,7 +4,6 @@ use crate::{Result, RustADBError};
 use std::fs::read_to_string;
 use std::path::Path;
 
-#[cfg(feature = "rusb")]
 use crate::usb::adb_rsa_key::ADBRsaKey;
 
 #[cfg(feature = "rusb")]
@@ -21,7 +20,6 @@ use crate::usb::constants::class_codes::{
 ///
 /// Returns `Ok(None)` if the file doesn't exist, `Ok(Some(key))` if the key was successfully loaded,
 /// or an error if there was a problem reading the file.
-#[cfg(feature = "rusb")]
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     // Try to read the private key file from given path
     // If the file is not found, return None

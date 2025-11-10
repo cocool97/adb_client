@@ -4,8 +4,6 @@ use std::{
     net::{SocketAddrV4, TcpStream},
 };
 
-use homedir::my_home;
-
 use crate::{
     Result, RustADBError, adb_transport::ADBTransport, emulator::models::ADBEmulatorCommand,
 };
@@ -37,7 +35,7 @@ impl TCPEmulatorTransport {
 
     /// Return authentication token stored in `$HOME/.emulator_console_auth_token`
     pub fn get_authentication_token(&mut self) -> Result<String> {
-        let Some(home) = my_home()? else {
+        let Some(home) = std::env::home_dir() else {
             return Err(RustADBError::NoHomeDirectory);
         };
 

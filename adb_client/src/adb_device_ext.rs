@@ -8,7 +8,7 @@ use crate::{RebootType, Result};
 
 /// Trait representing all features available on an ADB device, currently used by:
 /// - [`crate::server_device::ADBServerDevice`]
-/// - [`crate::usb::ADBUSBDevice`]
+/// - [`crate::usb::ADBRusbDevice`]
 /// - [`crate::tcp::ADBTcpDevice`]
 pub trait ADBDeviceExt {
     /// Runs command in a shell on the device, and write its output and error streams into output.

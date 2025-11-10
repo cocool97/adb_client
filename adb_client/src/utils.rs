@@ -21,9 +21,7 @@ pub fn check_extension_is_apk<P: AsRef<Path>>(path: P) -> Result<()> {
 }
 
 pub fn get_default_adb_key_path() -> Result<PathBuf> {
-    homedir::my_home()
-        .ok()
-        .flatten()
+    std::env::home_dir()
         .map(|home| home.join(".android").join("adbkey"))
         .ok_or(RustADBError::NoHomeDirectory)
 }
