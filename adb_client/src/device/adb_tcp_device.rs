@@ -8,7 +8,7 @@ use super::{ADBRsaKey, ADBTransportMessage, get_default_adb_key_path};
 use crate::device::adb_usb_device::read_adb_private_key;
 use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, Result, TcpTransport};
 
-/// Represent a device reached and available over USB.
+/// Represent a device reached and available over TCP.
 #[derive(Debug)]
 pub struct ADBTcpDevice {
     private_key: ADBRsaKey,
