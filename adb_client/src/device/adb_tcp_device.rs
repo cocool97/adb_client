@@ -6,7 +6,7 @@ use super::adb_message_device::ADBMessageDevice;
 use super::models::MessageCommand;
 use super::{ADBRsaKey, ADBTransportMessage, get_default_adb_key_path};
 use crate::device::adb_usb_device::read_adb_private_key;
-use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, Result, TcpTransport};
+use crate::{ADBDeviceExt, ADBMessageTransport, ADBTransport, RemountInfo, Result, TcpTransport};
 
 /// Represent a device reached and available over TCP.
 #[derive(Debug)]
@@ -123,6 +123,11 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
+    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
+        self.inner.remount()
+    }
+
+    #[inline]
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.inner.install(apk_path)
     }
@@ -130,6 +135,16 @@ impl ADBDeviceExt for ADBTcpDevice {
     #[inline]
     fn uninstall(&mut self, package: &str) -> Result<()> {
         self.inner.uninstall(package)
+    }
+
+    #[inline]
+    fn enable_verity(&mut self) -> Result<()> {
+        self.inner.enable_verity()
+    }
+
+    #[inline]
+    fn disable_verity(&mut self) -> Result<()> {
+        self.inner.disable_verity()
     }
 
     #[inline]

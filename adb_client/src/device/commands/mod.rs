@@ -3,6 +3,8 @@ mod install;
 mod pull;
 mod push;
 mod reboot;
+mod remount;
 mod shell;
 mod stat;
 mod uninstall;
+mod verity;

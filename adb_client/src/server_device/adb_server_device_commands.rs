@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    ADBDeviceExt, Result, RustADBError,
+    ADBDeviceExt, RemountInfo, Result, RustADBError,
     constants::BUFFER_SIZE,
     models::{AdbServerCommand, AdbStatResponse, HostFeatures},
 };
@@ -102,6 +102,18 @@ impl ADBDeviceExt for ADBServerDevice {
 
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
         self.reboot(reboot_type)
+    }
+
+    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
+        self.remount()
+    }
+
+    fn enable_verity(&mut self) -> Result<()> {
+        self.enable_verity()
+    }
+
+    fn disable_verity(&mut self) -> Result<()> {
+        self.disable_verity()
     }
 
     fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {

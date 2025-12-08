@@ -1,4 +1,6 @@
-use crate::{ADBDeviceExt, ADBMessageTransport, RebootType, Result, models::AdbStatResponse};
+use crate::{
+    ADBDeviceExt, ADBMessageTransport, RebootType, RemountInfo, Result, models::AdbStatResponse,
+};
 use std::{
     io::{Read, Write},
     path::Path,
@@ -31,12 +33,24 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
         self.reboot(reboot_type)
     }
 
+    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
+        self.remount()
+    }
+
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.install(apk_path)
     }
 
     fn uninstall(&mut self, package: &str) -> Result<()> {
         self.uninstall(package)
+    }
+
+    fn enable_verity(&mut self) -> Result<()> {
+        self.enable_verity()
+    }
+
+    fn disable_verity(&mut self) -> Result<()> {
+        self.disable_verity()
     }
 
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {

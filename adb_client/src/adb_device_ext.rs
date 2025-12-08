@@ -4,7 +4,7 @@ use std::path::Path;
 use image::{ImageBuffer, ImageFormat, Rgba};
 
 use crate::models::AdbStatResponse;
-use crate::{RebootType, Result};
+use crate::{RebootType, RemountInfo, Result};
 
 /// Trait representing all features available on both [`crate::ADBServerDevice`] and [`crate::ADBUSBDevice`]
 pub trait ADBDeviceExt {
@@ -27,6 +27,9 @@ pub trait ADBDeviceExt {
     /// Reboot the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
 
+    /// Remount the device partitions as read-write
+    fn remount(&mut self) -> Result<Vec<RemountInfo>>;
+
     /// Run `activity` from `package` on device. Return the command output.
     fn run_activity(&mut self, package: &str, activity: &str) -> Result<Vec<u8>> {
         let mut output = Vec::new();
@@ -43,6 +46,12 @@ pub trait ADBDeviceExt {
 
     /// Uninstall the package `package` from device.
     fn uninstall(&mut self, package: &str) -> Result<()>;
+
+    /// Enable dm-verity on the device
+    fn enable_verity(&mut self) -> Result<()>;
+
+    /// Disable dm-verity on the device
+    fn disable_verity(&mut self) -> Result<()>;
 
     /// Inner method requesting framebuffer from an Android device
     fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;
