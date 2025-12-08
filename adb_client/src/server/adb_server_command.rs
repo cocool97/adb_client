@@ -38,6 +38,9 @@ pub(crate) enum AdbServerCommand {
     Reverse(String, String),
     ReverseRemoveAll,
     Reconnect,
+    Remount,
+    DisableVerity,
+    EnableVerity,
     TcpIp(u16),
     Usb,
 }
@@ -88,6 +91,9 @@ impl Display for AdbServerCommand {
             AdbServerCommand::ServerStatus => write!(f, "host:server-status"),
             AdbServerCommand::Reconnect => write!(f, "reconnect"),
             AdbServerCommand::ReconnectOffline => write!(f, "host:reconnect-offline"),
+            AdbServerCommand::Remount => write!(f, "remount:"),
+            AdbServerCommand::DisableVerity => write!(f, "disable-verity:"),
+            AdbServerCommand::EnableVerity => write!(f, "enable-verity:"),
             AdbServerCommand::TcpIp(port) => {
                 write!(f, "tcpip:{port}")
             }
