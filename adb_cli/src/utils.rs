@@ -1,14 +1,9 @@
-/// # Safety
-///
-/// This conditionally mutates the process' environment.
-/// See [`std::env::set_var`] for more info.
-pub unsafe fn setup_logger(debug: bool) {
-    // RUST_LOG variable has more priority then "--debug" flag
-    if std::env::var("RUST_LOG").is_err() {
-        let level = if debug { "trace" } else { "info" };
+use env_logger::{Builder, Env};
 
-        unsafe { std::env::set_var("RUST_LOG", level) };
-    }
-
-    env_logger::init();
+/// Sets up appropriate logger level:
+/// - if `RUST_LOG` environment variable is set, use its value
+/// - else, use `debug` CLI option
+pub fn setup_logger(debug: bool) {
+    Builder::from_env(Env::default().default_filter_or(if debug { "debug" } else { "info" }))
+        .init();
 }

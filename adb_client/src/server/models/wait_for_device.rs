@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use crate::RustADBError;
 
@@ -24,10 +24,10 @@ impl Display for WaitForDeviceTransport {
     }
 }
 
-impl TryFrom<&str> for WaitForDeviceTransport {
-    type Error = RustADBError;
+impl FromStr for WaitForDeviceTransport {
+    type Err = RustADBError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value {
             "usb" => Ok(Self::Usb),
             "local" => Ok(Self::Local),

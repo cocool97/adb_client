@@ -12,6 +12,7 @@ pub struct PyADBServerDevice(pub ADBServerDevice);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyADBServerDevice {
+    #[must_use]
     #[getter]
     /// Device identifier
     pub fn identifier(&self) -> Option<String> {

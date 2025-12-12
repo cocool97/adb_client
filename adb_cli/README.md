@@ -1,4 +1,4 @@
-# adb_cli
+# `adb_cli`
 
 [![MIT licensed](https://img.shields.io/crates/l/adb_cli.svg)](./LICENSE-MIT)
 ![Crates.io Total Downloads](https://img.shields.io/crates/d/adb_cli)
