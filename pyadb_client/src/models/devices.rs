@@ -12,12 +12,14 @@ pub struct PyDeviceShort(DeviceShort);
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyDeviceShort {
+    #[must_use]
     #[getter]
     /// Device identifier
     pub fn identifier(&self) -> String {
         self.0.identifier.clone()
     }
 
+    #[must_use]
     #[getter]
     /// Device state
     pub fn state(&self) -> String {

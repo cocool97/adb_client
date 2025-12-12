@@ -22,6 +22,6 @@ name = "stub_gen"
 [dependencies]
 adb_client = { path = "../adb_client" }
 anyhow = { version = "1.0.100" }
-pyo3 = { version = "0.27.1", features = ["abi3-py310", "anyhow"] }
-pyo3-stub-gen = { version = "0.17.0" }
-pyo3-stub-gen-derive = { version = "0.17.0" }
+pyo3 = { version = "0.27.2", features = ["abi3-py310", "anyhow"] }
+pyo3-stub-gen = { version = "0.17.2" }
+pyo3-stub-gen-derive = { version = "0.17.2" }

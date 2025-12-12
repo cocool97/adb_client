@@ -14,7 +14,6 @@ use adb_client::{
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use adb_termios::ADBTermios;
 
-use anyhow::Result;
 use clap::Parser;
 use handlers::{handle_emulator_commands, handle_host_commands, handle_local_commands};
 use models::{DeviceCommands, LocalCommand, MainCommand, Opts};
@@ -24,87 +23,10 @@ use std::io::Write;
 use std::path::Path;
 use utils::setup_logger;
 
-fn main() -> Result<()> {
-    // This depends on `clap`
-    let opts = Opts::parse();
+use crate::models::{ADBCliError, ADBCliResult};
 
-    // SAFETY:
-    // We are assuming the entire process is single-threaded
-    // at this point.
-    // This seems true for the current version of `clap`,
-    // but there's no guarantee for future updates
-    unsafe { setup_logger(opts.debug) };
-
-    // Directly handling methods / commands that aren't linked to [`ADBDeviceExt`] trait.
-    // Other methods just have to create a concrete [`ADBDeviceExt`] instance, and return it.
-    // This instance will then be used to execute desired command.
-    let (mut device, commands) = match opts.command {
-        MainCommand::Host(server_command) => return Ok(handle_host_commands(server_command)?),
-        MainCommand::Emu(emulator_command) => return handle_emulator_commands(emulator_command),
-        MainCommand::Local(server_command) => {
-            // Must start server to communicate with device, but only if this is a local one.
-            let server_address_ip = server_command.address.ip();
-            if server_address_ip.is_loopback() || server_address_ip.is_unspecified() {
-                ADBServer::start(&HashMap::default(), &None);
-            }
-
-            let device = match server_command.serial {
-                Some(serial) => ADBServerDevice::new(serial, Some(server_command.address)),
-                None => ADBServerDevice::autodetect(Some(server_command.address)),
-            };
-
-            match server_command.command {
-                LocalCommand::DeviceCommands(device_commands) => (device.boxed(), device_commands),
-                LocalCommand::LocalDeviceCommand(local_device_command) => {
-                    return handle_local_commands(device, local_device_command);
-                }
-            }
-        }
-        MainCommand::Usb(usb_command) => {
-            let device = match (usb_command.vendor_id, usb_command.product_id) {
-                (Some(vid), Some(pid)) => match usb_command.path_to_private_key {
-                    Some(pk) => ADBUSBDevice::new_with_custom_private_key(vid, pid, pk)?,
-                    None => ADBUSBDevice::new(vid, pid)?,
-                },
-                (None, None) => match usb_command.path_to_private_key {
-                    Some(pk) => ADBUSBDevice::autodetect_with_custom_private_key(pk)?,
-                    None => ADBUSBDevice::autodetect()?,
-                },
-                _ => {
-                    anyhow::bail!(
-                        "please either supply values for both the --vendor-id and --product-id flags or none."
-                    );
-                }
-            };
-            (device.boxed(), usb_command.commands)
-        }
-        MainCommand::Tcp(tcp_command) => {
-            let device = match tcp_command.path_to_private_key {
-                Some(pk) => ADBTcpDevice::new_with_custom_private_key(tcp_command.address, pk)?,
-                None => ADBTcpDevice::new(tcp_command.address)?,
-            };
-            (device.boxed(), tcp_command.commands)
-        }
-        MainCommand::Mdns => {
-            let mut service = MDNSDiscoveryService::new()?;
-
-            let (tx, rx) = std::sync::mpsc::channel();
-            service.start(tx)?;
-
-            log::info!("Starting mdns discovery...");
-            while let Ok(device) = rx.recv() {
-                log::info!(
-                    "Found device {} with addresses {:?}",
-                    device.fullname,
-                    device.addresses
-                );
-            }
-
-            return Ok(service.shutdown()?);
-        }
-    };
-
-    match commands {
+fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> ADBCliResult<()> {
+    match command {
         DeviceCommands::Shell { commands } => {
             if commands.is_empty() {
                 // Need to duplicate some code here as ADBTermios [Drop] implementation resets terminal state.
@@ -163,6 +85,87 @@ fn main() -> Result<()> {
             log::info!("Successfully dumped framebuffer at path {path}");
         }
     }
+
+    Ok(())
+}
+
+fn main() -> ADBCliResult<()> {
+    // This depends on `clap`
+    let opts = Opts::parse();
+
+    setup_logger(opts.debug);
+
+    // Directly handling methods / commands that aren't linked to [`ADBDeviceExt`] trait.
+    // Other methods just have to create a concrete [`ADBDeviceExt`] instance, and return it.
+    // This instance will then be used to execute desired command.
+    let (device, commands) = match opts.command {
+        MainCommand::Host(server_command) => return Ok(handle_host_commands(server_command)?),
+        MainCommand::Emu(emulator_command) => return handle_emulator_commands(emulator_command),
+        MainCommand::Local(server_command) => {
+            // Must start server to communicate with device, but only if this is a local one.
+            let server_address_ip = server_command.address.ip();
+            if server_address_ip.is_loopback() || server_address_ip.is_unspecified() {
+                ADBServer::start(&HashMap::default(), &None);
+            }
+
+            let device = match server_command.serial {
+                Some(serial) => ADBServerDevice::new(serial, Some(server_command.address)),
+                None => ADBServerDevice::autodetect(Some(server_command.address)),
+            };
+
+            match server_command.command {
+                LocalCommand::DeviceCommands(device_commands) => (device.boxed(), device_commands),
+                LocalCommand::LocalDeviceCommand(local_device_command) => {
+                    return handle_local_commands(device, local_device_command);
+                }
+            }
+        }
+        MainCommand::Usb(usb_command) => {
+            let device = match (usb_command.vendor_id, usb_command.product_id) {
+                (Some(vid), Some(pid)) => match usb_command.path_to_private_key {
+                    Some(pk) => ADBUSBDevice::new_with_custom_private_key(vid, pid, pk)?,
+                    None => ADBUSBDevice::new(vid, pid)?,
+                },
+                (None, None) => match usb_command.path_to_private_key {
+                    Some(pk) => ADBUSBDevice::autodetect_with_custom_private_key(pk)?,
+                    None => ADBUSBDevice::autodetect()?,
+                },
+                _ => {
+                    return Err(ADBCliError::Standard(
+                        "cannot specify flags --vendor-id without --product-id or vice versa"
+                            .into(),
+                    ));
+                }
+            };
+            (device.boxed(), usb_command.commands)
+        }
+        MainCommand::Tcp(tcp_command) => {
+            let device = match tcp_command.path_to_private_key {
+                Some(pk) => ADBTcpDevice::new_with_custom_private_key(tcp_command.address, pk)?,
+                None => ADBTcpDevice::new(tcp_command.address)?,
+            };
+            (device.boxed(), tcp_command.commands)
+        }
+        MainCommand::Mdns => {
+            let mut service = MDNSDiscoveryService::new()?;
+
+            let (tx, rx) = std::sync::mpsc::channel();
+            service.start(tx)?;
+
+            log::info!("Starting mdns discovery...");
+            while let Ok(device) = rx.recv() {
+                log::info!(
+                    "Found device {} with addresses {:?}",
+                    device.fullname,
+                    device.addresses
+                );
+            }
+
+            return Ok(service.shutdown()?);
+        }
+    };
+
+    run_command(device, commands)?;
 
     Ok(())
 }

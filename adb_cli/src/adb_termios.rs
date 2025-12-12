@@ -4,7 +4,7 @@ use std::os::unix::prelude::{AsRawFd, RawFd};
 
 use termios::{TCSANOW, Termios, VMIN, VTIME, tcsetattr};
 
-use crate::Result;
+use crate::models::{ADBCliError, ADBCliResult};
 
 pub struct ADBTermios {
     fd: RawFd,
@@ -13,7 +13,7 @@ pub struct ADBTermios {
 }
 
 impl ADBTermios {
-    pub fn new(fd: &impl AsRawFd) -> Result<Self> {
+    pub fn new(fd: &impl AsRawFd) -> Result<Self, ADBCliError> {
         let mut new_termios = Termios::from_fd(fd.as_raw_fd())?;
         let old_termios = new_termios; // Saves previous state
         new_termios.c_lflag = 0;
@@ -27,7 +27,7 @@ impl ADBTermios {
         })
     }
 
-    pub fn set_adb_termios(&mut self) -> Result<()> {
+    pub fn set_adb_termios(&mut self) -> ADBCliResult<()> {
         Ok(tcsetattr(self.fd, TCSANOW, &self.new_termios)?)
     }
 }

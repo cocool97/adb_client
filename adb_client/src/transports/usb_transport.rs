@@ -47,6 +47,7 @@ impl USBTransport {
     /// Instantiate a new [`USBTransport`] from a [`rusb::Device`].
     ///
     /// Devices can be enumerated using [`rusb::devices()`] and then filtered out to get desired device.
+    #[must_use]
     pub fn new_from_device(rusb_device: rusb::Device<GlobalContext>) -> Self {
         Self {
             device: rusb_device,

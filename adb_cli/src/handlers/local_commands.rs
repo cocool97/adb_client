@@ -1,14 +1,13 @@
 use std::{fs::File, io::Write};
 
 use adb_client::ADBServerDevice;
-use anyhow::{Result, anyhow};
 
-use crate::models::LocalDeviceCommand;
+use crate::models::{ADBCliResult, LocalDeviceCommand};
 
 pub fn handle_local_commands(
     mut device: ADBServerDevice,
     local_device_commands: LocalDeviceCommand,
-) -> Result<()> {
+) -> ADBCliResult<()> {
     match local_device_commands {
         LocalDeviceCommand::HostFeatures => {
             let features = device
@@ -16,7 +15,7 @@ pub fn handle_local_commands(
                 .iter()
                 .map(ToString::to_string)
                 .reduce(|a, b| format!("{a},{b}"))
-                .ok_or(anyhow!("cannot list features"))?;
+                .unwrap_or_default();
             log::info!("Available host features: {features}");
 
             Ok(())

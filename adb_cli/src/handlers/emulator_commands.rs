@@ -1,8 +1,8 @@
 use adb_client::ADBEmulatorDevice;
 
-use crate::models::{EmuCommand, EmulatorCommand};
+use crate::models::{ADBCliResult, EmuCommand, EmulatorCommand};
 
-pub fn handle_emulator_commands(emulator_command: EmulatorCommand) -> anyhow::Result<()> {
+pub fn handle_emulator_commands(emulator_command: EmulatorCommand) -> ADBCliResult<()> {
     let mut emulator = ADBEmulatorDevice::new(emulator_command.serial, None)?;
 
     match emulator_command.command {

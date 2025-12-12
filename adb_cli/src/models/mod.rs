@@ -1,3 +1,4 @@
+mod adb_cli_error;
 mod device;
 mod emu;
 mod host;
@@ -7,6 +8,7 @@ mod reboot_type;
 mod tcp;
 mod usb;
 
+pub use adb_cli_error::{ADBCliError, ADBCliResult};
 pub use device::DeviceCommands;
 pub use emu::{EmuCommand, EmulatorCommand};
 pub use host::{HostCommand, MdnsCommand};

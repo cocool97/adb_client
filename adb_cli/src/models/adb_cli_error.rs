@@ -1,0 +1,84 @@
+use std::fmt::Debug;
+
+use adb_client::RustADBError;
+
+pub type ADBCliResult<T> = Result<T, ADBCliError>;
+
+pub enum ADBCliError {
+    Standard(Box<dyn std::error::Error>),
+    MayNeedAnIssue(Box<dyn std::error::Error>),
+}
+
+impl Debug for ADBCliError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ADBCliError::Standard(error) => write!(f, "{error}"),
+            ADBCliError::MayNeedAnIssue(error) => write!(
+                f,
+                r"
+                This error is abnormal and may need to fill an issue.
+                Please submit it to this project's repository here: https://github.com/cocool97/adb_client/issues.
+                Error source:
+                    {error}
+                ",
+            ),
+        }
+    }
+}
+
+impl From<std::io::Error> for ADBCliError {
+    fn from(value: std::io::Error) -> Self {
+        // We do not consider adb_cli related `std::io::error` as critical
+        Self::Standard(Box::new(value))
+    }
+}
+
+impl From<adb_client::RustADBError> for ADBCliError {
+    fn from(value: adb_client::RustADBError) -> Self {
+        let value = Box::new(value);
+
+        match value.as_ref() {
+            // List of [`RustADBError`] that may need an issue as abnormal
+            RustADBError::RegexParsingError
+            | RustADBError::WrongResponseReceived(_, _)
+            | RustADBError::FramebufferImageError(_)
+            | RustADBError::FramebufferConversionError
+            | RustADBError::UnimplementedFramebufferImageVersion(_)
+            | RustADBError::IOError(_)
+            | RustADBError::ADBRequestFailed(_)
+            | RustADBError::UnknownDeviceState(_)
+            | RustADBError::Utf8StrError(_)
+            | RustADBError::Utf8StringError(_)
+            | RustADBError::RegexError(_)
+            | RustADBError::ParseIntError(_)
+            | RustADBError::ConversionError
+            | RustADBError::IntegerConversionError(_)
+            | RustADBError::HomeError
+            | RustADBError::NoHomeDirectory
+            | RustADBError::UsbError(_)
+            | RustADBError::InvalidIntegrity(_, _)
+            | RustADBError::Base64DecodeError(_)
+            | RustADBError::Base64EncodeError(_)
+            | RustADBError::RSAError(_)
+            | RustADBError::TryFromSliceError(_)
+            | RustADBError::RsaPkcs8Error(_)
+            | RustADBError::CertificateGenerationError(_)
+            | RustADBError::TLSError(_)
+            | RustADBError::PemCertError(_)
+            | RustADBError::PoisonError
+            | RustADBError::UpgradeError(_)
+            | RustADBError::MDNSError(_)
+            | RustADBError::SendError(_)
+            | RustADBError::UnknownTransport(_) => Self::MayNeedAnIssue(value),
+            // List of [`RustADBError`] that may occur in standard contexts and therefore do not require for issues
+            RustADBError::ADBDeviceNotPaired
+            | RustADBError::UnknownResponseType(_)
+            | RustADBError::DeviceNotFound(_)
+            | RustADBError::USBNoDescriptorFound
+            | RustADBError::ADBShellNotSupported
+            | RustADBError::USBDeviceNotFound(_, _)
+            | RustADBError::WrongFileExtension(_)
+            | RustADBError::AddrParseError(_) => Self::Standard(value),
+        }
+    }
+}
