@@ -1,5 +1,5 @@
 use crate::{
-    Result, RustADBError,
+    Result,
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
         message_commands::MessageCommand,
@@ -13,15 +13,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let response = self.get_transport_mut().read_message()?;
 
-        if response.header().command() != MessageCommand::Okay {
-            return Err(RustADBError::ADBRequestFailed(format!(
-                "wrong command {}",
-                response.header().command()
-            )));
-        }
+        response.assert_command(MessageCommand::Okay)?;
 
         let mut response_str: Vec<String> = Vec::new();
-
         loop {
             let response = self.get_transport_mut().read_message()?;
 
