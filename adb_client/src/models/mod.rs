@@ -4,6 +4,7 @@ mod adb_stat_response;
 mod framebuffer_info;
 mod host_features;
 mod reboot_type;
+mod remount_info;
 mod sync_command;
 
 pub use adb_request_status::AdbRequestStatus;
@@ -12,4 +13,5 @@ pub use adb_stat_response::AdbStatResponse;
 pub(crate) use framebuffer_info::{FrameBufferInfoV1, FrameBufferInfoV2};
 pub use host_features::HostFeatures;
 pub use reboot_type::RebootType;
+pub use remount_info::RemountInfo;
 pub use sync_command::SyncCommand;

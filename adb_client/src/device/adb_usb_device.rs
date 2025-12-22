@@ -14,7 +14,7 @@ use super::{ADBRsaKey, ADBTransportMessage};
 use crate::ADBDeviceExt;
 use crate::ADBMessageTransport;
 use crate::ADBTransport;
-use crate::{Result, RustADBError, USBTransport};
+use crate::{RemountInfo, Result, RustADBError, USBTransport};
 
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     // Try to read the private key file from given path
@@ -234,6 +234,11 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
+    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
+        self.inner.remount()
+    }
+
+    #[inline]
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.inner.install(apk_path)
     }
@@ -241,6 +246,16 @@ impl ADBDeviceExt for ADBUSBDevice {
     #[inline]
     fn uninstall(&mut self, package: &str) -> Result<()> {
         self.inner.uninstall(package)
+    }
+
+    #[inline]
+    fn enable_verity(&mut self) -> Result<()> {
+        self.inner.enable_verity()
+    }
+
+    #[inline]
+    fn disable_verity(&mut self) -> Result<()> {
+        self.inner.disable_verity()
     }
 
     #[inline]

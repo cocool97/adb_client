@@ -54,6 +54,9 @@ pub enum RustADBError {
     /// Indicates that the device must be paired before attempting a connection over WI-FI
     #[error("Device not paired before attempting to connect")]
     ADBDeviceNotPaired,
+    /// Indicates that remount operation failed
+    #[error("Cannot remount filesystem: {0}")]
+    RemountError(String),
     /// An error occurred when getting device's framebuffer image
     #[error(transparent)]
     FramebufferImageError(#[from] image::error::ImageError),
