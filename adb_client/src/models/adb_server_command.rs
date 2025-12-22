@@ -28,6 +28,7 @@ pub(crate) enum AdbServerCommand {
     // Local commands
     ShellCommand(String),
     Shell,
+    Exec(String),
     FrameBuffer,
     Sync,
     Reboot(RebootType),
@@ -59,6 +60,7 @@ impl Display for AdbServerCommand {
                 Ok(term) => write!(f, "shell,TERM={term},raw:"),
                 Err(_) => write!(f, "shell,raw:"),
             },
+            AdbServerCommand::Exec(command) => write!(f, "exec:{command}"),
             AdbServerCommand::HostFeatures => write!(f, "host:features"),
             AdbServerCommand::Reboot(reboot_type) => {
                 write!(f, "reboot:{reboot_type}")
