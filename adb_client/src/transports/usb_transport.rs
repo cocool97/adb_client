@@ -32,10 +32,11 @@ impl USBTransport {
     /// Only the first device with given `vendor_id` and `product_id` is returned.
     pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
         for device in rusb::devices()?.iter() {
-            if let Ok(descriptor) = device.device_descriptor() {
-                if descriptor.vendor_id() == vendor_id && descriptor.product_id() == product_id {
-                    return Ok(Self::new_from_device(device));
-                }
+            if let Ok(descriptor) = device.device_descriptor()
+                && descriptor.vendor_id() == vendor_id
+                && descriptor.product_id() == product_id
+            {
+                return Ok(Self::new_from_device(device));
             }
         }
 
