@@ -12,6 +12,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
         let response = self.open_session(format!("shell:{}\0", command.join(" "),).as_bytes())?;
 
+        let mut transport = self.get_transport().clone();
+
+        let local_id = self.get_local_id()?;
+        let remote_id = self.get_remote_id()?;
+
         if response.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
                 "wrong command {}",
@@ -20,13 +25,25 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
 
         loop {
-            let response = self.get_transport_mut().read_message()?;
-            if response.header().command() != MessageCommand::Write {
+            let message = transport.read_message()?;
+            let command = message.header().command();
+
+            if command == MessageCommand::Clse {
                 break;
             }
 
-            output.write_all(&response.into_payload())?;
+            self.get_transport_mut()
+                .write_message(ADBTransportMessage::new(
+                    MessageCommand::Okay,
+                    local_id,
+                    remote_id,
+                    &[],
+                ))?;
+
+            output.write_all(&message.into_payload())?;
         }
+
+        let _discard_close = transport.read_message();
 
         Ok(())
     }
