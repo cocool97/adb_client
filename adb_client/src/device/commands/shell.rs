@@ -1,4 +1,5 @@
 use std::io::{ErrorKind, Read, Write};
+use std::time::Duration;
 
 use crate::Result;
 use crate::device::ShellMessageWriter;
@@ -43,7 +44,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             output.write_all(&message.into_payload())?;
         }
 
-        let _discard_close = transport.read_message();
+        // some devices will repeat the trailing CLSE command to ensure
+        // the client has acknowledged it. Read them quickly if present.
+        transport.read_message_with_timeout(Duration::from_millis(50));
+        transport.read_message_with_timeout(Duration::from_millis(50));
 
         Ok(())
     }
