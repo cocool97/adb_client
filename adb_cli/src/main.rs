@@ -8,7 +8,8 @@ mod models;
 mod utils;
 
 use adb_client::{
-    ADBDeviceExt, ADBServer, ADBServerDevice, ADBTcpDevice, ADBUSBDevice, MDNSDiscoveryService,
+    ADBDeviceExt, ADBListItemType, ADBServer, ADBServerDevice, ADBTcpDevice, ADBUSBDevice,
+    MDNSDiscoveryService,
 };
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -83,6 +84,24 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
         DeviceCommands::Framebuffer { path } => {
             device.framebuffer(&path)?;
             log::info!("Successfully dumped framebuffer at path {path}");
+        }
+        DeviceCommands::List { path } => {
+            let dirs = device.list(&path)?;
+            for dir in dirs {
+                let list_item_type = match dir.item_type {
+                    ADBListItemType::File => "File".to_string(),
+                    ADBListItemType::Directory => "Directory".to_string(),
+                    ADBListItemType::Symlink => "Symlink".to_string(),
+                };
+                log::info!(
+                    "type: {}, name: {}, time: {}, size: {}, permissions: {:#o}",
+                    list_item_type,
+                    dir.name,
+                    dir.time,
+                    dir.size,
+                    dir.permissions
+                );
+            }
         }
     }
 

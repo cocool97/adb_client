@@ -69,6 +69,7 @@ impl From<adb_client::RustADBError> for ADBCliError {
             | RustADBError::UpgradeError(_)
             | RustADBError::MDNSError(_)
             | RustADBError::SendError(_)
+            | RustADBError::UnknownFileMode(_)
             | RustADBError::UnknownTransport(_) => Self::MayNeedAnIssue(value),
             // List of [`RustADBError`] that may occur in standard contexts and therefore do not require for issues
             RustADBError::ADBDeviceNotPaired

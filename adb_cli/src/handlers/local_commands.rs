@@ -1,8 +1,8 @@
 use std::{fs::File, io::Write};
 
+use crate::ADBCliResult;
+use crate::models::LocalDeviceCommand;
 use adb_client::ADBServerDevice;
-
-use crate::models::{ADBCliResult, LocalDeviceCommand};
 
 pub fn handle_local_commands(
     mut device: ADBServerDevice,
@@ -20,7 +20,6 @@ pub fn handle_local_commands(
 
             Ok(())
         }
-        LocalDeviceCommand::List { path } => Ok(device.list(path)?),
         LocalDeviceCommand::Logcat { path } => {
             let writer: Box<dyn Write> = if let Some(path) = path {
                 let f = File::create(path)?;

@@ -43,4 +43,9 @@ pub enum DeviceCommands {
         /// Framebuffer image destination path
         path: String,
     },
+    /// List files on device
+    List {
+        /// Path to list files from
+        path: String,
+    },
 }
