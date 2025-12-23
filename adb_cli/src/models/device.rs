@@ -7,23 +7,13 @@ use super::RebootTypeCommand;
 #[derive(Parser, Debug)]
 pub enum DeviceCommands {
     /// Spawn an interactive shell or run a list of commands on the device
-    Shell {
-        commands: Vec<String>,
-    },
+    Shell { commands: Vec<String> },
     /// Pull a file from device
-    Pull {
-        source: String,
-        destination: String,
-    },
+    Pull { source: String, destination: String },
     /// Push a file on device
-    Push {
-        filename: String,
-        path: String,
-    },
+    Push { filename: String, path: String },
     /// Stat a file on device
-    Stat {
-        path: String,
-    },
+    Stat { path: String },
     /// Run an activity on device specified by the intent
     Run {
         /// The package whose activity is to be invoked
@@ -53,7 +43,9 @@ pub enum DeviceCommands {
         /// Framebuffer image destination path
         path: String,
     },
+    /// List files on device
     List {
+        /// Path to list files from
         path: String,
     },
 }

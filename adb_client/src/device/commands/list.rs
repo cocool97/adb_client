@@ -2,7 +2,7 @@ use crate::{
     ADBListItem, ADBListItemType, ADBMessageTransport, Result, RustADBError,
     device::{
         ADBTransportMessage, MessageCommand, MessageSubcommand,
-        adb_message_device::ADBMessageDevice,
+        adb_message_device::{ADBMessageDevice, bincode_serialize_to_vec},
     },
 };
 use byteorder::ByteOrder;
@@ -27,13 +27,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// It reads the request bytes across the existing payload, and if there is not enough bytes left,
     /// reads the rest from the next payload
     ///
-    ///   Current index                  
-    /// ┼───────────────┼   Requested    
-    ///                 ┌─────────────┐  
-    /// ┌───────────────┼───────┐     │  
-    /// └───────────────────────┘        
-    ///     Current             └─────┘  
-    ///     payload          Wanted in   
+    ///   Current index
+    /// ┼───────────────┼   Requested
+    ///                 ┌─────────────┐
+    /// ┌───────────────┼───────┐     │
+    /// └───────────────────────┘
+    ///     Current             └─────┘
+    ///     payload          Wanted in
     ///                      Next payload
     fn read_bytes_from_transport(
         requested_bytes: &usize,
@@ -79,10 +79,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             let mut len_buf = Vec::from([0_u8; 4]);
             LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
 
-            let subcommand_data = MessageSubcommand::List; //.with_arg(path.len() as u32);
+            let subcommand_data = MessageSubcommand::List;
 
-            let mut serialized_message =
-                bincode::serialize(&subcommand_data).map_err(|_e| RustADBError::ConversionError)?;
+            let mut serialized_message = bincode_serialize_to_vec(subcommand_data)
+                .map_err(|_e| RustADBError::ConversionError)?;
 
             serialized_message.append(&mut len_buf);
             let mut path_bytes: Vec<u8> = Vec::from(path.as_ref().as_bytes());

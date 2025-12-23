@@ -1,9 +1,8 @@
 use std::{fs::File, io::Write};
 
-use adb_client::{ADBListItemType, ADBServerDevice};
-use anyhow::{Result, anyhow};
-
-use crate::models::{ADBCliResult, LocalDeviceCommand};
+use crate::ADBCliResult;
+use crate::models::LocalDeviceCommand;
+use adb_client::ADBServerDevice;
 
 pub fn handle_local_commands(
     mut device: ADBServerDevice,
