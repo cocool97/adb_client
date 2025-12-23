@@ -46,8 +46,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         // some devices will repeat the trailing CLSE command to ensure
         // the client has acknowledged it. Read them quickly if present.
-        transport.read_message_with_timeout(Duration::from_millis(50));
-        transport.read_message_with_timeout(Duration::from_millis(50));
+        while let Ok(_discard_close_message) =
+            transport.read_message_with_timeout(Duration::from_millis(20))
+        {
+            continue;
+        }
 
         Ok(())
     }
