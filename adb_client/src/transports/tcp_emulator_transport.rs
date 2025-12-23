@@ -16,6 +16,7 @@ pub struct TCPEmulatorTransport {
 
 impl TCPEmulatorTransport {
     /// Instantiates a new instance of [`TCPEmulatorTransport`]
+    #[must_use]
     pub fn new(socket_addr: SocketAddrV4) -> Self {
         Self {
             socket_addr,
@@ -48,11 +49,11 @@ impl TCPEmulatorTransport {
     /// Send an authenticate request to this emulator
     pub fn authenticate(&mut self) -> Result<()> {
         let token = self.get_authentication_token()?;
-        self.send_command(ADBEmulatorCommand::Authenticate(token))
+        self.send_command(&ADBEmulatorCommand::Authenticate(token))
     }
 
     /// Send an [`ADBEmulatorCommand`] to this emulator
-    pub(crate) fn send_command(&mut self, command: ADBEmulatorCommand) -> Result<()> {
+    pub(crate) fn send_command(&mut self, command: &ADBEmulatorCommand) -> Result<()> {
         let mut connection = self.get_raw_connection()?;
 
         // Send command

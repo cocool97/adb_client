@@ -21,6 +21,7 @@ impl PyADBUSBDevice {
     }
 
     /// Run shell commands on device and return the output (stdout + stderr merged)
+    #[expect(clippy::needless_pass_by_value)]
     pub fn shell_command(&mut self, commands: Vec<String>) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         let commands: Vec<&str> = commands.iter().map(|x| &**x).collect();
@@ -41,6 +42,7 @@ impl PyADBUSBDevice {
     }
 
     /// Install a package installed on the device
+    #[expect(clippy::needless_pass_by_value)]
     pub fn install(&mut self, apk_path: PathBuf) -> Result<()> {
         Ok(self.0.install(&apk_path)?)
     }

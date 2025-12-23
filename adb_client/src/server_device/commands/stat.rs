@@ -44,7 +44,7 @@ impl ADBServerDevice {
         self.transport.send_adb_request(AdbServerCommand::Sync)?;
 
         // Send a "Stat" command
-        self.transport.send_sync_request(SyncCommand::Stat)?;
+        self.transport.send_sync_request(&SyncCommand::Stat)?;
 
         self.handle_stat_command(path)
     }

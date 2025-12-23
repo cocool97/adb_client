@@ -147,7 +147,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     let name = String::from_utf8(name_buf)?;
 
                     // First 9 bits are the file permissions
-                    let permissions = mode & 0b111111111;
+                    let permissions = mode & 0b1_1111_1111;
                     // Bits 14 to 16 are the file type
                     let item_type = match (mode >> 13) & 0b111 {
                         0b010 => ADBListItemType::Directory,

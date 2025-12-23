@@ -110,12 +110,12 @@ impl ADBUSBDevice {
     }
 
     /// Instantiate a new [`ADBUSBDevice`] using a custom private key path
-    pub fn new_with_custom_private_key(
+    pub fn new_with_custom_private_key<P: AsRef<Path>>(
         vendor_id: u16,
         product_id: u16,
-        private_key_path: PathBuf,
+        private_key_path: P,
     ) -> Result<Self> {
-        Self::new_from_transport_inner(USBTransport::new(vendor_id, product_id)?, &private_key_path)
+        Self::new_from_transport_inner(USBTransport::new(vendor_id, product_id)?, private_key_path)
     }
 
     /// Instantiate a new [`ADBUSBDevice`] from a [`USBTransport`] and an optional private key path.
@@ -131,16 +131,16 @@ impl ADBUSBDevice {
         Self::new_from_transport_inner(transport, &private_key_path)
     }
 
-    fn new_from_transport_inner(
+    fn new_from_transport_inner<P: AsRef<Path>>(
         transport: USBTransport,
-        private_key_path: &PathBuf,
+        private_key_path: P,
     ) -> Result<Self> {
-        let private_key = if let Some(private_key) = read_adb_private_key(private_key_path)? {
+        let private_key = if let Some(private_key) = read_adb_private_key(&private_key_path)? {
             private_key
         } else {
             log::warn!(
                 "No private key found at path {}. Using a temporary random one.",
-                private_key_path.display()
+                private_key_path.as_ref().display()
             );
             ADBRsaKey::new_random()?
         };

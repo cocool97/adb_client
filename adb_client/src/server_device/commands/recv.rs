@@ -72,7 +72,7 @@ impl ADBServerDevice {
         self.transport.send_adb_request(AdbServerCommand::Sync)?;
 
         // Send a recv command
-        self.transport.send_sync_request(SyncCommand::Recv)?;
+        self.transport.send_sync_request(&SyncCommand::Recv)?;
 
         self.handle_recv_command(path, stream)
     }

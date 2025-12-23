@@ -9,7 +9,7 @@ homepage = "https://github.com/cocool97/adb_client"
 keywords = ["adb", "android", "tcp", "usb"]
 license = "MIT"
 repository = "https://github.com/cocool97/adb_client"
-version = "2.1.18"
+version = "2.1.19"
 rust-version = "1.91.0"
 
 # To build locally when working on a new release

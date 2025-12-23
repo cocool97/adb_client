@@ -50,7 +50,7 @@ impl ADBServerDevice {
         self.transport.send_adb_request(AdbServerCommand::Sync)?;
 
         // Send a send command
-        self.transport.send_sync_request(SyncCommand::Send)?;
+        self.transport.send_sync_request(&SyncCommand::Send)?;
 
         self.handle_send_command(stream, path)
     }

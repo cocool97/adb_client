@@ -1,5 +1,5 @@
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::{io::Read, net::SocketAddr};
 
 use super::adb_message_device::ADBMessageDevice;
@@ -22,16 +22,16 @@ impl ADBTcpDevice {
     }
 
     /// Instantiate a new [`ADBTcpDevice`] using a custom private key path
-    pub fn new_with_custom_private_key(
+    pub fn new_with_custom_private_key<P: AsRef<Path>>(
         address: SocketAddr,
-        private_key_path: PathBuf,
+        private_key_path: P,
     ) -> Result<Self> {
         let private_key = if let Some(private_key) = read_adb_private_key(&private_key_path)? {
             private_key
         } else {
             log::warn!(
                 "No private key found at path {}. Using a temporary random one.",
-                private_key_path.display()
+                private_key_path.as_ref().display()
             );
             ADBRsaKey::new_random()?
         };

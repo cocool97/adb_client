@@ -1,4 +1,4 @@
-# adb_client
+# `adb_client`
 
 [![MIT licensed](https://img.shields.io/crates/l/adb_client.svg)](./LICENSE-MIT)
 [![Documentation](https://docs.rs/adb_client/badge.svg)](https://docs.rs/adb_client)

@@ -34,6 +34,7 @@ impl TCPServerTransport {
     }
 
     /// Instantiate a new instance of [`TCPServerTransport`] using given address, or default if not specified.
+    #[must_use]
     pub fn new_or_default(socket_addr: Option<SocketAddrV4>) -> Self {
         match socket_addr {
             Some(s) => Self::new(s),
@@ -42,6 +43,7 @@ impl TCPServerTransport {
     }
 
     /// Get underlying [`SocketAddrV4`]
+    #[must_use]
     pub fn get_socketaddr(&self) -> SocketAddrV4 {
         self.socket_addr
     }
@@ -90,7 +92,7 @@ impl TCPServerTransport {
     }
 
     /// Send the given [`SyncCommand`] to ADB server, and checks that the request has been taken in consideration.
-    pub(crate) fn send_sync_request(&mut self, command: SyncCommand) -> Result<()> {
+    pub(crate) fn send_sync_request(&mut self, command: &SyncCommand) -> Result<()> {
         // First 4 bytes are the name of the command we want to send
         // (e.g. "SEND", "RECV", "STAT", "LIST")
         Ok(self
