@@ -28,6 +28,7 @@ impl ADBDeviceExt for ADBServerDevice {
 
         // Add v2 mode if supported
         if supported_features.contains(&HostFeatures::ShellV2) {
+            log::debug!("using shell_v2 feature");
             args.push("v2".to_string());
         }
 
