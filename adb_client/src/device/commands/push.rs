@@ -10,7 +10,7 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
-        self.begin_synchronization()?;
+        let session = self.begin_synchronization()?;
 
         let path_header = format!("{},0777", path.as_ref());
 
@@ -20,14 +20,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            self.get_local_id()?,
-            self.get_remote_id()?,
+            session.local_id,
+            session.remote_id,
             &send_buffer,
         ))?;
 
-        self.push_file(self.get_local_id()?, self.get_remote_id()?, stream)?;
-
-        self.end_transaction()?;
+        self.push_file(session, stream)?;
+        self.end_transaction(session)?;
 
         Ok(())
     }
