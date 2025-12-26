@@ -20,8 +20,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            session.local_id,
-            session.remote_id,
+            session.local_id(),
+            session.remote_id(),
             &send_buffer,
         ))?;
 

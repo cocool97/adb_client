@@ -26,8 +26,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             self.get_transport_mut()
                 .write_message(ADBTransportMessage::new(
                     MessageCommand::Okay,
-                    session.local_id,
-                    session.remote_id,
+                    session.local_id(),
+                    session.remote_id(),
                     &[],
                 ))?;
 
@@ -38,9 +38,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         // the client has acknowledged it. Read them quickly if present.
         while let Ok(_discard_close_message) =
             transport.read_message_with_timeout(Duration::from_millis(20))
-        {
-            continue;
-        }
+        {}
 
         Ok(())
     }
@@ -64,8 +62,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 // Acknowledge for more data
                 let response = ADBTransportMessage::new(
                     MessageCommand::Okay,
-                    session.local_id,
-                    session.remote_id,
+                    session.local_id(),
+                    session.remote_id(),
                     &[],
                 );
                 transport.write_message(response)?;
@@ -83,7 +81,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let transport = self.get_transport().clone();
         let mut shell_writer =
-            ShellMessageWriter::new(transport, session.local_id, session.remote_id);
+            ShellMessageWriter::new(transport, session.local_id(), session.remote_id());
 
         // Read from given reader (that could be stdin e.g), and write content to device adbd
         if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {

@@ -1,5 +1,6 @@
 use super::{ADBRsaKey, ADBTransportMessage, MessageCommand, models::MessageSubcommand};
 use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
+use crate::device::models::ADBSession;
 use crate::{ADBMessageTransport, AdbStatResponse, Result, RustADBError, constants::BUFFER_SIZE};
 use bincode::config::{Configuration, Fixint, LittleEndian, NoLimit};
 use byteorder::ReadBytesExt;
@@ -27,12 +28,6 @@ pub(crate) fn bincode_deserialize_from_slice<D: DeserializeOwned>(data: &[u8]) -
 #[derive(Debug)]
 pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct ADBSession {
-    pub local_id: u32,
-    pub remote_id: u32,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
@@ -117,8 +112,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let message = self.transport.read_message()?;
         self.transport.write_message(ADBTransportMessage::new(
             MessageCommand::Okay,
-            session.local_id,
-            session.remote_id,
+            session.local_id(),
+            session.remote_id(),
             &[],
         ))?;
         Ok(message)
@@ -189,8 +184,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let message = ADBTransportMessage::new(
             MessageCommand::Write,
-            session.local_id,
-            session.remote_id,
+            session.local_id(),
+            session.remote_id(),
             &serialized_message,
         );
 
@@ -207,8 +202,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     let serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
                     let message = ADBTransportMessage::new(
                         MessageCommand::Write,
-                        session.local_id,
-                        session.remote_id,
+                        session.local_id(),
+                        session.remote_id(),
                         &serialized_message,
                     );
 
@@ -233,8 +228,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
                     let message = ADBTransportMessage::new(
                         MessageCommand::Write,
-                        session.local_id,
-                        session.remote_id,
+                        session.local_id(),
+                        session.remote_id(),
                         &serialized_message,
                     );
 
@@ -259,15 +254,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let stat_buffer = MessageSubcommand::Stat.with_arg(u32::try_from(remote_path.len())?);
         let message = ADBTransportMessage::new(
             MessageCommand::Write,
-            session.local_id,
-            session.remote_id,
+            session.local_id(),
+            session.remote_id(),
             &bincode_serialize_to_vec(&stat_buffer)?,
         );
         self.send_and_expect_okay(message)?;
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            session.local_id,
-            session.remote_id,
+            session.local_id(),
+            session.remote_id(),
             remote_path.as_bytes(),
         ))?;
         let response = self.transport.read_message()?;
@@ -281,8 +276,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            session.local_id,
-            session.remote_id,
+            session.local_id(),
+            session.remote_id(),
             &bincode_serialize_to_vec(&quit_buffer)?,
         ))?;
         let _discard_close = self.transport.read_message()?;
@@ -317,11 +312,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             )));
         }
 
-        let session = ADBSession {
-            local_id,
-            remote_id: response.header().arg0(),
-        };
-
-        Ok(session)
+        Ok(ADBSession::new(local_id, response.header().arg0()))
     }
 }

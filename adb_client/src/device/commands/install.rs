@@ -15,11 +15,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let file_size = apk_file.metadata()?.len();
 
         let session =
-            self.open_session(format!("exec:cmd package 'install' -S {}\0", file_size).as_bytes())?;
+            self.open_session(format!("exec:cmd package 'install' -S {file_size}\0").as_bytes())?;
 
         let transport = self.get_transport().clone();
 
-        let mut writer = MessageWriter::new(transport, session.local_id, session.remote_id);
+        let mut writer = MessageWriter::new(transport, session.local_id(), session.remote_id());
 
         std::io::copy(&mut apk_file, &mut writer)?;
 

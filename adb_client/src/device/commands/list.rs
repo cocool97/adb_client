@@ -15,7 +15,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItem>> {
         let session = self.begin_synchronization()?;
 
-        let output = self.handle_list(path, session.local_id, session.remote_id);
+        let output = self.handle_list(path, session.local_id(), session.remote_id());
 
         self.end_transaction(session)?;
         output
