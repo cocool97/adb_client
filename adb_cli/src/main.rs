@@ -184,7 +184,7 @@ fn inner_main() -> ADBCliResult<()> {
             log::info!("Starting mdns discovery...");
             while let Ok(device) = rx.recv() {
                 log::info!(
-                    "Found device {} with ipv4 addresses {:?} and ipv6 addresses {:?}",
+                    "Found device fullname='{}' with ipv4 addresses={:?} and ipv6 addresses={:?}",
                     device.fullname,
                     device.ipv4_addresses(),
                     device.ipv6_addresses()

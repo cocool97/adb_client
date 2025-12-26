@@ -36,10 +36,10 @@ jobs:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Build release
-        run: cargo build --all-features --release
+        run: cargo build -p adb_cli --release
 
       - name: Rename binary
-        run: mv target/release/adb_cli target/release/adb_cli-linux
+        run: cp target/release/adb_cli target/release/adb_cli-linux
 
       - name: Build DEB package
         run: cargo deb -p adb_cli
@@ -69,10 +69,10 @@ jobs:
           override: true
 
       - name: Build release
-        run: cargo build --all-features --release
+        run: cargo build -p adb_cli --release
 
       - name: Rename binary
-        run: mv target/release/adb_cli target/release/adb_cli-macos
+        run: cp target/release/adb_cli target/release/adb_cli-macos
 
       - name: Upload macOS binary
         uses: softprops/action-gh-release@v2
@@ -98,7 +98,7 @@ jobs:
           python-version: "3.10"
 
       - name: Build release
-        run: cargo build --all-features --release
+        run: cargo build -p adb_cli --release
 
       - name: Rename binary
         run: Rename-Item -Path target/release/adb_cli.exe -NewName adb_cli-windows.exe
