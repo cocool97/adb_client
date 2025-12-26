@@ -26,6 +26,7 @@ impl Default for TCPServerTransport {
 
 impl TCPServerTransport {
     /// Instantiates a new instance of [`TCPServerTransport`]
+    #[must_use]
     pub fn new(socket_addr: SocketAddrV4) -> Self {
         Self {
             socket_addr,

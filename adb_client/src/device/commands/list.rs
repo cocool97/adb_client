@@ -36,12 +36,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     ///     payload          Wanted in
     ///                      Next payload
     fn read_bytes_from_transport(
-        requested_bytes: &usize,
+        requested_bytes: usize,
         current_index: &mut usize,
         transport: &mut T,
         payload: &mut Vec<u8>,
-        local_id: &u32,
-        remote_id: &u32,
+        local_id: u32,
+        remote_id: u32,
     ) -> Result<Vec<u8>> {
         if *current_index + requested_bytes <= payload.len() {
             // if there is enough bytes in this payload
@@ -59,7 +59,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
             // Request the next message
             let send_message =
-                ADBTransportMessage::new(MessageCommand::Okay, *local_id, *remote_id, &[]);
+                ADBTransportMessage::new(MessageCommand::Okay, local_id, remote_id, &[]);
             transport.write_message(send_message)?;
             // Read the new message
             *payload = transport.read_message()?.into_payload();
@@ -80,7 +80,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
         {
             let mut len_buf = Vec::from([0_u8; 4]);
-            LittleEndian::write_u32(&mut len_buf, path.as_ref().len() as u32);
+            LittleEndian::write_u32(&mut len_buf, u32::try_from(path.as_ref().len())?);
 
             let subcommand_data = MessageSubcommand::List;
 
@@ -109,12 +109,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             // Loop though the response for all the entries
             const STATUS_CODE_LENGTH_IN_BYTES: usize = 4;
             let status_code = Self::read_bytes_from_transport(
-                &STATUS_CODE_LENGTH_IN_BYTES,
+                STATUS_CODE_LENGTH_IN_BYTES,
                 &mut current_index,
                 transport,
                 &mut payload,
-                &local_id,
-                &remote_id,
+                local_id,
+                remote_id,
             )?;
             match str::from_utf8(&status_code)? {
                 "DENT" => {
@@ -122,12 +122,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     const U32_SIZE_IN_BYTES: usize = 4;
                     const SIZE_OF_METADATA: usize = U32_SIZE_IN_BYTES * 4;
                     let metadata = Self::read_bytes_from_transport(
-                        &SIZE_OF_METADATA,
+                        SIZE_OF_METADATA,
                         &mut current_index,
                         transport,
                         &mut payload,
-                        &local_id,
-                        &remote_id,
+                        local_id,
+                        remote_id,
                     )?;
                     let mode = metadata[..U32_SIZE_IN_BYTES].to_vec();
                     let size = metadata[U32_SIZE_IN_BYTES..2 * U32_SIZE_IN_BYTES].to_vec();
@@ -140,12 +140,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     let name_len = LittleEndian::read_u32(&name_len) as usize;
                     // Read the file name, since it requires the length from the name_len
                     let name_buf = Self::read_bytes_from_transport(
-                        &name_len,
+                        name_len,
                         &mut current_index,
                         transport,
                         &mut payload,
-                        &local_id,
-                        &remote_id,
+                        local_id,
+                        remote_id,
                     )?;
                     let name = String::from_utf8(name_buf)?;
 
@@ -170,7 +170,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 "DONE" => {
                     return Ok(list_items);
                 }
-                x => log::error!("Got an unknown response {}", x),
+                x => log::error!("Got an unknown response {x}"),
             }
         }
     }

@@ -22,6 +22,7 @@ pub struct ADBServer {
 
 impl ADBServer {
     /// Instantiates a new [`ADBServer`]
+    #[must_use]
     pub fn new(address: SocketAddrV4) -> Self {
         Self {
             transport: None,
@@ -32,6 +33,7 @@ impl ADBServer {
     }
 
     /// Instantiates a new [`ADBServer`] with a custom adb path
+    #[must_use]
     pub fn new_from_path(address: SocketAddrV4, adb_path: Option<String>) -> Self {
         Self {
             transport: None,

@@ -4,7 +4,7 @@ use crate::{
 };
 use std::{
     convert::TryInto,
-    io::{BufReader, BufWriter, Read, Write},
+    io::{self, BufReader, BufWriter, Read, Write},
     str::{self, FromStr},
     time::SystemTime,
 };
@@ -22,7 +22,7 @@ impl<W: Write> ADBSendCommandWriter<W> {
 
 impl<W: Write> Write for ADBSendCommandWriter<W> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let chunk_len = buf.len() as u32;
+        let chunk_len = u32::try_from(buf.len()).map_err(io::Error::other)?;
 
         // 8 = "DATA".len() + sizeof(u32)
         let mut buffer = Vec::with_capacity(8 + buf.len());

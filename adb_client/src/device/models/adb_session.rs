@@ -1,4 +1,4 @@
-/// Represent a session between an ADBDevice and remote `adbd`.
+/// Represent a session between an `ADBDevice` and remote `adbd`.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ADBSession {
     local_id: u32,

@@ -110,7 +110,7 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
 }
 
 fn main() -> ExitCode {
-    if let Err(err) = _main() {
+    if let Err(err) = inner_main() {
         log::error!("{err}");
         return ExitCode::FAILURE;
     }
@@ -118,7 +118,7 @@ fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn _main() -> ADBCliResult<()> {
+fn inner_main() -> ADBCliResult<()> {
     // This depends on `clap`
     let opts = Opts::parse();
 

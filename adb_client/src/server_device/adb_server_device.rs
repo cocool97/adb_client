@@ -12,6 +12,7 @@ pub struct ADBServerDevice {
 
 impl ADBServerDevice {
     /// Instantiates a new [`ADBServerDevice`], knowing its ADB identifier (as returned by `adb devices` command).
+    #[must_use]
     pub fn new(identifier: String, server_addr: Option<SocketAddrV4>) -> Self {
         let transport = TCPServerTransport::new_or_default(server_addr);
 
@@ -22,6 +23,7 @@ impl ADBServerDevice {
     }
 
     /// Instantiates a new [`ADBServerDevice`], assuming only one is currently connected.
+    #[must_use]
     pub fn autodetect(server_addr: Option<SocketAddrV4>) -> Self {
         let transport = TCPServerTransport::new_or_default(server_addr);
 

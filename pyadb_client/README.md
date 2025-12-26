@@ -1,4 +1,4 @@
-# pyadb_client
+# `pyadb_client`
 
 <p align="center">
     <p align="center">Python library to communicate with ADB devices. Built on top of Rust adb_client library.</p>
