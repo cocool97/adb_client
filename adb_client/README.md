@@ -16,6 +16,19 @@ Add `adb_client` crate as a dependency by simply adding it to your `Cargo.toml`:
 adb_client = "*"
 ```
 
+## Crate features
+
+| Feature |                   Description                   | Default? |
+| :-----: | :---------------------------------------------: | :------: |
+| `mdns`  | Enables mDNS device discovery on local network. |    No    |
+
+To deactivate some default features you can use the `default-features = false` option in your `Cargo.toml` file and manually specify the features you want to activate:
+
+```toml
+[dependencies]
+adb_client = { version = "*", default-features = false, features = ["mdns"] }
+```
+
 ## Benchmarks
 
 Benchmarks run on `v2.0.6`, on a **Samsung S10 SM-G973F** device and an **Intel i7-1265U** CPU laptop
@@ -24,11 +37,11 @@ Benchmarks run on `v2.0.6`, on a **Samsung S10 SM-G973F** device and an **Intel 
 
 `ADBServerDevice` performs all operations by using adb server as a bridge.
 
-|File size|Sample size|`ADBServerDevice`|`adb`|Difference|
-|:-------:|:---------:|:----------:|:---:|:-----:|
-|10 MB|100|350,79 ms|356,30 ms|<div style="color:green">-1,57 %</div>|
-|500 MB|50|15,60 s|15,64 s|<div style="color:green">-0,25 %</div>|
-|1 GB|20|31,09 s|31,12 s|<div style="color:green">-0,10 %</div>|
+| File size | Sample size | `ADBServerDevice` |   `adb`   |               Difference               |
+| :-------: | :---------: | :---------------: | :-------: | :------------------------------------: |
+|   10 MB   |     100     |     350,79 ms     | 356,30 ms | <div style="color:green">-1,57 %</div> |
+|  500 MB   |     50      |      15,60 s      |  15,64 s  | <div style="color:green">-0,25 %</div> |
+|   1 GB    |     20      |      31,09 s      |  31,12 s  | <div style="color:green">-0,10 %</div> |
 
 ## Examples
 

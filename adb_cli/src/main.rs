@@ -9,7 +9,7 @@ mod utils;
 
 use adb_client::{
     ADBDeviceExt, ADBListItemType, ADBServer, ADBServerDevice, ADBTcpDevice, ADBUSBDevice,
-    MDNSDiscoveryService,
+    mdns::MDNSDiscoveryService,
 };
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -184,9 +184,10 @@ fn inner_main() -> ADBCliResult<()> {
             log::info!("Starting mdns discovery...");
             while let Ok(device) = rx.recv() {
                 log::info!(
-                    "Found device {} with addresses {:?}",
+                    "Found device fullname='{}' with ipv4 addresses={:?} and ipv6 addresses={:?}",
                     device.fullname,
-                    device.addresses
+                    device.ipv4_addresses(),
+                    device.ipv6_addresses()
                 );
             }
 
