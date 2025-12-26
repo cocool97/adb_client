@@ -1,5 +1,6 @@
 use super::{ADBRsaKey, ADBTransportMessage, MessageCommand, models::MessageSubcommand};
 use crate::device::adb_transport_message::{AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN};
+use crate::device::models::ADBSession;
 use crate::{ADBMessageTransport, AdbStatResponse, Result, RustADBError, constants::BUFFER_SIZE};
 use bincode::config::{Configuration, Fixint, LittleEndian, NoLimit};
 use byteorder::ReadBytesExt;
@@ -27,18 +28,12 @@ pub(crate) fn bincode_deserialize_from_slice<D: DeserializeOwned>(data: &[u8]) -
 #[derive(Debug)]
 pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
-    local_id: Option<u32>,
-    remote_id: Option<u32>,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Instantiate a new [`ADBMessageTransport`]
     pub fn new(transport: T) -> Self {
-        Self {
-            transport,
-            local_id: None,
-            remote_id: None,
-        }
+        Self { transport }
     }
 
     pub(crate) fn get_transport(&mut self) -> &T {
@@ -110,12 +105,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     /// Receive a message and acknowledge it by replying with an `OKAY` command
-    pub(crate) fn recv_and_reply_okay(&mut self) -> Result<ADBTransportMessage> {
+    pub(crate) fn recv_and_reply_okay(
+        &mut self,
+        session: ADBSession,
+    ) -> Result<ADBTransportMessage> {
         let message = self.transport.read_message()?;
         self.transport.write_message(ADBTransportMessage::new(
             MessageCommand::Okay,
-            self.get_local_id()?,
-            self.get_remote_id()?,
+            session.local_id(),
+            session.remote_id(),
             &[],
         ))?;
         Ok(message)
@@ -136,11 +134,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn recv_file<W: std::io::Write>(
         &mut self,
+        session: ADBSession,
         mut output: W,
     ) -> std::result::Result<(), RustADBError> {
         let mut len: Option<u64> = None;
         loop {
-            let payload = self.recv_and_reply_okay()?.into_payload();
+            let payload = self.recv_and_reply_okay(session)?.into_payload();
             let mut rdr = Cursor::new(&payload);
             while rdr.position() != payload.len() as u64 {
                 match len.take() {
@@ -173,8 +172,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn push_file<R: std::io::Read>(
         &mut self,
-        local_id: u32,
-        remote_id: u32,
+        session: ADBSession,
         mut reader: R,
     ) -> std::result::Result<(), RustADBError> {
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
@@ -186,8 +184,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let message = ADBTransportMessage::new(
             MessageCommand::Write,
-            local_id,
-            remote_id,
+            session.local_id(),
+            session.remote_id(),
             &serialized_message,
         );
 
@@ -204,8 +202,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     let serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
                     let message = ADBTransportMessage::new(
                         MessageCommand::Write,
-                        local_id,
-                        remote_id,
+                        session.local_id(),
+                        session.remote_id(),
                         &serialized_message,
                     );
 
@@ -230,8 +228,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
                     let message = ADBTransportMessage::new(
                         MessageCommand::Write,
-                        local_id,
-                        remote_id,
+                        session.local_id(),
+                        session.remote_id(),
                         &serialized_message,
                     );
 
@@ -244,24 +242,27 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
     }
 
-    pub(crate) fn begin_synchronization(&mut self) -> Result<()> {
-        self.open_session(b"sync:\0")?;
-        Ok(())
+    pub(crate) fn begin_synchronization(&mut self) -> Result<ADBSession> {
+        self.open_session(b"sync:\0")
     }
 
-    pub(crate) fn stat_with_explicit_ids(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
+    pub(crate) fn stat_with_explicit_ids(
+        &mut self,
+        session: ADBSession,
+        remote_path: &str,
+    ) -> Result<AdbStatResponse> {
         let stat_buffer = MessageSubcommand::Stat.with_arg(u32::try_from(remote_path.len())?);
         let message = ADBTransportMessage::new(
             MessageCommand::Write,
-            self.get_local_id()?,
-            self.get_remote_id()?,
+            session.local_id(),
+            session.remote_id(),
             &bincode_serialize_to_vec(&stat_buffer)?,
         );
         self.send_and_expect_okay(message)?;
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            self.get_local_id()?,
-            self.get_remote_id()?,
+            session.local_id(),
+            session.remote_id(),
             remote_path.as_bytes(),
         ))?;
         let response = self.transport.read_message()?;
@@ -271,24 +272,25 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         bincode_deserialize_from_slice(&response.into_payload()[4..])
     }
 
-    pub(crate) fn end_transaction(&mut self) -> Result<()> {
+    pub(crate) fn end_transaction(&mut self, session: ADBSession) -> Result<()> {
         let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
         self.send_and_expect_okay(ADBTransportMessage::new(
             MessageCommand::Write,
-            self.get_local_id()?,
-            self.get_remote_id()?,
+            session.local_id(),
+            session.remote_id(),
             &bincode_serialize_to_vec(&quit_buffer)?,
         ))?;
         let _discard_close = self.transport.read_message()?;
         Ok(())
     }
 
-    pub(crate) fn open_session(&mut self, data: &[u8]) -> Result<ADBTransportMessage> {
+    pub(crate) fn open_session(&mut self, data: &[u8]) -> Result<ADBSession> {
         let mut rng = rand::rng();
+        let local_id: u32 = rng.random();
 
         let message = ADBTransportMessage::new(
             MessageCommand::Open,
-            rng.random(), // Our 'local-id'
+            local_id, // Our 'local-id'
             0,
             data,
         );
@@ -296,21 +298,20 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let response = self.get_transport_mut().read_message()?;
 
-        self.local_id = Some(response.header().arg1());
-        self.remote_id = Some(response.header().arg0());
+        if response.header().command() != MessageCommand::Okay {
+            return Err(RustADBError::ADBRequestFailed(format!(
+                "Open session failed: got {} in respone instead of OKAY",
+                response.header().command()
+            )));
+        }
 
-        Ok(response)
-    }
+        if response.header().arg1() != local_id {
+            return Err(RustADBError::ADBRequestFailed(format!(
+                "Open session failed: respones used {} for our local_id instead of {local_id}",
+                response.header().arg1()
+            )));
+        }
 
-    pub(crate) fn get_local_id(&self) -> Result<u32> {
-        self.local_id.ok_or(RustADBError::ADBRequestFailed(
-            "connection not opened, no local_id".into(),
-        ))
-    }
-
-    pub(crate) fn get_remote_id(&self) -> Result<u32> {
-        self.remote_id.ok_or(RustADBError::ADBRequestFailed(
-            "connection not opened, no remote_id".into(),
-        ))
+        Ok(ADBSession::new(local_id, response.header().arg0()))
     }
 }
