@@ -42,6 +42,12 @@ Rust library implementing both ADB protocols (server and end-devices) and provid
 
 Improved documentation available [here](./adb_client/README.md).
 
+## examples
+
+Some examples showing of to use this library are available in the `examples` directory:
+
+- `examples/mdns`: mDNS device discovery
+
 ## adb_cli
 
 Rust binary providing an improved version of Google's official `adb` CLI, by using `adb_client` library.

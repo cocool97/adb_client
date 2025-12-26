@@ -1,7 +1,8 @@
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::{sync::mpsc::Sender, thread::JoinHandle};
 
-use crate::{MDNSDevice, Result, RustADBError};
+use super::MDNSDevice;
+use crate::{Result, RustADBError};
 
 const ADB_SERVICE_NAME: &str = "_adb-tls-connect._tcp.local.";
 
@@ -29,7 +30,7 @@ impl MDNSDiscoveryService {
         })
     }
 
-    /// Start discovery by spawning a new thread responsible of getting events.
+    /// Start discovery by spawning a new background thread responsible of getting events.
     pub fn start(&mut self, sender: Sender<MDNSDevice>) -> Result<()> {
         let receiver = self.daemon.browse(ADB_SERVICE_NAME)?;
 
@@ -44,9 +45,9 @@ impl MDNSDiscoveryService {
                             // Ignoring these events. We are only interesting in found devices
                         }
                         ServiceEvent::ServiceResolved(service_info) => {
-                            if let Err(e) = sender.send(MDNSDevice::from(service_info)) {
-                                return Err(e.into());
-                            }
+                            sender
+                                .send(MDNSDevice::from(service_info))
+                                .map_err(|_| RustADBError::SendError)?;
                         }
                         e => {
                             log::warn!("received unknown event type {e:?}");
