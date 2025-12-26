@@ -126,7 +126,7 @@ fn set_bit(n: usize) -> Result<BigUint> {
 
 #[test]
 fn test_pubkey_gen() {
-    const DEFAULT_PRIV_KEY: &'static str = r"-----BEGIN PRIVATE KEY-----
+    const DEFAULT_PRIV_KEY: &str = r"-----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4Dyn85cxDJnjM
 uYXQl/w469MDKdlGdviLfmFMWeYLVfL2Mz1AVyvKqscrtlhbbgMQ/M+3lDvEdHS0
 14RIGAwWRtrlTTmhLvM2/IO+eSKSYeCrCVc4KLG3E3WRryUXbs2ynA29xjTJVw+Z

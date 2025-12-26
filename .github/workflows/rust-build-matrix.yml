@@ -1,0 +1,13 @@
+name: Rust - Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-release:
+    uses: cocool97/action_templates/.github/workflows/rust-build-matrix.yml@main
+    with:
+      python_version: "3.10"
