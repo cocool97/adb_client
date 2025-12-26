@@ -50,7 +50,9 @@ pub trait ADBDeviceExt {
     /// Inner method requesting framebuffer from an Android device
     fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;
 
-    /// Dump framebuffer of this device into given path
+    /// Dump framebuffer of this device into given path.
+    ///
+    /// Output data format is currently only `PNG`.
     fn framebuffer(&mut self, path: &dyn AsRef<Path>) -> Result<()> {
         // Big help from AOSP source code (<https://android.googlesource.com/platform/system/adb/+/refs/heads/main/framebuffer_service.cpp>)
         let img = self.framebuffer_inner()?;
