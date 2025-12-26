@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::Display;
 
 use adb_client::RustADBError;
 
@@ -9,19 +9,18 @@ pub enum ADBCliError {
     MayNeedAnIssue(Box<dyn std::error::Error>),
 }
 
-impl Debug for ADBCliError {
+impl Display for ADBCliError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ADBCliError::Standard(error) => write!(f, "{error}"),
-            ADBCliError::MayNeedAnIssue(error) => write!(
-                f,
-                r"
-                This error is abnormal and may need to fill an issue.
-                Please submit it to this project's repository here: https://github.com/cocool97/adb_client/issues.
-                Error source:
-                    {error}
-                ",
-            ),
+            ADBCliError::MayNeedAnIssue(error) => {
+                write!(
+                    f,
+                    r"Error: {error}
+                    An unexpected error occurred and may indicate a bug.
+                    Please report this issue on the project repository (including steps to reproduce if possible): https://github.com/cocool97/adb_client/issues.",
+                )
+            }
         }
     }
 }

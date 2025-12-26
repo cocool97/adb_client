@@ -22,6 +22,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use std::process::ExitCode;
 use utils::setup_logger;
 
 use crate::models::{ADBCliError, ADBCliResult};
@@ -108,7 +109,16 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
     Ok(())
 }
 
-fn main() -> ADBCliResult<()> {
+fn main() -> ExitCode {
+    if let Err(err) = _main() {
+        log::error!("{err}");
+        return ExitCode::FAILURE;
+    }
+
+    ExitCode::SUCCESS
+}
+
+fn _main() -> ADBCliResult<()> {
     // This depends on `clap`
     let opts = Opts::parse();
 
