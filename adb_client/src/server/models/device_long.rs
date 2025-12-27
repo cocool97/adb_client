@@ -107,6 +107,7 @@ fn test_static_devices_long() {
         "QQ20131020250511       device 20-4 product:NOH-AN00 model:NOH_AN00 device:HWNOH transport_id:3",
     ];
     for input in inputs {
-        DeviceLong::try_from(input.as_bytes()).expect(&format!("cannot parse input: '{input}'"));
+        DeviceLong::try_from(input.as_bytes())
+            .unwrap_or_else(|_| panic!("cannot parse input: '{input}'"));
     }
 }
