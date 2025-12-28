@@ -90,10 +90,18 @@ pub fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) 
     false
 }
 
+/// Get the default path to the ADB key file.
+/// First checks for the presence of the environment variable `ANDROID_USER_HOME`, defaulting to the user's home directory.
 pub fn get_default_adb_key_path() -> Result<PathBuf> {
-    std::env::home_dir()
-        .map(|home| home.join(".android").join("adbkey"))
-        .ok_or(RustADBError::NoHomeDirectory)
+    let android_user_home = std::env::var("ANDROID_USER_HOME")
+        .ok()
+        .map(|android_user_home| PathBuf::from(android_user_home).join("android"));
+    let default_dot_android = std::env::home_dir().map(|home| home.join(".android"));
+
+    Ok(android_user_home
+        .or(default_dot_android)
+        .ok_or(RustADBError::NoHomeDirectory)?
+        .join("adbkey"))
 }
 
 /// Represent a device reached and available over USB.
