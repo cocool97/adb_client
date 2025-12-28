@@ -21,28 +21,75 @@ use crate::message_devices::models::read_adb_private_key;
 use crate::usb::usb_transport::USBTransport;
 use crate::utils::get_default_adb_key_path;
 
-/// Search for adb devices with known interface class and subclass values
-pub fn search_adb_devices() -> Result<Option<(u16, u16)>> {
+/// Represents an Android device connected via USB
+#[derive(Clone, Debug)]
+pub struct ADBDeviceInfo {
+    /// Vendor ID of the device
+    pub vendor_id: u16,
+    /// Product ID of the device
+    pub product_id: u16,
+    /// Textual description of the device
+    pub device_description: String,
+}
+
+/// Find and return a list of all connected Android devices with known interface class and subclass values
+pub fn find_all_connected_adb_devices() -> Result<Vec<ADBDeviceInfo>> {
     let mut found_devices = vec![];
+
     for device in rusb::devices()?.iter() {
         let Ok(des) = device.device_descriptor() else {
             continue;
         };
+
         if is_adb_device(&device, &des) {
-            log::debug!(
-                "Autodetect device {:04x}:{:04x}",
-                des.vendor_id(),
-                des.product_id()
-            );
-            found_devices.push((des.vendor_id(), des.product_id()));
+            let Ok(device_handle) = device.open() else {
+                found_devices.push(ADBDeviceInfo {
+                    vendor_id: des.vendor_id(),
+                    product_id: des.product_id(),
+                    device_description: "Unknown device".to_string(),
+                });
+                continue;
+            };
+
+            let manufacturer = device_handle
+                .read_manufacturer_string_ascii(&des)
+                .unwrap_or_else(|_| "Unknown".to_string());
+
+            let product = device_handle
+                .read_product_string_ascii(&des)
+                .unwrap_or_else(|_| "Unknown".to_string());
+
+            found_devices.push(ADBDeviceInfo {
+                vendor_id: des.vendor_id(),
+                product_id: des.product_id(),
+                device_description: format!("{manufacturer} {product}"),
+            });
         }
     }
 
+    Ok(found_devices)
+}
+
+/// Find and return an USB-connected Android device with known interface class and subclass values.
+///
+/// Returns the first device found or None if no device is found.
+/// If multiple devices are found, an error is returned.
+pub fn get_single_connected_adb_device() -> Result<Option<ADBDeviceInfo>> {
+    let found_devices = find_all_connected_adb_devices()?;
     match (found_devices.first(), found_devices.get(1)) {
         (None, _) => Ok(None),
-        (Some(identifiers), None) => Ok(Some(*identifiers)),
-        (Some((vid1, pid1)), Some((vid2, pid2))) => Err(RustADBError::DeviceNotFound(format!(
-            "Found two Android devices {vid1:04x}:{pid1:04x} and {vid2:04x}:{pid2:04x}",
+        (Some(device_info), None) => {
+            log::debug!(
+                "Autodetect device {:04x}:{:04x} - {}",
+                device_info.vendor_id,
+                device_info.product_id,
+                device_info.device_description
+            );
+            Ok(Some(device_info.clone()))
+        }
+        (Some(device_1), Some(device_2)) => Err(RustADBError::DeviceNotFound(format!(
+            "Found two Android devices {:04x}:{:04x} and {:04x}:{:04x}",
+            device_1.vendor_id, device_1.product_id, device_2.vendor_id, device_2.product_id
         ))),
     }
 }
@@ -144,10 +191,12 @@ impl ADBUSBDevice {
 
     /// autodetect connected ADB devices and establish a connection with the first device found using a custom private key path
     pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
-        match search_adb_devices()? {
-            Some((vendor_id, product_id)) => {
-                ADBUSBDevice::new_with_custom_private_key(vendor_id, product_id, private_key_path)
-            }
+        match get_single_connected_adb_device()? {
+            Some(device_info) => ADBUSBDevice::new_with_custom_private_key(
+                device_info.vendor_id,
+                device_info.product_id,
+                private_key_path,
+            ),
             _ => Err(RustADBError::DeviceNotFound(
                 "cannot find USB devices matching the signature of an ADB device".into(),
             )),
