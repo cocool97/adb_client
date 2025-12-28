@@ -12,7 +12,7 @@
             <img alt="msrv" src="https://img.shields.io/crates/msrv/adb_client"/>
         </a>
         <a href="https://github.com/cocool97/adb_client/actions">
-            <img alt="ci status" src="https://github.com/cocool97/adb_client/actions/workflows/rust-build.yml/badge.svg"/>
+            <img alt="ci status" src="https://github.com/cocool97/adb_client/actions/workflows/rust-build-matrix.yml/badge.svg"/>
         </a>
         <a href="https://deps.rs/repo/github/cocool97/adb_client">
             <img alt="dependency status" src="https://deps.rs/repo/github/cocool97/adb_client/status.svg"/>
