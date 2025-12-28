@@ -91,8 +91,17 @@ pub fn is_adb_device<T: UsbContext>(device: &Device<T>, des: &DeviceDescriptor) 
 }
 
 pub fn get_default_adb_key_path() -> Result<PathBuf> {
-    std::env::home_dir()
-        .map(|home| home.join(".android").join("adbkey"))
+    let android_user_home = std::env::var("ANDROID_USER_HOME")
+        .ok()
+        .map(|android_user_home| {
+            PathBuf::from(android_user_home)
+                .join("android")
+                .join("adbkey")
+        });
+    let default_dot_android = std::env::home_dir().map(|home| home.join(".android").join("adbkey"));
+
+    android_user_home
+        .or(default_dot_android)
         .ok_or(RustADBError::NoHomeDirectory)
 }
 
