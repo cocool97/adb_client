@@ -37,7 +37,6 @@ impl From<adb_client::RustADBError> for ADBCliError {
         let value = Box::new(value);
 
         match value.as_ref() {
-            // List of [`RustADBError`] that may need an issue as abnormal
             RustADBError::RegexParsingError
             | RustADBError::WrongResponseReceived(_, _)
             | RustADBError::FramebufferImageError(_)
@@ -68,8 +67,8 @@ impl From<adb_client::RustADBError> for ADBCliError {
             | RustADBError::MDNSError(_)
             | RustADBError::SendError
             | RustADBError::UnknownFileMode(_)
-            | RustADBError::UnknownTransport(_) => Self::MayNeedAnIssue(value),
-            // List of [`RustADBError`] that may occur in standard contexts and therefore do not require for issues
+            | RustADBError::UnknownTransport(_)
+            | RustADBError::RemountError(_) => Self::MayNeedAnIssue(value),
             RustADBError::ADBDeviceNotPaired
             | RustADBError::UnknownResponseType(_)
             | RustADBError::DeviceNotFound(_)

@@ -3,7 +3,7 @@ use crate::{
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
     },
-    models::AdbStatResponse,
+    models::{AdbStatResponse, RemountInfo},
 };
 use std::{
     io::{Read, Write},
@@ -42,6 +42,11 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     }
 
     #[inline]
+    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
+        self.remount()
+    }
+
+    #[inline]
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.install(apk_path)
     }
@@ -49,6 +54,16 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     #[inline]
     fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
         self.uninstall(package)
+    }
+
+    #[inline]
+    fn enable_verity(&mut self) -> Result<()> {
+        self.enable_verity()
+    }
+
+    #[inline]
+    fn disable_verity(&mut self) -> Result<()> {
+        self.disable_verity()
     }
 
     #[inline]
