@@ -16,7 +16,7 @@ pub trait ADBDeviceExt {
     fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()>;
 
     /// Display the stat information for a remote file
-    fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse>;
+    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse>;
 
     /// Pull the remote file pointed to by `source` and write its contents into `output`
     fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()>;
@@ -31,10 +31,23 @@ pub trait ADBDeviceExt {
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
 
     /// Run `activity` from `package` on device. Return the command output.
-    fn run_activity(&mut self, package: &str, activity: &str) -> Result<Vec<u8>> {
+    fn run_activity(
+        &mut self,
+        package: &dyn AsRef<str>,
+        activity: &dyn AsRef<str>,
+    ) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         self.shell_command(
-            &["am", "start", &format!("{package}/{package}.{activity}")],
+            &[
+                "am",
+                "start",
+                &format!(
+                    "{}/{}.{}",
+                    package.as_ref(),
+                    package.as_ref(),
+                    activity.as_ref()
+                ),
+            ],
             &mut output,
         )?;
 
@@ -45,7 +58,7 @@ pub trait ADBDeviceExt {
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()>;
 
     /// Uninstall the package `package` from device.
-    fn uninstall(&mut self, package: &str) -> Result<()>;
+    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()>;
 
     /// Inner method requesting framebuffer from an Android device
     fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;

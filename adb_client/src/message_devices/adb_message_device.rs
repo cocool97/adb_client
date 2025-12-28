@@ -8,14 +8,14 @@ use std::{
 };
 
 use crate::{
-    ADBSession, AdbStatResponse, Result, RustADBError,
+    AdbStatResponse, Result, RustADBError,
     message_devices::{
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::{
             ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN,
         },
         message_commands::{MessageCommand, MessageSubcommand},
-        models::ADBRsaKey,
+        models::{ADBRsaKey, ADBSession},
     },
 };
 

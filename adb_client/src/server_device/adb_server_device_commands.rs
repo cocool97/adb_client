@@ -60,8 +60,8 @@ impl ADBDeviceExt for ADBServerDevice {
     }
 
     #[inline]
-    fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
-        self.stat(remote_path)
+    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
+        self.stat(remote_path.as_ref())
     }
 
     fn shell(
@@ -136,8 +136,8 @@ impl ADBDeviceExt for ADBServerDevice {
     }
 
     #[inline]
-    fn uninstall(&mut self, package: &str) -> Result<()> {
-        self.uninstall(package)
+    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
+        self.uninstall(package.as_ref())
     }
 
     #[inline]

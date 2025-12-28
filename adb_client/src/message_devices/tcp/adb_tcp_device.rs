@@ -111,7 +111,7 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
-    fn stat(&mut self, remote_path: &str) -> Result<crate::AdbStatResponse> {
+    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<crate::AdbStatResponse> {
         self.inner.stat(remote_path)
     }
 
@@ -136,7 +136,7 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
-    fn uninstall(&mut self, package: &str) -> Result<()> {
+    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
         self.inner.uninstall(package)
     }
 

@@ -51,7 +51,7 @@ impl PyADBUSBDevice {
 
     /// Uninstall a package installed on the device
     pub fn uninstall(&mut self, package: &str) -> Result<()> {
-        Ok(self.0.uninstall(package)?)
+        Ok(self.0.uninstall(&package)?)
     }
 }
 
