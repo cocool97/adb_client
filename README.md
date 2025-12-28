@@ -55,12 +55,6 @@ Provides a "real-world" usage example of this library.
 
 Improved documentation available [here](./adb_cli/README.md).
 
-## examples
-
-Some examples are available in the `examples` directory:
-
-- `examples/mdns`: mDNS device discovery example
-
 ## pyadb_client
 
 Python wrapper using `adb_client` library to export classes usable directly from a Python environment.
