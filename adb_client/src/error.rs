@@ -63,9 +63,6 @@ pub enum RustADBError {
     /// Unimplemented framebuffer image version
     #[error("Unimplemented framebuffer image version: {0}")]
     UnimplementedFramebufferImageVersion(u32),
-    /// An error occurred while getting user's home directory
-    #[error("Cannot get user home directory")]
-    HomeError,
     /// Cannot get home directory
     #[error("Cannot get home directory")]
     NoHomeDirectory,

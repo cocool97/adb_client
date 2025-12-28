@@ -53,7 +53,6 @@ impl From<adb_client::RustADBError> for ADBCliError {
             | RustADBError::ParseIntError(_)
             | RustADBError::ConversionError
             | RustADBError::IntegerConversionError(_)
-            | RustADBError::HomeError
             | RustADBError::NoHomeDirectory
             | RustADBError::UsbError(_)
             | RustADBError::InvalidIntegrity(_, _)
