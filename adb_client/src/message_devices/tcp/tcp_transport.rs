@@ -96,19 +96,19 @@ fn certificate_from_pk(key_pair: &KeyPair) -> Result<Vec<CertificateDer<'static>
 impl TcpTransport {
     /// Instantiate a new [`TcpTransport`]
     pub fn new(address: SocketAddr) -> Result<Self> {
-        Self::new_with_custom_private_key(address, get_default_adb_key_path()?)
+        Ok(Self::new_with_custom_private_key(
+            address,
+            get_default_adb_key_path()?,
+        ))
     }
 
     /// Instantiate a new [`TcpTransport`] using a given private key
-    pub fn new_with_custom_private_key(
-        address: SocketAddr,
-        private_key_path: PathBuf,
-    ) -> Result<Self> {
-        Ok(Self {
+    pub fn new_with_custom_private_key(address: SocketAddr, private_key_path: PathBuf) -> Self {
+        Self {
             address,
             current_connection: None,
             private_key_path,
-        })
+        }
     }
 
     fn get_current_connection(&self) -> Result<Arc<Mutex<CurrentConnection>>> {

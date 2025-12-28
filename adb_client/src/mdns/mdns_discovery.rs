@@ -36,19 +36,10 @@ impl MDNSDiscoveryService {
         let handle: JoinHandle<Result<()>> = std::thread::spawn(move || {
             loop {
                 while let Ok(event) = receiver.recv() {
-                    match event {
-                        ServiceEvent::ServiceResolved(service_info) => {
-                            sender
-                                .send(MDNSDevice::from(service_info))
-                                .map_err(|_| RustADBError::SendError)?;
-                        }
-                        ServiceEvent::SearchStarted(_)
-                        | ServiceEvent::ServiceRemoved(_, _)
-                        | ServiceEvent::ServiceFound(_, _)
-                        | ServiceEvent::SearchStopped(_)
-                        | _ => {
-                            // Ignoring these events. We are only interesting in found devices
-                        }
+                    if let ServiceEvent::ServiceResolved(service_info) = event {
+                        sender
+                            .send(MDNSDevice::from(service_info))
+                            .map_err(|_| RustADBError::SendError)?;
                     }
                 }
             }

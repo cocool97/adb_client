@@ -8,6 +8,19 @@ use crate::{
     Result, RustADBError, adb_transport::ADBTransport, emulator::models::ADBEmulatorCommand,
 };
 
+/// Return authentication token stored in `$HOME/.emulator_console_auth_token`
+fn get_authentication_token() -> Result<String> {
+    let Some(home) = std::env::home_dir() else {
+        return Err(RustADBError::NoHomeDirectory);
+    };
+
+    let mut f = File::open(home.join(".emulator_console_auth_token"))?;
+    let mut token = String::new();
+    f.read_to_string(&mut token)?;
+
+    Ok(token)
+}
+
 /// Emulator transport running on top on TCP.
 #[derive(Debug)]
 pub struct TCPEmulatorTransport {
@@ -34,22 +47,9 @@ impl TCPEmulatorTransport {
             )))
     }
 
-    /// Return authentication token stored in `$HOME/.emulator_console_auth_token`
-    pub fn get_authentication_token(&mut self) -> Result<String> {
-        let Some(home) = std::env::home_dir() else {
-            return Err(RustADBError::NoHomeDirectory);
-        };
-
-        let mut f = File::open(home.join(".emulator_console_auth_token"))?;
-        let mut token = String::new();
-        f.read_to_string(&mut token)?;
-
-        Ok(token)
-    }
-
     /// Send an authenticate request to this emulator
     pub fn authenticate(&mut self) -> Result<()> {
-        let token = self.get_authentication_token()?;
+        let token = get_authentication_token()?;
         self.send_command(&ADBEmulatorCommand::Authenticate(token))
     }
 
