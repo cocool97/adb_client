@@ -159,8 +159,7 @@ fn inner_main() -> ADBCliResult<()> {
                 {
                     writeln!(
                         writer,
-                        "#{}\t{:04x}\t{:04x}\t{}",
-                        index, vendor_id, product_id, device_description
+                        "#{index}\t{vendor_id:04x}\t{product_id:04x}\t{device_description}",
                     )?;
                 }
 

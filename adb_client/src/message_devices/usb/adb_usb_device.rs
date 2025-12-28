@@ -42,16 +42,13 @@ pub fn find_all_connected_adb_devices() -> Result<Vec<ADBDeviceInfo>> {
         };
 
         if is_adb_device(&device, &des) {
-            let device_handle = match device.open() {
-                Ok(h) => h,
-                Err(_) => {
-                    found_devices.push(ADBDeviceInfo {
-                        vendor_id: des.vendor_id(),
-                        product_id: des.product_id(),
-                        device_description: "Unknown device".to_string(),
-                    });
-                    continue;
-                }
+            let Ok(device_handle) = device.open() else {
+                found_devices.push(ADBDeviceInfo {
+                    vendor_id: des.vendor_id(),
+                    product_id: des.product_id(),
+                    device_description: "Unknown device".to_string(),
+                });
+                continue;
             };
 
             let manufacturer = device_handle
@@ -62,12 +59,10 @@ pub fn find_all_connected_adb_devices() -> Result<Vec<ADBDeviceInfo>> {
                 .read_product_string_ascii(&des)
                 .unwrap_or_else(|_| "Unknown".to_string());
 
-            let device_description = format!("{} {}", manufacturer, product);
-
             found_devices.push(ADBDeviceInfo {
                 vendor_id: des.vendor_id(),
                 product_id: des.product_id(),
-                device_description,
+                device_description: format!("{manufacturer} {product}"),
             });
         }
     }
