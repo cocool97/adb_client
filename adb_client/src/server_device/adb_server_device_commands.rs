@@ -4,12 +4,14 @@ use std::{
 };
 
 use crate::{
-    ADBDeviceExt, Result, RustADBError,
-    constants::BUFFER_SIZE,
-    models::{AdbServerCommand, AdbStatResponse, HostFeatures},
+    ADBDeviceExt, ADBListItemType, Result, RustADBError,
+    models::{AdbStatResponse, HostFeatures},
+    server::AdbServerCommand,
 };
 
 use super::ADBServerDevice;
+
+const BUFFER_SIZE: usize = 65535;
 
 impl ADBDeviceExt for ADBServerDevice {
     fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
@@ -57,8 +59,9 @@ impl ADBDeviceExt for ADBServerDevice {
         }
     }
 
-    fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
-        self.stat(remote_path)
+    #[inline]
+    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
+        self.stat(remote_path.as_ref())
     }
 
     fn shell(
@@ -112,31 +115,38 @@ impl ADBDeviceExt for ADBServerDevice {
         Ok(())
     }
 
+    #[inline]
     fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
         self.pull(source, &mut output)
     }
 
+    #[inline]
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
         self.reboot(reboot_type)
     }
 
+    #[inline]
     fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
         self.push(stream, path)
     }
 
+    #[inline]
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.install(apk_path)
     }
 
-    fn uninstall(&mut self, package: &str) -> Result<()> {
-        self.uninstall(package)
+    #[inline]
+    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
+        self.uninstall(package.as_ref())
     }
 
+    #[inline]
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.framebuffer_inner()
     }
 
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<crate::ADBListItem>> {
+    #[inline]
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
         self.list(path)
     }
 }

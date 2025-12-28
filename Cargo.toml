@@ -1,5 +1,5 @@
 [workspace]
-members = ["adb_cli", "adb_client", "pyadb_client", "examples/mdns"]
+members = ["adb_cli", "adb_client", "examples/mdns", "pyadb_client"]
 resolver = "2"
 
 [workspace.package]

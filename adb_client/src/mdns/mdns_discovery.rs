@@ -1,8 +1,7 @@
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::{sync::mpsc::Sender, thread::JoinHandle};
 
-use super::MDNSDevice;
-use crate::{Result, RustADBError};
+use crate::{Result, RustADBError, mdns::MDNSDevice};
 
 const ADB_SERVICE_NAME: &str = "_adb-tls-connect._tcp.local.";
 
@@ -37,21 +36,10 @@ impl MDNSDiscoveryService {
         let handle: JoinHandle<Result<()>> = std::thread::spawn(move || {
             loop {
                 while let Ok(event) = receiver.recv() {
-                    match event {
-                        ServiceEvent::SearchStarted(_)
-                        | ServiceEvent::ServiceRemoved(_, _)
-                        | ServiceEvent::ServiceFound(_, _)
-                        | ServiceEvent::SearchStopped(_) => {
-                            // Ignoring these events. We are only interesting in found devices
-                        }
-                        ServiceEvent::ServiceResolved(service_info) => {
-                            sender
-                                .send(MDNSDevice::from(service_info))
-                                .map_err(|_| RustADBError::SendError)?;
-                        }
-                        e => {
-                            log::warn!("received unknown event type {e:?}");
-                        }
+                    if let ServiceEvent::ServiceResolved(service_info) = event {
+                        sender
+                            .send(MDNSDevice::from(service_info))
+                            .map_err(|_| RustADBError::SendError)?;
                     }
                 }
             }

@@ -1,6 +1,8 @@
 use crate::{
-    ADBServerDevice, Result, RustADBError,
-    models::{ADBListItem, ADBListItemType, AdbServerCommand, SyncCommand},
+    Result, RustADBError,
+    models::{ADBListItem, ADBListItemType, SyncCommand},
+    server::AdbServerCommand,
+    server_device::ADBServerDevice,
 };
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use std::{
@@ -11,7 +13,7 @@ use std::{
 impl ADBServerDevice {
     /// Lists files in path on the device.
     /// note: path uses internal file paths, so Documents is at /storage/emulated/0/Documents
-    pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItem>> {
+    pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
@@ -23,7 +25,7 @@ impl ADBServerDevice {
         self.handle_list_command(path)
     }
 
-    fn handle_list_command<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItem>> {
+    fn handle_list_command<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
         let mut len_buf = [0_u8; 4];
@@ -59,21 +61,23 @@ impl ADBServerDevice {
 
                     // First 9 bits are the file permissions
                     let permissions = mode & 0b1_1111_1111;
-                    // Bits 14 to 16 are the file type
-                    let item_type = match (mode >> 13) & 0b111 {
-                        0b010 => ADBListItemType::Directory,
-                        0b100 => ADBListItemType::File,
-                        0b101 => ADBListItemType::Symlink,
-                        type_code => return Err(RustADBError::UnknownFileMode(type_code)),
-                    };
+
                     let entry = ADBListItem {
                         name,
                         time,
                         permissions,
                         size,
-                        item_type,
                     };
-                    list_items.push(entry);
+
+                    // Bits 14 to 16 are the file type
+                    let item_type = match (mode >> 13) & 0b111 {
+                        0b010 => ADBListItemType::Directory(entry),
+                        0b100 => ADBListItemType::File(entry),
+                        0b101 => ADBListItemType::Symlink(entry),
+                        type_code => return Err(RustADBError::UnknownFileMode(type_code)),
+                    };
+
+                    list_items.push(item_type);
                 }
                 "DONE" => {
                     return Ok(list_items);

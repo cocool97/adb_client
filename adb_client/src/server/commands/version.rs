@@ -1,4 +1,7 @@
-use crate::{ADBServer, AdbVersion, Result, models::AdbServerCommand};
+use crate::{
+    Result,
+    server::{ADBServer, AdbServerCommand, AdbVersion},
+};
 
 impl ADBServer {
     /// Gets server's internal version number.

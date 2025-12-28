@@ -1,6 +1,6 @@
 use std::{fs::File, path::PathBuf};
 
-use adb_client::{ADBDeviceExt, ADBUSBDevice};
+use adb_client::{ADBDeviceExt, usb::ADBUSBDevice};
 use anyhow::Result;
 use pyo3::{pyclass, pymethods};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
@@ -51,7 +51,7 @@ impl PyADBUSBDevice {
 
     /// Uninstall a package installed on the device
     pub fn uninstall(&mut self, package: &str) -> Result<()> {
-        Ok(self.0.uninstall(package)?)
+        Ok(self.0.uninstall(&package)?)
     }
 }
 

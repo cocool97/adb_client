@@ -3,10 +3,10 @@ use std::path::Path;
 
 use image::{ImageBuffer, ImageFormat, Rgba};
 
-use crate::models::AdbStatResponse;
-use crate::{ADBListItem, RebootType, Result};
+use crate::models::{ADBListItemType, AdbStatResponse};
+use crate::{RebootType, Result};
 
-/// Trait representing all features available on both [`crate::ADBServerDevice`] and [`crate::ADBUSBDevice`]
+/// Trait representing all features available on ADB devices.
 pub trait ADBDeviceExt {
     /// Runs command in a shell on the device, and write its output and error streams into output.
     fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()>;
@@ -16,7 +16,7 @@ pub trait ADBDeviceExt {
     fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()>;
 
     /// Display the stat information for a remote file
-    fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse>;
+    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse>;
 
     /// Pull the remote file pointed to by `source` and write its contents into `output`
     fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()>;
@@ -25,16 +25,29 @@ pub trait ADBDeviceExt {
     fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()>;
 
     /// List the items in a directory on the device
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItem>>;
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>>;
 
     /// Reboot the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
 
     /// Run `activity` from `package` on device. Return the command output.
-    fn run_activity(&mut self, package: &str, activity: &str) -> Result<Vec<u8>> {
+    fn run_activity(
+        &mut self,
+        package: &dyn AsRef<str>,
+        activity: &dyn AsRef<str>,
+    ) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         self.shell_command(
-            &["am", "start", &format!("{package}/{package}.{activity}")],
+            &[
+                "am",
+                "start",
+                &format!(
+                    "{}/{}.{}",
+                    package.as_ref(),
+                    package.as_ref(),
+                    activity.as_ref()
+                ),
+            ],
             &mut output,
         )?;
 
@@ -45,7 +58,7 @@ pub trait ADBDeviceExt {
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()>;
 
     /// Uninstall the package `package` from device.
-    fn uninstall(&mut self, package: &str) -> Result<()>;
+    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()>;
 
     /// Inner method requesting framebuffer from an Android device
     fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;

@@ -1,4 +1,4 @@
-use adb_client::ADBServer;
+use adb_client::server::ADBServer;
 use anyhow::Result;
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use rand::{Rng, rng};

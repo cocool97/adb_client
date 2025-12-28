@@ -2,7 +2,8 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 use std::{fmt::Display, str};
 
-use crate::{DeviceState, RustADBError};
+use crate::RustADBError;
+use crate::server::DeviceState;
 use regex::bytes::Regex;
 
 static DEVICES_LONG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
