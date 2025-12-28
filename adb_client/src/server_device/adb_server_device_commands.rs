@@ -4,8 +4,8 @@ use std::{
 };
 
 use crate::{
-    ADBDeviceExt, Result, RustADBError,
-    models::{ADBListItem, AdbStatResponse, HostFeatures},
+    ADBDeviceExt, ADBListItemType, Result, RustADBError,
+    models::{AdbStatResponse, HostFeatures},
     server::AdbServerCommand,
 };
 
@@ -59,6 +59,7 @@ impl ADBDeviceExt for ADBServerDevice {
         }
     }
 
+    #[inline]
     fn stat(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
         self.stat(remote_path)
     }
@@ -114,31 +115,38 @@ impl ADBDeviceExt for ADBServerDevice {
         Ok(())
     }
 
+    #[inline]
     fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
         self.pull(source, &mut output)
     }
 
+    #[inline]
     fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
         self.reboot(reboot_type)
     }
 
+    #[inline]
     fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
         self.push(stream, path)
     }
 
+    #[inline]
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
         self.install(apk_path)
     }
 
+    #[inline]
     fn uninstall(&mut self, package: &str) -> Result<()> {
         self.uninstall(package)
     }
 
+    #[inline]
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.framebuffer_inner()
     }
 
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItem>> {
+    #[inline]
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
         self.list(path)
     }
 }

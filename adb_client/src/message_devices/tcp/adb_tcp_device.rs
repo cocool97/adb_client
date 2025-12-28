@@ -7,10 +7,9 @@ use crate::message_devices::adb_message_transport::ADBMessageTransport;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::message_devices::models::{ADBRsaKey, read_adb_private_key};
-use crate::models::ADBListItem;
 use crate::tcp::tcp_transport::TcpTransport;
 use crate::utils::get_default_adb_key_path;
-use crate::{ADBDeviceExt, ADBTransport, Result};
+use crate::{ADBDeviceExt, ADBListItemType, ADBTransport, Result};
 
 /// Represent a device reached and available over TCP.
 #[derive(Debug)]
@@ -147,7 +146,7 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItem>> {
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
         self.inner.list(path)
     }
 }

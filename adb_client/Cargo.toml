@@ -20,7 +20,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = []
 mdns = ["dep:mdns-sd"]
-usb = ["dep:rsa", "dep:rusb"]
+usb = ["dep:rusb"]
 
 [dependencies]
 base64 = { version = "0.22.1" }
@@ -38,6 +38,7 @@ rcgen = { version = "0.14.6", default-features = false, features = [
     "pem",
 ] }
 regex = { version = "1.12.2", features = ["perf", "std", "unicode"] }
+rsa = { version = "0.9.7" }
 rustls = { version = "0.23.35" }
 rustls-pki-types = { version = "1.13.2" }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -53,7 +54,6 @@ mdns-sd = { version = "0.17.1", default-features = false, features = [
 #########
 #########
 # USB-only dependencies
-rsa = { version = "0.9.7", optional = true }
 rusb = { version = "0.9.4", features = ["vendored"], optional = true }
 #########
 

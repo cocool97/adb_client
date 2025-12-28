@@ -8,6 +8,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::ADBDeviceExt;
+use crate::ADBListItemType;
 use crate::Result;
 use crate::RustADBError;
 use crate::adb_transport::ADBTransport;
@@ -17,7 +18,6 @@ use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::message_devices::models::ADBRsaKey;
 use crate::message_devices::models::read_adb_private_key;
-use crate::models::ADBListItem;
 use crate::usb::usb_transport::USBTransport;
 use crate::utils::get_default_adb_key_path;
 
@@ -231,7 +231,7 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItem>> {
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
         self.inner.list(path)
     }
 }

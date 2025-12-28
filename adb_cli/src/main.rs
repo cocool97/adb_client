@@ -7,12 +7,12 @@ mod handlers;
 mod models;
 mod utils;
 
+use adb_client::ADBDeviceExt;
 use adb_client::mdns::MDNSDiscoveryService;
 use adb_client::server::ADBServer;
 use adb_client::server_device::ADBServerDevice;
 use adb_client::tcp::ADBTcpDevice;
 use adb_client::usb::ADBUSBDevice;
-use adb_client::{ADBDeviceExt, ADBListItemType};
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use adb_termios::ADBTermios;
@@ -91,19 +91,7 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
         DeviceCommands::List { path } => {
             let dirs = device.list(&path)?;
             for dir in dirs {
-                let list_item_type = match dir.item_type {
-                    ADBListItemType::File => "File".to_string(),
-                    ADBListItemType::Directory => "Directory".to_string(),
-                    ADBListItemType::Symlink => "Symlink".to_string(),
-                };
-                log::info!(
-                    "type: {}, name: {}, time: {}, size: {}, permissions: {:#o}",
-                    list_item_type,
-                    dir.name,
-                    dir.time,
-                    dir.size,
-                    dir.permissions
-                );
+                log::info!("{dir}");
             }
         }
     }

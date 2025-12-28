@@ -1,5 +1,28 @@
+use std::fmt::Display;
+
+/// The different types of item that the `ADBListItem` can represent.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
-/// A list entry on the remote device
+pub enum ADBListItemType {
+    /// The entry is a file
+    File(ADBListItem),
+    /// The entry is a directory
+    Directory(ADBListItem),
+    /// The entry is a symlink
+    Symlink(ADBListItem),
+}
+
+impl Display for ADBListItemType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ADBListItemType::File(item) => write!(f, "file: {item}"),
+            ADBListItemType::Directory(item) => write!(f, "directory: {item}"),
+            ADBListItemType::Symlink(item) => write!(f, "symlink: {item}"),
+        }
+    }
+}
+
+/// An item list entry on the device.
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ADBListItem {
     /// The name of the file, not the path
     pub name: String,
@@ -9,17 +32,14 @@ pub struct ADBListItem {
     pub permissions: u32,
     /// The size of the file
     pub size: u32,
-    /// The type of item this is, file, directory or symlink
-    pub item_type: ADBListItemType,
 }
 
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
-/// The different types of item that the list item can be
-pub enum ADBListItemType {
-    /// The entry is a file
-    File,
-    /// The entry is a directory
-    Directory,
-    /// The entry is a symlink
-    Symlink,
+impl Display for ADBListItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "name: {}, time: {}, size: {}, permissions: {:#o}",
+            self.name, self.time, self.size, self.permissions
+        )
+    }
 }

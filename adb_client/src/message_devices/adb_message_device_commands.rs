@@ -1,9 +1,9 @@
 use crate::{
-    ADBDeviceExt, RebootType, Result,
+    ADBDeviceExt, ADBListItemType, RebootType, Result,
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
     },
-    models::{ADBListItem, AdbStatResponse},
+    models::AdbStatResponse,
 };
 use std::{
     io::{Read, Write},
@@ -47,7 +47,7 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
         self.framebuffer_inner()
     }
 
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItem>> {
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
         self.list(path)
     }
 }
