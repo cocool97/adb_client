@@ -176,12 +176,12 @@ impl ADBUSBDevice {
     pub fn connect(&mut self) -> Result<()> {
         self.get_transport_mut().connect()?;
 
-        let message = ADBTransportMessage::new(
+        let message = ADBTransportMessage::try_new(
             MessageCommand::Cnxn,
             0x0100_0000,
             1_048_576,
             format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
-        );
+        )?;
 
         self.get_transport_mut().write_message(message)?;
 

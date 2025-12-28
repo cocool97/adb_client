@@ -10,7 +10,7 @@ impl ADBServerDevice {
 
         let features = self
             .transport
-            .proxy_connection(AdbServerCommand::HostFeatures, true)?;
+            .proxy_connection(&AdbServerCommand::HostFeatures, true)?;
 
         Ok(features
             .split(|x| x.eq(&b','))

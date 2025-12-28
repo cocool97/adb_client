@@ -14,7 +14,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(AdbServerCommand::FrameBuffer)?;
+            .send_adb_request(&AdbServerCommand::FrameBuffer)?;
 
         let version = self
             .transport

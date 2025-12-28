@@ -59,7 +59,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
             // Request the next message
             let send_message =
-                ADBTransportMessage::new(MessageCommand::Okay, local_id, remote_id, &[]);
+                ADBTransportMessage::try_new(MessageCommand::Okay, local_id, remote_id, &[])?;
             transport.write_message(send_message)?;
             // Read the new message
             *payload = transport.read_message()?.into_payload();
@@ -91,12 +91,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             let mut path_bytes: Vec<u8> = Vec::from(path.as_ref().as_bytes());
             serialized_message.append(&mut path_bytes);
 
-            let message = ADBTransportMessage::new(
+            let message = ADBTransportMessage::try_new(
                 MessageCommand::Write,
                 local_id,
                 remote_id,
                 &serialized_message,
-            );
+            )?;
             self.send_and_expect_okay(message)?;
         }
 
@@ -159,11 +159,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         type_code => return Err(RustADBError::UnknownFileMode(type_code)),
                     };
                     let entry = ADBListItem {
-                        item_type,
                         name,
                         time,
-                        size,
                         permissions,
+                        size,
+                        item_type,
                     };
                     list_items.push(entry);
                 }

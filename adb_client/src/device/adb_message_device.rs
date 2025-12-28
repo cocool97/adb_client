@@ -68,7 +68,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let sign = private_key.sign(auth_message.into_payload())?;
 
-        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign);
+        let message = ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign)?;
 
         self.get_transport_mut().write_message(message)?;
 
@@ -85,7 +85,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut pubkey = private_key.android_pubkey_encode()?.into_bytes();
         pubkey.push(b'\0');
 
-        let message = ADBTransportMessage::new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey);
+        let message =
+            ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey)?;
 
         self.get_transport_mut().write_message(message)?;
 
@@ -110,12 +111,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         session: ADBSession,
     ) -> Result<ADBTransportMessage> {
         let message = self.transport.read_message()?;
-        self.transport.write_message(ADBTransportMessage::new(
+        self.transport.write_message(ADBTransportMessage::try_new(
             MessageCommand::Okay,
             session.local_id(),
             session.remote_id(),
             &[],
-        ))?;
+        )?)?;
         Ok(message)
     }
 
@@ -182,12 +183,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
         serialized_message.append(&mut buffer[..amount_read].to_vec());
 
-        let message = ADBTransportMessage::new(
+        let message = ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             &serialized_message,
-        );
+        )?;
 
         self.send_and_expect_okay(message)?;
 
@@ -200,12 +201,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     let subcommand_data = MessageSubcommand::Done.with_arg(0);
 
                     let serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
-                    let message = ADBTransportMessage::new(
+                    let message = ADBTransportMessage::try_new(
                         MessageCommand::Write,
                         session.local_id(),
                         session.remote_id(),
                         &serialized_message,
-                    );
+                    )?;
 
                     self.send_and_expect_okay(message)?;
 
@@ -226,12 +227,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
                     serialized_message.append(&mut buffer[..size].to_vec());
 
-                    let message = ADBTransportMessage::new(
+                    let message = ADBTransportMessage::try_new(
                         MessageCommand::Write,
                         session.local_id(),
                         session.remote_id(),
                         &serialized_message,
-                    );
+                    )?;
 
                     self.send_and_expect_okay(message)?;
                 }
@@ -252,19 +253,19 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         remote_path: &str,
     ) -> Result<AdbStatResponse> {
         let stat_buffer = MessageSubcommand::Stat.with_arg(u32::try_from(remote_path.len())?);
-        let message = ADBTransportMessage::new(
+        let message = ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             &bincode_serialize_to_vec(&stat_buffer)?,
-        );
+        )?;
         self.send_and_expect_okay(message)?;
-        self.send_and_expect_okay(ADBTransportMessage::new(
+        self.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             remote_path.as_bytes(),
-        ))?;
+        )?)?;
         let response = self.transport.read_message()?;
         // Skip first 4 bytes as this is the literal "STAT".
         // Interesting part starts right after
@@ -274,12 +275,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn end_transaction(&mut self, session: ADBSession) -> Result<()> {
         let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
-        self.send_and_expect_okay(ADBTransportMessage::new(
+        self.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             &bincode_serialize_to_vec(&quit_buffer)?,
-        ))?;
+        )?)?;
         let _discard_close = self.transport.read_message()?;
         Ok(())
     }
@@ -288,12 +289,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut rng = rand::rng();
         let local_id: u32 = rng.random();
 
-        let message = ADBTransportMessage::new(
+        let message = ADBTransportMessage::try_new(
             MessageCommand::Open,
             local_id, // Our 'local-id'
             0,
             data,
-        );
+        )?;
         self.get_transport_mut().write_message(message)?;
 
         let response = self.get_transport_mut().read_message()?;

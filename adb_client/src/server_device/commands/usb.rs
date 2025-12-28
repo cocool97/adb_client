@@ -5,7 +5,7 @@ impl ADBServerDevice {
     pub fn usb(&mut self) -> Result<()> {
         self.set_serial_transport()?;
         self.transport
-            .proxy_connection(AdbServerCommand::Usb, false)
+            .proxy_connection(&AdbServerCommand::Usb, false)
             .map(|_| ())
     }
 }

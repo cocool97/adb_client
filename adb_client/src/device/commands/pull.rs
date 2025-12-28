@@ -23,29 +23,29 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
 
         self.get_transport_mut().write_message_with_timeout(
-            ADBTransportMessage::new(
+            ADBTransportMessage::try_new(
                 MessageCommand::Okay,
                 session.local_id(),
                 session.remote_id(),
                 &[],
-            ),
+            )?,
             std::time::Duration::from_secs(4),
         )?;
 
         let recv_buffer = MessageSubcommand::Recv.with_arg(u32::try_from(source.len())?);
         let recv_buffer = adb_message_device::bincode_serialize_to_vec(&recv_buffer)?;
-        self.send_and_expect_okay(ADBTransportMessage::new(
+        self.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             &recv_buffer,
-        ))?;
-        self.send_and_expect_okay(ADBTransportMessage::new(
+        )?)?;
+        self.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             source.as_bytes(),
-        ))?;
+        )?)?;
 
         self.recv_file(session, output)?;
         self.end_transaction(session)?;

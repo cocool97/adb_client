@@ -9,6 +9,9 @@ repository.workspace = true
 version.workspace = true
 rust-version.workspace = true
 
+[lints]
+workspace = true
+
 [[bin]]
 name = "mdns"
 path = "main.rs"

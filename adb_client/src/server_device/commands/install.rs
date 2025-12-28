@@ -16,7 +16,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(AdbServerCommand::Install(file_size))?;
+            .send_adb_request(&AdbServerCommand::Install(file_size))?;
 
         let mut raw_connection = self.transport.get_raw_connection()?;
 

@@ -39,7 +39,7 @@ impl ADBDeviceExt for ADBServerDevice {
 
         // Send the request
         self.transport
-            .send_adb_request(AdbServerCommand::ShellCommand(command_string, args))?;
+            .send_adb_request(&AdbServerCommand::ShellCommand(command_string, args))?;
 
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {
@@ -74,7 +74,7 @@ impl ADBDeviceExt for ADBServerDevice {
         }
 
         self.set_serial_transport()?;
-        self.transport.send_adb_request(AdbServerCommand::Shell)?;
+        self.transport.send_adb_request(&AdbServerCommand::Shell)?;
 
         let mut read_stream = self.transport.get_raw_connection()?.try_clone()?;
 

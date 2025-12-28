@@ -45,7 +45,7 @@ impl Display for UsbBackend {
 }
 
 /// MDNS Backend Status
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum MDNSBackend {
     #[default]
     /// `Unknown`

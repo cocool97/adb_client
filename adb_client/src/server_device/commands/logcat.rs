@@ -14,11 +14,6 @@ impl<W: Write> LogFilter<W> {
             buffer: Vec::new(),
         }
     }
-
-    fn should_write(&self, _line: &[u8]) -> bool {
-        // Can implement checks here to ensure if logs have to be written
-        true
-    }
 }
 
 impl<W: Write> Write for LogFilter<W> {
@@ -32,9 +27,7 @@ impl<W: Write> Write for LogFilter<W> {
             let end = processed + pos + 1; // +1 to include the '\n'
             let line = &self.buffer[processed..end];
 
-            if self.should_write(line) {
-                self.writer.write_all(line)?;
-            }
+            self.writer.write_all(line)?;
 
             processed = end;
         }

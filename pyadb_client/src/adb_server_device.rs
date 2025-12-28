@@ -20,6 +20,7 @@ impl PyADBServerDevice {
     }
 
     /// Run shell commands on device and return the output (stdout + stderr merged)
+    #[expect(clippy::needless_pass_by_value)]
     pub fn shell_command(&mut self, commands: Vec<String>) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         let commands: Vec<&str> = commands.iter().map(|x| &**x).collect();
@@ -28,18 +29,21 @@ impl PyADBServerDevice {
     }
 
     /// Push a local file from input to dest
+    #[expect(clippy::needless_pass_by_value)]
     pub fn push(&mut self, input: PathBuf, dest: PathBuf) -> Result<()> {
         let mut reader = File::open(input)?;
         Ok(self.0.push(&mut reader, dest.to_string_lossy())?)
     }
 
     /// Pull a file from device located at input, and drop it to dest
+    #[expect(clippy::needless_pass_by_value)]
     pub fn pull(&mut self, input: PathBuf, dest: PathBuf) -> Result<()> {
         let mut writer = File::create(dest)?;
         Ok(self.0.pull(&input.to_string_lossy(), &mut writer)?)
     }
 
     /// Install a package installed on the device
+    #[expect(clippy::needless_pass_by_value)]
     pub fn install(&mut self, apk_path: PathBuf) -> Result<()> {
         Ok(self.0.install(&apk_path)?)
     }

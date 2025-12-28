@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 /// Type of reboot needed.
 pub enum RebootType {
     /// "Classic" device reboot

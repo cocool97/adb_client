@@ -6,7 +6,7 @@ impl ADBServer {
     pub fn disconnect_device(&mut self, address: SocketAddrV4) -> Result<()> {
         let response = self
             .connect()?
-            .proxy_connection(AdbServerCommand::Disconnect(address), true)?;
+            .proxy_connection(&AdbServerCommand::Disconnect(address), true)?;
 
         match String::from_utf8(response) {
             Ok(s) if s.starts_with("disconnected") => Ok(()),

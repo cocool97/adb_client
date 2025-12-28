@@ -41,7 +41,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
-        self.transport.send_adb_request(AdbServerCommand::Sync)?;
+        self.transport.send_adb_request(&AdbServerCommand::Sync)?;
 
         // Send a "Stat" command
         self.transport.send_sync_request(&SyncCommand::Stat)?;

@@ -51,7 +51,7 @@ impl TCPServerTransport {
 
     pub(crate) fn proxy_connection(
         &mut self,
-        adb_command: AdbServerCommand,
+        adb_command: &AdbServerCommand,
         with_response: bool,
     ) -> Result<Vec<u8>> {
         self.send_adb_request(adb_command)?;
@@ -117,7 +117,7 @@ impl TCPServerTransport {
 
     /// Send the given [`AdbCommand`] to ADB server, and checks that the request has been taken in consideration.
     /// If an error occurred, a [`RustADBError`] is returned with the response error string.
-    pub(crate) fn send_adb_request(&mut self, command: AdbServerCommand) -> Result<()> {
+    pub(crate) fn send_adb_request(&mut self, command: &AdbServerCommand) -> Result<()> {
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
 

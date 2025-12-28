@@ -6,7 +6,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .proxy_connection(AdbServerCommand::Reconnect, false)
+            .proxy_connection(&AdbServerCommand::Reconnect, false)
             .map(|_| ())
     }
 }

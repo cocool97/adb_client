@@ -10,7 +10,7 @@ impl ADBServer {
     pub fn devices(&mut self) -> Result<Vec<DeviceShort>> {
         let devices = self
             .connect()?
-            .proxy_connection(AdbServerCommand::Devices, true)?;
+            .proxy_connection(&AdbServerCommand::Devices, true)?;
 
         let mut vec_devices: Vec<DeviceShort> = vec![];
         for device in devices.split(|x| x.eq(&b'\n')) {
@@ -28,7 +28,7 @@ impl ADBServer {
     pub fn devices_long(&mut self) -> Result<Vec<DeviceLong>> {
         let devices_long = self
             .connect()?
-            .proxy_connection(AdbServerCommand::DevicesLong, true)?;
+            .proxy_connection(&AdbServerCommand::DevicesLong, true)?;
 
         let mut vec_devices: Vec<DeviceLong> = vec![];
         for device in devices_long.split(|x| x.eq(&b'\n')) {
@@ -81,7 +81,7 @@ impl ADBServer {
     /// Tracks new devices showing up.
     pub fn track_devices(&mut self, callback: impl Fn(DeviceShort) -> Result<()>) -> Result<()> {
         self.connect()?
-            .send_adb_request(AdbServerCommand::TrackDevices)?;
+            .send_adb_request(&AdbServerCommand::TrackDevices)?;
 
         loop {
             let length = self.get_transport()?.get_hex_body_length()?;

@@ -24,12 +24,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
 
             self.get_transport_mut()
-                .write_message(ADBTransportMessage::new(
+                .write_message(ADBTransportMessage::try_new(
                     MessageCommand::Okay,
                     session.local_id(),
                     session.remote_id(),
                     &[],
-                ))?;
+                )?)?;
 
             output.write_all(&message.into_payload())?;
         }
@@ -60,12 +60,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 let message = transport.read_message()?;
 
                 // Acknowledge for more data
-                let response = ADBTransportMessage::new(
+                let response = ADBTransportMessage::try_new(
                     MessageCommand::Okay,
                     session.local_id(),
                     session.remote_id(),
                     &[],
-                );
+                )?;
                 transport.write_message(response)?;
 
                 match message.header().command() {

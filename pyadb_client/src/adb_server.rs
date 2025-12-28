@@ -17,7 +17,7 @@ pub struct PyADBServer(ADBServer);
 impl PyADBServer {
     #[new]
     /// Instantiate a new `PyADBServer` instance
-    pub fn new(address: String) -> PyResult<Self> {
+    pub fn new(address: &str) -> PyResult<Self> {
         let address = address.parse::<SocketAddrV4>()?;
         Ok(ADBServer::new(address).into())
     }
@@ -38,8 +38,8 @@ impl PyADBServer {
     }
 
     /// Get a device by its name, as shown in `.devices()` output
-    pub fn get_device_by_name(&mut self, name: String) -> Result<PyADBServerDevice> {
-        Ok(self.0.get_device_by_name(&name)?.into())
+    pub fn get_device_by_name(&mut self, name: &str) -> Result<PyADBServerDevice> {
+        Ok(self.0.get_device_by_name(name)?.into())
     }
 }
 

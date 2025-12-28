@@ -45,9 +45,9 @@ impl ADBServerDevice {
         let identifier = self.identifier.clone();
         let transport = self.connect()?;
         if let Some(serial) = identifier {
-            transport.send_adb_request(AdbServerCommand::TransportSerial(serial))?;
+            transport.send_adb_request(&AdbServerCommand::TransportSerial(serial))?;
         } else {
-            transport.send_adb_request(AdbServerCommand::TransportAny)?;
+            transport.send_adb_request(&AdbServerCommand::TransportAny)?;
         }
 
         Ok(())

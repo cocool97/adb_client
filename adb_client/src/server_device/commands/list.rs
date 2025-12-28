@@ -15,7 +15,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
-        self.transport.send_adb_request(AdbServerCommand::Sync)?;
+        self.transport.send_adb_request(&AdbServerCommand::Sync)?;
 
         // Send a list command
         self.transport.send_sync_request(&SyncCommand::List)?;
@@ -67,11 +67,11 @@ impl ADBServerDevice {
                         type_code => return Err(RustADBError::UnknownFileMode(type_code)),
                     };
                     let entry = ADBListItem {
-                        item_type,
                         name,
                         time,
-                        size,
                         permissions,
+                        size,
+                        item_type,
                     };
                     list_items.push(entry);
                 }

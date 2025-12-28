@@ -16,6 +16,10 @@ rust-version = "1.91.0"
 [patch.crates-io]
 adb_client = { path = "./adb_client" }
 
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+missing_errors_doc = "allow"
+
 [profile.release]
 codegen-units = 1
 debug-assertions = false

@@ -8,7 +8,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(AdbServerCommand::Uninstall(package_name.to_string()))?;
+            .send_adb_request(&AdbServerCommand::Uninstall(package_name.to_string()))?;
 
         let mut data = [0; 1024];
         let read_amount = self.transport.get_raw_connection()?.read(&mut data)?;

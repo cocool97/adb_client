@@ -12,12 +12,12 @@ const REMOTE_TEST_FILE_PATH: &str = "/data/local/tmp/test_file.bin";
 
 /// Generate random test file with given size
 fn generate_test_file(size_in_bytes: usize) -> Result<()> {
+    const BUFFER_SIZE: usize = 64 * 1024;
+    let mut buffer = vec![0u8; BUFFER_SIZE].into_boxed_slice();
     let mut test_file = File::create(LOCAL_TEST_FILE_PATH)?;
 
     let mut rng = rng();
 
-    const BUFFER_SIZE: usize = 64 * 1024;
-    let mut buffer = [0u8; BUFFER_SIZE];
     let mut remaining_bytes = size_in_bytes;
 
     while remaining_bytes > 0 {
@@ -52,17 +52,14 @@ fn bench_adb_push_command() -> Result<()> {
     Ok(())
 }
 
-/// benchmarking `adb push INPUT DEST` and adb_client `ADBServerDevice.push(INPUT, DEST)`
+/// benchmarking `adb push INPUT DEST` and `adb_client` `ADBServerDevice.push(INPUT, DEST)`
 fn benchmark_adb_push(c: &mut Criterion) {
     for (file_size, sample_size) in [
         (10 * 1024 * 1024, 100),  // 10MB -> 100 iterations
         (500 * 1024 * 1024, 50),  // 500MB -> 50 iterations
         (1000 * 1024 * 1024, 20), // 1GB -> 20 iterations
     ] {
-        eprintln!(
-            "Benchmarking file_size={} and sample_size={}",
-            file_size, sample_size
-        );
+        eprintln!("Benchmarking file_size={file_size} and sample_size={sample_size}",);
 
         generate_test_file(file_size).expect("Cannot generate test file");
 

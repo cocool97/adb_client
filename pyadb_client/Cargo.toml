@@ -11,6 +11,9 @@ repository.workspace = true
 version.workspace = true
 rust-version.workspace = true
 
+[lints]
+workspace = true
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 name = "pyadb_client"

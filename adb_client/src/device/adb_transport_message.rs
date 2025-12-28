@@ -26,15 +26,15 @@ pub struct ADBTransportMessageHeader {
 }
 
 impl ADBTransportMessageHeader {
-    pub fn new(command: MessageCommand, arg0: u32, arg1: u32, data: &[u8]) -> Self {
-        Self {
+    pub fn try_new(command: MessageCommand, arg0: u32, arg1: u32, data: &[u8]) -> Result<Self> {
+        Ok(Self {
             command,
             arg0,
             arg1,
-            data_length: data.len() as u32,
+            data_length: u32::try_from(data.len())?,
             data_crc32: Self::compute_crc32(data),
             magic: Self::compute_magic(command),
-        }
+        })
     }
 
     pub fn command(&self) -> MessageCommand {
@@ -72,11 +72,11 @@ impl ADBTransportMessageHeader {
 }
 
 impl ADBTransportMessage {
-    pub fn new(command: MessageCommand, arg0: u32, arg1: u32, data: &[u8]) -> Self {
-        Self {
-            header: ADBTransportMessageHeader::new(command, arg0, arg1, data),
+    pub fn try_new(command: MessageCommand, arg0: u32, arg1: u32, data: &[u8]) -> Result<Self> {
+        Ok(Self {
+            header: ADBTransportMessageHeader::try_new(command, arg0, arg1, data)?,
             payload: data.to_vec(),
-        }
+        })
     }
 
     pub fn from_header_and_payload(header: ADBTransportMessageHeader, payload: Vec<u8>) -> Self {

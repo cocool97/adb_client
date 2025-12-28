@@ -181,7 +181,7 @@ impl ADBTransport for USBTransport {
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {
-        let message = ADBTransportMessage::new(MessageCommand::Clse, 0, 0, &[]);
+        let message = ADBTransportMessage::try_new(MessageCommand::Clse, 0, 0, &[])?;
         if let Err(e) = self.write_message(message) {
             log::error!("error while sending CLSE message: {e}");
         }
