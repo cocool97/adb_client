@@ -1,5 +1,7 @@
 use crate::{
-    Result, models::SyncCommand, server::AdbServerCommand, server_device::ADBServerDevice,
+    Result,
+    models::{ADBCommand, ADBLocalCommand, SyncCommand},
+    server_device::ADBServerDevice,
 };
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{BufReader, BufWriter, Read, Write};
@@ -70,7 +72,8 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
-        self.transport.send_adb_request(&AdbServerCommand::Sync)?;
+        self.transport
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Sync))?;
 
         // Send a recv command
         self.transport.send_sync_request(&SyncCommand::Recv)?;

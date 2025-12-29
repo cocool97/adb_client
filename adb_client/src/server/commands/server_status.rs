@@ -1,6 +1,7 @@
 use crate::{
     Result,
-    server::{ADBServer, AdbServerCommand, models::ServerStatus},
+    models::{ADBCommand, ADBHostCommand},
+    server::{ADBServer, models::ServerStatus},
 };
 
 impl ADBServer {
@@ -8,7 +9,7 @@ impl ADBServer {
     pub fn server_status(&mut self) -> Result<ServerStatus> {
         let status = self
             .connect()?
-            .proxy_connection(&AdbServerCommand::ServerStatus, true)?;
+            .proxy_connection(&ADBCommand::Host(ADBHostCommand::ServerStatus), true)?;
 
         ServerStatus::try_from(status)
     }

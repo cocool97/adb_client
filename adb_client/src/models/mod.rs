@@ -1,3 +1,6 @@
+mod adb_command;
+mod adb_host_command;
+mod adb_local_command;
 mod adb_request_status;
 mod adb_stat_response;
 mod framebuffer_info;
@@ -7,6 +10,9 @@ mod reboot_type;
 mod remount_info;
 mod sync_command;
 
+pub(crate) use adb_command::ADBCommand;
+pub(crate) use adb_host_command::ADBHostCommand;
+pub(crate) use adb_local_command::ADBLocalCommand;
 pub(crate) use adb_request_status::AdbRequestStatus;
 pub use adb_stat_response::AdbStatResponse;
 pub(crate) use framebuffer_info::{FrameBufferInfoV1, FrameBufferInfoV2};

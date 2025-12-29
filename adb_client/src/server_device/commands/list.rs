@@ -1,7 +1,6 @@
 use crate::{
     Result, RustADBError,
-    models::{ADBListItem, ADBListItemType, SyncCommand},
-    server::AdbServerCommand,
+    models::{ADBCommand, ADBListItem, ADBListItemType, ADBLocalCommand, SyncCommand},
     server_device::ADBServerDevice,
 };
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
@@ -17,7 +16,8 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
-        self.transport.send_adb_request(&AdbServerCommand::Sync)?;
+        self.transport
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Sync))?;
 
         // Send a list command
         self.transport.send_sync_request(&SyncCommand::List)?;

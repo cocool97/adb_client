@@ -1,6 +1,7 @@
 use crate::{
     Result,
-    server::{ADBServer, AdbServerCommand, AdbVersion},
+    models::{ADBCommand, ADBHostCommand},
+    server::{ADBServer, AdbVersion},
 };
 
 impl ADBServer {
@@ -8,7 +9,7 @@ impl ADBServer {
     pub fn version(&mut self) -> Result<AdbVersion> {
         let version = self
             .connect()?
-            .proxy_connection(&AdbServerCommand::Version, true)?;
+            .proxy_connection(&ADBCommand::Host(ADBHostCommand::Version), true)?;
 
         AdbVersion::try_from(version)
     }

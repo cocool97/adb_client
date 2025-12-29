@@ -1,6 +1,10 @@
 use std::io::Read;
 
-use crate::{Result, server::AdbServerCommand, server_device::ADBServerDevice};
+use crate::{
+    Result,
+    models::{ADBCommand, ADBLocalCommand},
+    server_device::ADBServerDevice,
+};
 
 impl ADBServerDevice {
     /// Uninstall a package from device
@@ -8,7 +12,9 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(&AdbServerCommand::Uninstall(package_name.to_string()))?;
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Uninstall(
+                package_name.to_string(),
+            )))?;
 
         let mut data = [0; 1024];
         let read_amount = self.transport.get_raw_connection()?.read(&mut data)?;

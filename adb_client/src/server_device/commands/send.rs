@@ -1,7 +1,6 @@
 use crate::{
     Result, RustADBError,
-    models::{AdbRequestStatus, SyncCommand},
-    server::AdbServerCommand,
+    models::{ADBCommand, ADBLocalCommand, AdbRequestStatus, SyncCommand},
     server_device::ADBServerDevice,
 };
 use std::{
@@ -51,7 +50,8 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
-        self.transport.send_adb_request(&AdbServerCommand::Sync)?;
+        self.transport
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Sync))?;
 
         // Send a send command
         self.transport.send_sync_request(&SyncCommand::Send)?;

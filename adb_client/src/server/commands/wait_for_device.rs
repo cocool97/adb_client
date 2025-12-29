@@ -1,6 +1,7 @@
 use crate::{
     Result,
-    server::{ADBServer, AdbServerCommand, WaitForDeviceState, WaitForDeviceTransport},
+    models::{ADBCommand, ADBHostCommand},
+    server::{ADBServer, WaitForDeviceState, WaitForDeviceTransport},
 };
 
 impl ADBServer {
@@ -13,7 +14,9 @@ impl ADBServer {
         let transport = transport.unwrap_or_default();
 
         self.connect()?
-            .send_adb_request(&AdbServerCommand::WaitForDevice(state, transport))?;
+            .send_adb_request(&ADBCommand::Host(ADBHostCommand::WaitForDevice(
+                state, transport,
+            )))?;
 
         // Server should respond with an "OKAY" response
         self.get_transport()?.read_adb_response()

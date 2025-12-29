@@ -1,5 +1,7 @@
 use crate::{
-    Result, models::HostFeatures, server::AdbServerCommand, server_device::ADBServerDevice,
+    Result,
+    models::{ADBCommand, ADBHostCommand, HostFeatures},
+    server_device::ADBServerDevice,
 };
 
 impl ADBServerDevice {
@@ -9,7 +11,7 @@ impl ADBServerDevice {
 
         let features = self
             .transport
-            .proxy_connection(&AdbServerCommand::HostFeatures, true)?;
+            .proxy_connection(&ADBCommand::Host(ADBHostCommand::HostFeatures), true)?;
 
         Ok(features
             .split(|x| x.eq(&b','))

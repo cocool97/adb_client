@@ -1,6 +1,7 @@
 use crate::{
     ADBTransport, Result,
-    server::{AdbServerCommand, TCPServerTransport},
+    models::{ADBCommand, ADBHostCommand},
+    server::TCPServerTransport,
 };
 use std::net::SocketAddrV4;
 
@@ -48,9 +49,10 @@ impl ADBServerDevice {
         let identifier = self.identifier.clone();
         let transport = self.connect()?;
         if let Some(serial) = identifier {
-            transport.send_adb_request(&AdbServerCommand::TransportSerial(serial))?;
+            transport
+                .send_adb_request(&ADBCommand::Host(ADBHostCommand::TransportSerial(serial)))?;
         } else {
-            transport.send_adb_request(&AdbServerCommand::TransportAny)?;
+            transport.send_adb_request(&ADBCommand::Host(ADBHostCommand::TransportAny))?;
         }
 
         Ok(())

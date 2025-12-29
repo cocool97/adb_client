@@ -5,8 +5,7 @@ use image::{ImageBuffer, Rgba};
 
 use crate::{
     Result, RustADBError,
-    models::{FrameBufferInfoV1, FrameBufferInfoV2},
-    server::AdbServerCommand,
+    models::{ADBCommand, ADBLocalCommand, FrameBufferInfoV1, FrameBufferInfoV2},
     server_device::ADBServerDevice,
 };
 
@@ -16,7 +15,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(&AdbServerCommand::FrameBuffer)?;
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::FrameBuffer))?;
 
         let version = self
             .transport
