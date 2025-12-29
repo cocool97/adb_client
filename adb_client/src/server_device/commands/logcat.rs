@@ -49,6 +49,6 @@ impl<W: Write> Write for LogFilter<W> {
 impl ADBServerDevice {
     /// Get logs from device
     pub fn get_logs<W: Write>(&mut self, output: W) -> Result<()> {
-        self.shell_command(&["exec logcat"], &mut LogFilter::new(output))
+        self.shell_command(&"exec logcat", &mut LogFilter::new(output))
     }
 }

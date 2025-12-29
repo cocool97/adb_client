@@ -13,7 +13,7 @@ use super::ADBServerDevice;
 const BUFFER_SIZE: usize = 65535;
 
 impl ADBDeviceExt for ADBServerDevice {
-    fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
+    fn shell_command(&mut self, command: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -25,7 +25,6 @@ impl ADBDeviceExt for ADBServerDevice {
 
         // Prepare shell command arguments
         let mut args = Vec::new();
-        let command_string = command.join(" ");
 
         // Add v2 mode if supported
         if supported_features.contains(&HostFeatures::ShellV2) {
@@ -41,7 +40,7 @@ impl ADBDeviceExt for ADBServerDevice {
         // Send the request
         self.transport
             .send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
-                command_string,
+                command.as_ref().to_string(),
                 args,
             )))?;
 

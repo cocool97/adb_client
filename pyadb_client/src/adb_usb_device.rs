@@ -21,11 +21,9 @@ impl PyADBUSBDevice {
     }
 
     /// Run shell commands on device and return the output (stdout + stderr merged)
-    #[expect(clippy::needless_pass_by_value)]
-    pub fn shell_command(&mut self, commands: Vec<String>) -> Result<Vec<u8>> {
+    pub fn shell_command(&mut self, command: &str) -> Result<Vec<u8>> {
         let mut output = Vec::new();
-        let commands: Vec<&str> = commands.iter().map(|x| &**x).collect();
-        self.0.shell_command(&commands, &mut output)?;
+        self.0.shell_command(&command, &mut output)?;
         Ok(output)
     }
 
