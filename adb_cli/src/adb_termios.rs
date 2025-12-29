@@ -2,7 +2,7 @@
 
 use std::os::unix::prelude::{AsRawFd, RawFd};
 
-use termios::{TCSANOW, Termios, VMIN, VTIME, tcsetattr};
+use termios::{ECHO, ICANON, TCSANOW, Termios, VMIN, VTIME, tcsetattr};
 
 use crate::models::{ADBCliError, ADBCliResult};
 
@@ -16,7 +16,8 @@ impl ADBTermios {
     pub fn new(fd: &impl AsRawFd) -> Result<Self, ADBCliError> {
         let mut new_termios = Termios::from_fd(fd.as_raw_fd())?;
         let old_termios = new_termios; // Saves previous state
-        new_termios.c_lflag = 0;
+        // Deactivate canonical mode (`ICANON`) and echo (`ECHO`)
+        new_termios.c_lflag &= !(ICANON | ECHO);
         new_termios.c_cc[VTIME] = 0;
         new_termios.c_cc[VMIN] = 1;
 

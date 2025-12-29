@@ -52,7 +52,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         reader: &mut dyn Read,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        self.bidi_session(b"shell:\0", reader, writer)
+        self.bidirectional_session(b"shell:\0", reader, writer)
     }
 
     /// Runs `command` on the device.
@@ -63,11 +63,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         reader: &mut dyn Read,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        self.bidi_session(format!("exec:{command}\0").as_bytes(), reader, writer)
+        self.bidirectional_session(format!("exec:{command}\0").as_bytes(), reader, writer)
     }
 
     /// Starts an bidirectional(interactive) session. This can be a shell or an exec session.
-    fn bidi_session(
+    fn bidirectional_session(
         &mut self,
         session_data: &[u8],
         mut reader: &mut dyn Read,
