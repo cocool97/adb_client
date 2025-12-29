@@ -57,7 +57,7 @@ jobs:
 
   release-macos:
     name: macOS - Build Binary
-    runs-on: macos-13
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
