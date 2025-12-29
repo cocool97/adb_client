@@ -1,7 +1,10 @@
 use std::{fs::File, io::Read, path::Path};
 
 use crate::{
-    Result, server::AdbServerCommand, server_device::ADBServerDevice, utils::check_extension_is_apk,
+    Result,
+    models::{ADBCommand, ADBLocalCommand},
+    server_device::ADBServerDevice,
+    utils::check_extension_is_apk,
 };
 
 impl ADBServerDevice {
@@ -16,7 +19,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(&AdbServerCommand::Install(file_size))?;
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Install(file_size)))?;
 
         let mut raw_connection = self.transport.get_raw_connection()?;
 

@@ -5,8 +5,7 @@ use std::{
 
 use crate::{
     ADBDeviceExt, ADBListItemType, Result, RustADBError,
-    models::{AdbStatResponse, HostFeatures, RemountInfo},
-    server::AdbServerCommand,
+    models::{ADBCommand, ADBLocalCommand, AdbStatResponse, HostFeatures, RemountInfo},
 };
 
 use super::ADBServerDevice;
@@ -41,7 +40,10 @@ impl ADBDeviceExt for ADBServerDevice {
 
         // Send the request
         self.transport
-            .send_adb_request(&AdbServerCommand::ShellCommand(command_string, args))?;
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
+                command_string,
+                args,
+            )))?;
 
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {
@@ -70,11 +72,15 @@ impl ADBDeviceExt for ADBServerDevice {
         reader: &mut dyn Read,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        self.bidirectional_session(&AdbServerCommand::Exec(command.to_owned()), reader, writer)
+        self.bidirectional_session(
+            &ADBCommand::Local(ADBLocalCommand::Exec(command.to_owned())),
+            reader,
+            writer,
+        )
     }
 
     fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
-        self.bidirectional_session(&AdbServerCommand::Shell, reader, writer)
+        self.bidirectional_session(&ADBCommand::Local(ADBLocalCommand::Shell), reader, writer)
     }
 
     fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
@@ -121,7 +127,7 @@ impl ADBDeviceExt for ADBServerDevice {
 impl ADBServerDevice {
     fn bidirectional_session(
         &mut self,
-        server_cmd: &AdbServerCommand,
+        server_cmd: &ADBCommand,
         mut reader: &mut dyn Read,
         mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {

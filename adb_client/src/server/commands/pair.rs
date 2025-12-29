@@ -1,6 +1,7 @@
 use crate::{
     Result, RustADBError,
-    server::{ADBServer, AdbServerCommand},
+    models::{ADBCommand, ADBHostCommand},
+    server::ADBServer,
 };
 use std::net::SocketAddrV4;
 
@@ -9,7 +10,7 @@ impl ADBServer {
     pub fn pair(&mut self, address: SocketAddrV4, code: String) -> Result<()> {
         let response = self
             .connect()?
-            .proxy_connection(&AdbServerCommand::Pair(address, code), true)?;
+            .proxy_connection(&ADBCommand::Host(ADBHostCommand::Pair(address, code)), true)?;
 
         match String::from_utf8(response) {
             Ok(s) if s.starts_with("Successfully paired to") => Ok(()),

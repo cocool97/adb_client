@@ -3,18 +3,14 @@ use crate::{
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
     },
+    models::ADBLocalCommand,
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn uninstall(&mut self, package_name: &dyn AsRef<str>) -> Result<()> {
-        self.open_session(
-            format!(
-                "exec:cmd package 'uninstall' {}{}",
-                package_name.as_ref(),
-                "\0"
-            )
-            .as_bytes(),
-        )?;
+        self.open_session(&ADBLocalCommand::Uninstall(
+            package_name.as_ref().to_string(),
+        ))?;
 
         let final_status = self.get_transport_mut().read_message()?;
 

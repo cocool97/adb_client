@@ -4,12 +4,12 @@ use crate::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
         message_commands::MessageCommand,
     },
-    models::RemountInfo,
+    models::{ADBLocalCommand, RemountInfo},
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn remount(&mut self) -> Result<Vec<RemountInfo>> {
-        self.open_session(b"remount:\0")?;
+        self.open_session(&ADBLocalCommand::Remount)?;
 
         let response = self.get_transport_mut().read_message()?;
 

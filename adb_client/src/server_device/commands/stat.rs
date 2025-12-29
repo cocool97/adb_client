@@ -3,7 +3,8 @@ use std::io::{Read, Write};
 use byteorder::{ByteOrder, LittleEndian};
 
 use crate::{
-    AdbStatResponse, Result, RustADBError, models::SyncCommand, server::AdbServerCommand,
+    AdbStatResponse, Result, RustADBError,
+    models::{ADBCommand, ADBLocalCommand, SyncCommand},
     server_device::ADBServerDevice,
 };
 
@@ -41,7 +42,8 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
-        self.transport.send_adb_request(&AdbServerCommand::Sync)?;
+        self.transport
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Sync))?;
 
         // Send a "Stat" command
         self.transport.send_sync_request(&SyncCommand::Stat)?;

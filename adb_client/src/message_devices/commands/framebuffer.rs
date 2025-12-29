@@ -9,12 +9,12 @@ use crate::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
         message_commands::MessageCommand,
     },
-    models::{FrameBufferInfoV1, FrameBufferInfoV2},
+    models::{ADBLocalCommand, FrameBufferInfoV1, FrameBufferInfoV2},
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
-        let session = self.open_session(b"framebuffer:\0")?;
+        let session = self.open_session(&ADBLocalCommand::FrameBuffer)?;
 
         let response = self.recv_and_reply_okay(session)?;
 

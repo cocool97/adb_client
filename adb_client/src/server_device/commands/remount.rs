@@ -1,5 +1,7 @@
 use crate::{
-    Result, models::RemountInfo, server::AdbServerCommand, server_device::ADBServerDevice,
+    Result,
+    models::{ADBCommand, ADBLocalCommand, RemountInfo},
+    server_device::ADBServerDevice,
 };
 use std::io::Read;
 
@@ -9,7 +11,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(&AdbServerCommand::Remount)?;
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Remount))?;
 
         let mut data = [0; 1024];
         let read_amount = self.transport.get_raw_connection()?.read(&mut data)?;

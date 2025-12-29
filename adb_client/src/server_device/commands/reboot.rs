@@ -1,4 +1,8 @@
-use crate::{Result, models::RebootType, server::AdbServerCommand, server_device::ADBServerDevice};
+use crate::{
+    Result,
+    models::{ADBCommand, ADBLocalCommand, RebootType},
+    server_device::ADBServerDevice,
+};
 
 impl ADBServerDevice {
     /// Reboots the device
@@ -6,7 +10,10 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .proxy_connection(&AdbServerCommand::Reboot(reboot_type), false)
+            .proxy_connection(
+                &ADBCommand::Local(ADBLocalCommand::Reboot(reboot_type)),
+                false,
+            )
             .map(|_| ())
     }
 }

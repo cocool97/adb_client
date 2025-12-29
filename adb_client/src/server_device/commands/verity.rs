@@ -1,4 +1,8 @@
-use crate::{Result, server::AdbServerCommand, server_device::ADBServerDevice};
+use crate::{
+    Result,
+    models::{ADBCommand, ADBLocalCommand},
+    server_device::ADBServerDevice,
+};
 
 impl ADBServerDevice {
     /// Disable verity on the device
@@ -6,7 +10,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(&AdbServerCommand::DisableVerity)
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::DisableVerity))
     }
 
     /// Enable verity on the device
@@ -14,6 +18,6 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(&AdbServerCommand::EnableVerity)
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::EnableVerity))
     }
 }

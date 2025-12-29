@@ -1,4 +1,8 @@
-use crate::{Result, server::AdbServerCommand, server_device::ADBServerDevice};
+use crate::{
+    Result,
+    models::{ADBCommand, ADBLocalCommand},
+    server_device::ADBServerDevice,
+};
 
 impl ADBServerDevice {
     /// Reverse socket connection
@@ -6,7 +10,10 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .proxy_connection(&AdbServerCommand::Reverse(remote, local), false)
+            .proxy_connection(
+                &ADBCommand::Local(ADBLocalCommand::Reverse(remote, local)),
+                false,
+            )
             .map(|_| ())
     }
 
@@ -15,7 +22,7 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .proxy_connection(&AdbServerCommand::ReverseRemoveAll, false)
+            .proxy_connection(&ADBCommand::Local(ADBLocalCommand::ReverseRemoveAll), false)
             .map(|_| ())
     }
 }

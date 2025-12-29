@@ -1,13 +1,14 @@
 use crate::{
     Result,
-    server::{ADBServer, AdbServerCommand},
+    models::{ADBCommand, ADBHostCommand},
+    server::ADBServer,
 };
 
 impl ADBServer {
     /// Asks the ADB server to quit immediately.
     pub fn kill(&mut self) -> Result<()> {
         self.connect()?
-            .proxy_connection(&AdbServerCommand::Kill, false)
+            .proxy_connection(&ADBCommand::Host(ADBHostCommand::Kill), false)
             .map(|_| ())
     }
 }
