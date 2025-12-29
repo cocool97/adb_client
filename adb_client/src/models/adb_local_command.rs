@@ -28,12 +28,12 @@ impl Display for ADBLocalCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ADBLocalCommand::Sync => write!(f, "sync:"),
-            ADBLocalCommand::ShellCommand(command, args) => {
-                let args_s = args.join(",");
+            ADBLocalCommand::ShellCommand(command, shell_args) => {
+                let args_s = shell_args.join(",");
                 write!(
                     f,
                     "shell{}{args_s},raw:{command}",
-                    if args.is_empty() { "" } else { "," }
+                    if shell_args.is_empty() { "" } else { "," }
                 )
             }
             ADBLocalCommand::Shell => match std::env::var("TERM") {

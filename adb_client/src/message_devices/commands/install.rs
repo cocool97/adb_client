@@ -6,6 +6,7 @@ use crate::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
         commands::utils::MessageWriter, message_commands::MessageCommand,
     },
+    models::ADBLocalCommand,
     utils::check_extension_is_apk,
 };
 
@@ -17,8 +18,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let file_size = apk_file.metadata()?.len();
 
-        let session =
-            self.open_session(format!("exec:cmd package 'install' -S {file_size}\0").as_bytes())?;
+        let session = self.open_session(&ADBLocalCommand::Install(file_size))?;
 
         let transport = self.get_transport().clone();
 

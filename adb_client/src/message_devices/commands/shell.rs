@@ -1,6 +1,7 @@
 use std::io::{ErrorKind, Read, Write};
 use std::time::Duration;
 
+use crate::models::ADBLocalCommand;
 use crate::{
     Result, RustADBError,
     message_devices::{
@@ -13,7 +14,10 @@ use crate::{
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Runs 'command' in a shell on the device, and write its output and error streams into output.
     pub(crate) fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
-        let session = self.open_session(format!("shell:{}\0", command.join(" "),).as_bytes())?;
+        let session = self.open_session(&ADBLocalCommand::ShellCommand(
+            command.join(" "),
+            Vec::new(),
+        ))?;
 
         let mut transport = self.get_transport().clone();
 
@@ -52,7 +56,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         reader: &mut dyn Read,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        self.bidirectional_session(b"shell:\0", reader, writer)
+        self.bidirectional_session(&ADBLocalCommand::Shell, reader, writer)
     }
 
     /// Runs `command` on the device.
@@ -63,17 +67,17 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         reader: &mut dyn Read,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        self.bidirectional_session(format!("exec:{command}\0").as_bytes(), reader, writer)
+        self.bidirectional_session(&ADBLocalCommand::Exec(command.to_string()), reader, writer)
     }
 
     /// Starts an bidirectional(interactive) session. This can be a shell or an exec session.
     fn bidirectional_session(
         &mut self,
-        session_data: &[u8],
+        local_command: &ADBLocalCommand,
         mut reader: &mut dyn Read,
         mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        let session = self.open_session(session_data)?;
+        let session = self.open_session(local_command)?;
 
         let mut transport = self.get_transport().clone();
 

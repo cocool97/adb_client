@@ -17,6 +17,7 @@ use crate::{
         message_commands::{MessageCommand, MessageSubcommand},
         models::{ADBRsaKey, ADBSession},
     },
+    models::ADBLocalCommand,
 };
 
 const BUFFER_SIZE: usize = 65535;
@@ -255,7 +256,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     pub(crate) fn begin_synchronization(&mut self) -> Result<ADBSession> {
-        self.open_session(b"sync:\0")
+        self.open_session(&ADBLocalCommand::Sync)
     }
 
     pub(crate) fn stat_with_explicit_ids(
@@ -296,7 +297,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         Ok(())
     }
 
-    pub(crate) fn open_session(&mut self, data: &[u8]) -> Result<ADBSession> {
+    pub(crate) fn open_session(&mut self, cmd: &ADBLocalCommand) -> Result<ADBSession> {
         let mut rng = rand::rng();
         let local_id: u32 = rng.random();
 
@@ -304,7 +305,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             MessageCommand::Open,
             local_id, // Our 'local-id'
             0,
-            data,
+            cmd.to_string().as_bytes(),
         )?;
         self.get_transport_mut().write_message(message)?;
 

@@ -4,11 +4,12 @@ use crate::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
         message_commands::MessageCommand,
     },
+    models::ADBLocalCommand,
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn enable_verity(&mut self) -> Result<()> {
-        self.open_session(b"enable-verity:\0")?;
+        self.open_session(&ADBLocalCommand::EnableVerity)?;
 
         self.get_transport_mut()
             .read_message()
@@ -16,7 +17,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     pub(crate) fn disable_verity(&mut self) -> Result<()> {
-        self.open_session(b"disable-verity:\0")?;
+        self.open_session(&ADBLocalCommand::DisableVerity)?;
 
         self.get_transport_mut()
             .read_message()
