@@ -13,9 +13,13 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Runs 'command' in a shell on the device, and write its output and error streams into output.
-    pub(crate) fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
+    pub(crate) fn shell_command(
+        &mut self,
+        command: &dyn AsRef<str>,
+        output: &mut dyn Write,
+    ) -> Result<()> {
         let session = self.open_session(&ADBLocalCommand::ShellCommand(
-            command.join(" "),
+            command.as_ref().to_string(),
             Vec::new(),
         ))?;
 

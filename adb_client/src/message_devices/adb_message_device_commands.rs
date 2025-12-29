@@ -12,7 +12,7 @@ use std::{
 
 impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     #[inline]
-    fn shell_command(&mut self, command: &[&str], output: &mut dyn Write) -> Result<()> {
+    fn shell_command(&mut self, command: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
         self.shell_command(command, output)
     }
 

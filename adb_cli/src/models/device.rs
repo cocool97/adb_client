@@ -7,7 +7,10 @@ use super::RebootTypeCommand;
 #[derive(Parser, Debug)]
 pub enum DeviceCommands {
     /// Spawn an interactive shell or run a list of commands on the device
-    Shell { commands: Vec<String> },
+    Shell {
+        #[arg(trailing_var_arg = true)]
+        commands: Vec<String>,
+    },
     /// Pull a file from device
     Pull { source: String, destination: String },
     /// Push a file on device
