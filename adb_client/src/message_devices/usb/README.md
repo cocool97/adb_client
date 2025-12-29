@@ -8,7 +8,7 @@ use adb_client::{usb::ADBUSBDevice, ADBDeviceExt};
 let vendor_id = 0x04e8;
 let product_id = 0x6860;
 let mut device = ADBUSBDevice::new(vendor_id, product_id).expect("cannot find device");
-device.shell_command(&["df", "-h"], &mut std::io::stdout());
+device.shell_command(&"df -h", &mut std::io::stdout());
 ```
 
 ## Push a file to the device
