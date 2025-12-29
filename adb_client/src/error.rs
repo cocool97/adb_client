@@ -90,8 +90,6 @@ pub enum RustADBError {
     #[error(transparent)]
     Base64EncodeError(#[from] base64::EncodeSliceError),
     /// An error occurred with RSA engine
-    #[cfg(feature = "usb")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error(transparent)]
     RSAError(#[from] rsa::errors::Error),
     /// Cannot convert given data from slice
@@ -101,8 +99,6 @@ pub enum RustADBError {
     #[error("wrong file extension: {0}")]
     WrongFileExtension(String),
     /// An error occurred with PKCS8 data
-    #[cfg(feature = "usb")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error("error with pkcs8: {0}")]
     RsaPkcs8Error(#[from] rsa::pkcs8::Error),
     /// Error during certificate generation
