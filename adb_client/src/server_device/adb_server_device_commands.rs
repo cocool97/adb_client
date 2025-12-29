@@ -64,11 +64,69 @@ impl ADBDeviceExt for ADBServerDevice {
         self.stat(remote_path.as_ref())
     }
 
-    fn shell(
+    fn exec(
         &mut self,
+        command: &str,
+        reader: &mut dyn Read,
+        writer: Box<dyn Write + Send>,
+    ) -> Result<()> {
+        self.bidirectional_session(&AdbServerCommand::Exec(command.to_owned()), reader, writer)
+    }
+
+    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
+        self.bidirectional_session(&AdbServerCommand::Shell, reader, writer)
+    }
+
+    fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
+        self.pull(source, &mut output)
+    }
+
+    fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
+        self.reboot(reboot_type)
+    }
+
+    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
+        self.push(stream, path)
+    }
+
+    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
+        self.install(apk_path)
+    }
+
+    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
+        self.uninstall(package.as_ref())
+    }
+
+    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
+        self.framebuffer_inner()
+    }
+
+    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
+        self.list(path)
+    }
+
+    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
+        self.remount()
+    }
+
+    fn enable_verity(&mut self) -> Result<()> {
+        self.enable_verity()
+    }
+
+    fn disable_verity(&mut self) -> Result<()> {
+        self.disable_verity()
+    }
+}
+
+impl ADBServerDevice {
+    fn bidirectional_session(
+        &mut self,
+        server_cmd: &AdbServerCommand,
         mut reader: &mut dyn Read,
         mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
+        // TODO: Not sure if this feature check is neccecery if server_cmd is `AdbServerCommand::Exec(_)`.
+        //       If it isn't move this check to `<ADBServerDevice as ADBDeviceExt>::shell`.
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -77,7 +135,7 @@ impl ADBDeviceExt for ADBServerDevice {
         }
 
         self.set_serial_transport()?;
-        self.transport.send_adb_request(&AdbServerCommand::Shell)?;
+        self.transport.send_adb_request(server_cmd)?;
 
         let mut read_stream = self.transport.get_raw_connection()?.try_clone()?;
 
@@ -113,55 +171,5 @@ impl ADBDeviceExt for ADBServerDevice {
         }
 
         Ok(())
-    }
-
-    #[inline]
-    fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
-        self.pull(source, &mut output)
-    }
-
-    #[inline]
-    fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
-        self.reboot(reboot_type)
-    }
-
-    #[inline]
-    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
-        self.remount()
-    }
-
-    #[inline]
-    fn enable_verity(&mut self) -> Result<()> {
-        self.enable_verity()
-    }
-
-    #[inline]
-    fn disable_verity(&mut self) -> Result<()> {
-        self.disable_verity()
-    }
-
-    #[inline]
-    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
-        self.push(stream, path)
-    }
-
-    #[inline]
-    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
-        self.install(apk_path)
-    }
-
-    #[inline]
-    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
-        self.uninstall(package.as_ref())
-    }
-
-    #[inline]
-    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
-        self.framebuffer_inner()
-    }
-
-    #[inline]
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
-        self.list(path)
     }
 }

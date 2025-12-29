@@ -22,6 +22,16 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     }
 
     #[inline]
+    fn exec(
+        &mut self,
+        command: &str,
+        reader: &mut dyn Read,
+        writer: Box<dyn Write + Send>,
+    ) -> Result<()> {
+        self.exec(command, reader, writer)
+    }
+
+    #[inline]
     fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
         self.stat(remote_path)
     }
