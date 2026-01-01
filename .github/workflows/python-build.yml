@@ -27,7 +27,7 @@ jobs:
         run: cargo run --bin stub_gen
 
       - name: Install Python build dependencies
-        run: pip install maturin==1.8.2
+        run: pip install maturin==1.10.2
 
       - name: Build Python packages
         run: maturin build --sdist --release -m pyadb_client/Cargo.toml
@@ -50,7 +50,7 @@ jobs:
 
     steps:
       - name: Install maturin
-        run: pip install maturin==1.8.2
+        run: pip install maturin==1.10.2
 
       - name: Download wheels for x86_64
         uses: actions/download-artifact@v4
