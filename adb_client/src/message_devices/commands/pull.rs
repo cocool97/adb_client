@@ -15,7 +15,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let session = self.begin_synchronization()?;
         let source = source.as_ref();
 
-        let adb_stat_response = self.stat_with_explicit_ids(session, source)?;
+        let adb_stat_response = self.stat_with_explicit_ids(&session, source)?;
 
         if adb_stat_response.file_perm == 0 {
             return Err(RustADBError::UnknownResponseType(
@@ -48,8 +48,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             source.as_bytes(),
         )?)?;
 
-        self.recv_file(session, output)?;
-        self.end_transaction(session)?;
+        self.recv_file(&session, output)?;
+        self.end_transaction(&session)?;
         Ok(())
     }
 }

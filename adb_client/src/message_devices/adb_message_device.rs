@@ -120,7 +120,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Receive a message and acknowledge it by replying with an `OKAY` command
     pub(crate) fn recv_and_reply_okay(
         &mut self,
-        session: ADBSession,
+        session: &ADBSession,
     ) -> Result<ADBTransportMessage> {
         let message = self.transport.read_message()?;
         self.transport.write_message(ADBTransportMessage::try_new(
@@ -147,7 +147,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn recv_file<W: std::io::Write>(
         &mut self,
-        session: ADBSession,
+        session: &ADBSession,
         mut output: W,
     ) -> std::result::Result<(), RustADBError> {
         let mut len: Option<u64> = None;
@@ -185,7 +185,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn push_file<R: std::io::Read>(
         &mut self,
-        session: ADBSession,
+        session: &ADBSession,
         mut reader: R,
     ) -> std::result::Result<(), RustADBError> {
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
@@ -261,7 +261,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     pub(crate) fn stat_with_explicit_ids(
         &mut self,
-        session: ADBSession,
+        session: &ADBSession,
         remote_path: &str,
     ) -> Result<AdbStatResponse> {
         let stat_buffer = MessageSubcommand::Stat.with_arg(u32::try_from(remote_path.len())?);
@@ -285,7 +285,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         bincode_deserialize_from_slice(&response.into_payload()[4..])
     }
 
-    pub(crate) fn end_transaction(&mut self, session: ADBSession) -> Result<()> {
+    pub(crate) fn end_transaction(&mut self, session: &ADBSession) -> Result<()> {
         let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
         self.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,

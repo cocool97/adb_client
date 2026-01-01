@@ -16,7 +16,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
         let session = self.open_session(&ADBLocalCommand::FrameBuffer)?;
 
-        let response = self.recv_and_reply_okay(session)?;
+        let response = self.recv_and_reply_okay(&session)?;
 
         let mut payload_cursor = Cursor::new(response.payload());
 
@@ -39,7 +39,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         break;
                     }
 
-                    let response = self.recv_and_reply_okay(session)?;
+                    let response = self.recv_and_reply_okay(&session)?;
 
                     framebuffer_data.extend_from_slice(&response.into_payload());
 
@@ -72,7 +72,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         break;
                     }
 
-                    let response = self.recv_and_reply_okay(session)?;
+                    let response = self.recv_and_reply_okay(&session)?;
 
                     framebuffer_data.extend_from_slice(&response.into_payload());
 

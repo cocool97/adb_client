@@ -27,8 +27,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             &send_buffer,
         )?)?;
 
-        self.push_file(session, stream)?;
-        self.end_transaction(session)?;
+        self.push_file(&session, stream)?;
+        self.end_transaction(&session)?;
 
         Ok(())
     }

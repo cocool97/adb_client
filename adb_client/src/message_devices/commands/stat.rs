@@ -8,8 +8,8 @@ use crate::{
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
         let session = self.begin_synchronization()?;
-        let adb_stat_response = self.stat_with_explicit_ids(session, remote_path.as_ref())?;
-        self.end_transaction(session)?;
+        let adb_stat_response = self.stat_with_explicit_ids(&session, remote_path.as_ref())?;
+        self.end_transaction(&session)?;
         Ok(adb_stat_response)
     }
 }

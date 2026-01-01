@@ -83,6 +83,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     ) -> Result<()> {
         let session = self.open_session(local_command)?;
 
+        let local_id = session.local_id();
+        let remote_id = session.remote_id();
+
         let mut transport = self.get_transport().clone();
 
         // Reading thread, reads response from adbd
@@ -91,12 +94,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 let message = transport.read_message()?;
 
                 // Acknowledge for more data
-                let response = ADBTransportMessage::try_new(
-                    MessageCommand::Okay,
-                    session.local_id(),
-                    session.remote_id(),
-                    &[],
-                )?;
+                let response =
+                    ADBTransportMessage::try_new(MessageCommand::Okay, local_id, remote_id, &[])?;
                 transport.write_message(response)?;
 
                 match message.header().command() {
