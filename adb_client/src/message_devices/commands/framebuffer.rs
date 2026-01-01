@@ -1,5 +1,5 @@
 use std::io::{Cursor, Read};
-
+use std::time::Duration;
 use byteorder::{LittleEndian, ReadBytesExt};
 use image::{ImageBuffer, Rgba};
 
@@ -92,9 +92,16 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             v => return Err(RustADBError::UnimplementedFramebufferImageVersion(v)),
         };
 
+        // Read the final CLSE for this session
         self.get_transport_mut()
             .read_message()
             .and_then(|message| message.assert_command(MessageCommand::Clse))?;
+
+        // Some devices may repeat the trailing CLSE to ensure the client has seen it.
+        // Drain any extra CLSEs that may be present.
+        while let Ok(_discard_close_message) =
+            self.get_transport_mut().read_message_with_timeout(Duration::from_millis(20))
+        {}
 
         Ok(img)
     }

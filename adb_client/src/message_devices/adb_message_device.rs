@@ -123,19 +123,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         session: ADBSession,
     ) -> Result<ADBTransportMessage> {
         let message = self.transport.read_message()?;
-
-        // Only acknowledge WRITE messages. CLSE and other commands should not be
-        // acknowledged with OKAY because that can confuse the remote and break
-        // subsequent session opens.
-        if message.header().command() == MessageCommand::Write {
-            self.transport.write_message(ADBTransportMessage::try_new(
-                MessageCommand::Okay,
-                session.local_id(),
-                session.remote_id(),
-                &[],
-            )?)?;
-        }
-
+        self.transport.write_message(ADBTransportMessage::try_new(
+            MessageCommand::Okay,
+            session.local_id(),
+            session.remote_id(),
+            &[],
+        )?)?;
         Ok(message)
     }
 
