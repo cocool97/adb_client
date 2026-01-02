@@ -1,5 +1,4 @@
 use std::io::{ErrorKind, Read, Write};
-use std::time::Duration;
 
 use crate::models::ADBLocalCommand;
 use crate::{
@@ -23,8 +22,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             Vec::new(),
         ))?;
 
-        let mut transport = self.get_transport_mut().clone();
-
         loop {
             let message = session.recv_and_reply_okay()?;
             if message.header().command() == MessageCommand::Clse {
@@ -32,12 +29,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
             output.write_all(&message.into_payload())?;
         }
-
-        // some devices will repeat the trailing CLSE command to ensure
-        // the client has acknowledged it. Read them quickly if present.
-        while let Ok(_discard_close_message) =
-            transport.read_message_with_timeout(Duration::from_millis(20))
-        {}
 
         Ok(())
     }

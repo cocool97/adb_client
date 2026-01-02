@@ -1,4 +1,7 @@
-use std::io::{Cursor, Read, Seek};
+use std::{
+    io::{Cursor, Read, Seek},
+    time::Duration,
+};
 
 use byteorder::ReadBytesExt;
 
@@ -194,5 +197,16 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         // Interesting part starts right after
 
         bincode_deserialize_from_slice(&response.into_payload()[4..])
+    }
+}
+
+impl<T: ADBMessageTransport> Drop for ADBSession<T> {
+    fn drop(&mut self) {
+        // some devices will repeat the trailing CLSE command to ensure
+        // the client has acknowledged it. Read them quickly if present.
+        while let Ok(_discard_close_message) = self
+            .transport
+            .read_message_with_timeout(Duration::from_millis(20))
+        {}
     }
 }
