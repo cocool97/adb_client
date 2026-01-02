@@ -20,12 +20,12 @@ pub enum RebootType {
 impl Display for RebootType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RebootType::System => write!(f, ""),
-            RebootType::Bootloader => write!(f, "bootloader"),
-            RebootType::Recovery => write!(f, "recovery"),
-            RebootType::Sideload => write!(f, "sideload"),
-            RebootType::SideloadAutoReboot => write!(f, "sideload-auto-reboot"),
-            RebootType::Fastboot => write!(f, "fastboot"),
+            Self::System => write!(f, ""),
+            Self::Bootloader => write!(f, "bootloader"),
+            Self::Recovery => write!(f, "recovery"),
+            Self::Sideload => write!(f, "sideload"),
+            Self::SideloadAutoReboot => write!(f, "sideload-auto-reboot"),
+            Self::Fastboot => write!(f, "fastboot"),
         }
     }
 }

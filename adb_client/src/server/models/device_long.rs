@@ -53,7 +53,7 @@ impl TryFrom<&[u8]> for DeviceLong {
             .captures(value)
             .ok_or(RustADBError::RegexParsingError)?;
 
-        Ok(DeviceLong {
+        Ok(Self {
             identifier: String::from_utf8(
                 groups
                     .name("identifier")

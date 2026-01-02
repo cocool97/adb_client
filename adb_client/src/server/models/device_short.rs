@@ -29,7 +29,7 @@ impl TryFrom<Vec<u8>> for DeviceShort {
         let groups = DEVICES_REGEX
             .captures(&value)
             .ok_or(RustADBError::RegexParsingError)?;
-        Ok(DeviceShort {
+        Ok(Self {
             identifier: String::from_utf8(
                 groups
                     .get(1)

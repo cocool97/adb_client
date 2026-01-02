@@ -48,7 +48,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         Self { transport }
     }
 
-    pub(crate) fn get_transport(&mut self) -> &T {
+    pub(crate) fn get_transport(&self) -> &T {
         &self.transport
     }
 

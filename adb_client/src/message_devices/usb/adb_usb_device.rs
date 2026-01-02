@@ -193,7 +193,7 @@ impl ADBUSBDevice {
     /// autodetect connected ADB devices and establish a connection with the first device found using a custom private key path
     pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
         match get_single_connected_adb_device()? {
-            Some(device_info) => ADBUSBDevice::new_with_custom_private_key(
+            Some(device_info) => Self::new_with_custom_private_key(
                 device_info.vendor_id,
                 device_info.product_id,
                 private_key_path,

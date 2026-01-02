@@ -29,7 +29,7 @@ impl FromStr for RemountInfo {
             return Err(RustADBError::RemountError(s.to_string()));
         };
 
-        Ok(RemountInfo {
+        Ok(Self {
             path: path.as_str().to_string(),
             mode: mode.as_str().to_string(),
         })

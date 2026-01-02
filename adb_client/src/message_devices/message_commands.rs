@@ -52,13 +52,13 @@ impl MessageSubcommand {
 impl Display for MessageCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MessageCommand::Cnxn => write!(f, "CNXN"),
-            MessageCommand::Clse => write!(f, "CLSE"),
-            MessageCommand::Auth => write!(f, "AUTH"),
-            MessageCommand::Open => write!(f, "OPEN"),
-            MessageCommand::Write => write!(f, "WRTE"),
-            MessageCommand::Okay => write!(f, "OKAY"),
-            MessageCommand::Stls => write!(f, "STLS"),
+            Self::Cnxn => write!(f, "CNXN"),
+            Self::Clse => write!(f, "CLSE"),
+            Self::Auth => write!(f, "AUTH"),
+            Self::Open => write!(f, "OPEN"),
+            Self::Write => write!(f, "WRTE"),
+            Self::Okay => write!(f, "OKAY"),
+            Self::Stls => write!(f, "STLS"),
         }
     }
 }

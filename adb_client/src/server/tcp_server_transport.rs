@@ -27,7 +27,7 @@ impl Default for TCPServerTransport {
 impl TCPServerTransport {
     /// Instantiates a new instance of [`TCPServerTransport`]
     #[must_use]
-    pub fn new(socket_addr: SocketAddrV4) -> Self {
+    pub const fn new(socket_addr: SocketAddrV4) -> Self {
         Self {
             socket_addr,
             tcp_stream: None,
@@ -37,20 +37,17 @@ impl TCPServerTransport {
     /// Instantiate a new instance of [`TCPServerTransport`] using given address, or default if not specified.
     #[must_use]
     pub fn new_or_default(socket_addr: Option<SocketAddrV4>) -> Self {
-        match socket_addr {
-            Some(s) => Self::new(s),
-            None => Self::default(),
-        }
+        socket_addr.map_or_else(Self::default, Self::new)
     }
 
     /// Get underlying [`SocketAddrV4`]
     #[must_use]
-    pub fn get_socketaddr(&self) -> SocketAddrV4 {
+    pub const fn get_socketaddr(&self) -> SocketAddrV4 {
         self.socket_addr
     }
 
     pub(crate) fn proxy_connection(
-        &mut self,
+        &self,
         adb_command: &ADBCommand,
         with_response: bool,
     ) -> Result<Vec<u8>> {
@@ -84,7 +81,7 @@ impl TCPServerTransport {
     }
 
     /// Gets the body length from hexadecimal value
-    pub(crate) fn get_hex_body_length(&mut self) -> Result<u32> {
+    pub(crate) fn get_hex_body_length(&self) -> Result<u32> {
         let length_buffer = self.read_body_length()?;
         Ok(u32::from_str_radix(
             std::str::from_utf8(&length_buffer)?,
@@ -93,7 +90,7 @@ impl TCPServerTransport {
     }
 
     /// Send the given [`SyncCommand`] to ADB server, and checks that the request has been taken in consideration.
-    pub(crate) fn send_sync_request(&mut self, command: &SyncCommand) -> Result<()> {
+    pub(crate) fn send_sync_request(&self, command: &SyncCommand) -> Result<()> {
         // First 4 bytes are the name of the command we want to send
         // (e.g. "SEND", "RECV", "STAT", "LIST")
         Ok(self
@@ -117,7 +114,7 @@ impl TCPServerTransport {
 
     /// Send the given [`AdbCommand`] to ADB server, and checks that the request has been taken in consideration.
     /// If an error occurred, a [`RustADBError`] is returned with the response error string.
-    pub(crate) fn send_adb_request(&mut self, command: &ADBCommand) -> Result<()> {
+    pub(crate) fn send_adb_request(&self, command: &ADBCommand) -> Result<()> {
         let adb_command_string = command.to_string();
         let adb_request = format!("{:04x}{}", adb_command_string.len(), adb_command_string);
 
@@ -128,7 +125,7 @@ impl TCPServerTransport {
     }
 
     /// Read a response from ADB server
-    pub(crate) fn read_adb_response(&mut self) -> Result<()> {
+    pub(crate) fn read_adb_response(&self) -> Result<()> {
         // Reads returned status code from ADB server
         let mut request_status = [0; 4];
         self.get_raw_connection()?.read_exact(&mut request_status)?;

@@ -33,10 +33,8 @@ enum CurrentConnection {
 impl CurrentConnection {
     fn set_read_timeout(&self, read_timeout: Duration) -> Result<()> {
         match self {
-            CurrentConnection::Tcp(tcp_stream) => {
-                Ok(tcp_stream.set_read_timeout(Some(read_timeout))?)
-            }
-            CurrentConnection::Tls(stream_owned) => {
+            Self::Tcp(tcp_stream) => Ok(tcp_stream.set_read_timeout(Some(read_timeout))?),
+            Self::Tls(stream_owned) => {
                 Ok(stream_owned.sock.set_read_timeout(Some(read_timeout))?)
             }
         }
@@ -44,10 +42,8 @@ impl CurrentConnection {
 
     fn set_write_timeout(&self, write_timeout: Duration) -> Result<()> {
         match self {
-            CurrentConnection::Tcp(tcp_stream) => {
-                Ok(tcp_stream.set_write_timeout(Some(write_timeout))?)
-            }
-            CurrentConnection::Tls(stream_owned) => {
+            Self::Tcp(tcp_stream) => Ok(tcp_stream.set_write_timeout(Some(write_timeout))?),
+            Self::Tls(stream_owned) => {
                 Ok(stream_owned.sock.set_write_timeout(Some(write_timeout))?)
             }
         }
@@ -57,8 +53,8 @@ impl CurrentConnection {
 impl Read for CurrentConnection {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         match self {
-            CurrentConnection::Tcp(tcp_stream) => tcp_stream.read(buf),
-            CurrentConnection::Tls(tls_conn) => tls_conn.read(buf),
+            Self::Tcp(tcp_stream) => tcp_stream.read(buf),
+            Self::Tls(tls_conn) => tls_conn.read(buf),
         }
     }
 }
@@ -66,15 +62,15 @@ impl Read for CurrentConnection {
 impl Write for CurrentConnection {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match self {
-            CurrentConnection::Tcp(tcp_stream) => tcp_stream.write(buf),
-            CurrentConnection::Tls(tls_conn) => tls_conn.write(buf),
+            Self::Tcp(tcp_stream) => tcp_stream.write(buf),
+            Self::Tls(tls_conn) => tls_conn.write(buf),
         }
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
         match self {
-            CurrentConnection::Tcp(tcp_stream) => tcp_stream.flush(),
-            CurrentConnection::Tls(tls_conn) => tls_conn.flush(),
+            Self::Tcp(tcp_stream) => tcp_stream.flush(),
+            Self::Tls(tls_conn) => tls_conn.flush(),
         }
     }
 }

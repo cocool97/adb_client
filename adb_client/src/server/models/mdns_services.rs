@@ -37,7 +37,7 @@ impl TryFrom<&[u8]> for MDNSServices {
         let groups = MDNS_SERVICES_REGEX
             .captures(value)
             .ok_or(RustADBError::RegexParsingError)?;
-        Ok(MDNSServices {
+        Ok(Self {
             service_name: String::from_utf8(
                 groups
                     .get(1)

@@ -23,7 +23,7 @@ impl std::fmt::Debug for MDNSDiscoveryService {
 impl MDNSDiscoveryService {
     /// Instantiate a new discovery service to find devices over mdns
     pub fn new() -> Result<Self> {
-        Ok(MDNSDiscoveryService {
+        Ok(Self {
             daemon: ServiceDaemon::new()?,
             thread_handle: None,
         })

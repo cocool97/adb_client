@@ -17,7 +17,7 @@ pub struct AdbVersion {
 impl AdbVersion {
     /// Instantiates a new [`AdbVersion`].
     #[must_use]
-    pub fn new(minor: u32, revision: u32) -> Self {
+    pub const fn new(minor: u32, revision: u32) -> Self {
         Self {
             major: 1,
             minor,
@@ -36,7 +36,7 @@ impl TryFrom<Vec<u8>> for AdbVersion {
     type Error = RustADBError;
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
-        Ok(AdbVersion::new(
+        Ok(Self::new(
             u32::from_str_radix(str::from_utf8(&value[0..2])?, 16)?,
             u32::from_str_radix(str::from_utf8(&value[2..4])?, 16)?,
         ))

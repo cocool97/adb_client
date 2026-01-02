@@ -15,9 +15,9 @@ pub enum UsbBackend {
 impl From<i32> for UsbBackend {
     fn from(i: i32) -> Self {
         match i {
-            0 => UsbBackend::Unknown,
-            1 => UsbBackend::Native,
-            2 => UsbBackend::LibUSB,
+            0 => Self::Unknown,
+            1 => Self::Native,
+            2 => Self::LibUSB,
             _ => Self::default(),
         }
     }
@@ -26,9 +26,9 @@ impl From<i32> for UsbBackend {
 impl<'a> From<&'a str> for UsbBackend {
     fn from(s: &'a str) -> Self {
         match s {
-            "UNKNOWN_USB" => UsbBackend::Unknown,
-            "NATIVE" => UsbBackend::Native,
-            "LIBUSB" => UsbBackend::LibUSB,
+            "UNKNOWN_USB" => Self::Unknown,
+            "NATIVE" => Self::Native,
+            "LIBUSB" => Self::LibUSB,
             _ => Self::default(),
         }
     }
@@ -37,15 +37,15 @@ impl<'a> From<&'a str> for UsbBackend {
 impl Display for UsbBackend {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UsbBackend::Unknown => write!(f, "UNKNOWN_USB"),
-            UsbBackend::Native => write!(f, "NATIVE"),
-            UsbBackend::LibUSB => write!(f, "LIBUSB"),
+            Self::Unknown => write!(f, "UNKNOWN_USB"),
+            Self::Native => write!(f, "NATIVE"),
+            Self::LibUSB => write!(f, "LIBUSB"),
         }
     }
 }
 
 /// MDNS Backend Status
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 pub enum MDNSBackend {
     #[default]
     /// `Unknown`
@@ -59,9 +59,9 @@ pub enum MDNSBackend {
 impl From<i32> for MDNSBackend {
     fn from(i: i32) -> Self {
         match i {
-            0 => MDNSBackend::Unknown,
-            1 => MDNSBackend::Bonjour,
-            2 => MDNSBackend::OpenScreen,
+            0 => Self::Unknown,
+            1 => Self::Bonjour,
+            2 => Self::OpenScreen,
             _ => Self::default(),
         }
     }
@@ -70,9 +70,9 @@ impl From<i32> for MDNSBackend {
 impl<'a> From<&'a str> for MDNSBackend {
     fn from(s: &'a str) -> Self {
         match s {
-            "UNKNOWN_MDNS" => MDNSBackend::Unknown,
-            "BONJOUR" => MDNSBackend::Bonjour,
-            "OPENSCREEN" => MDNSBackend::OpenScreen,
+            "UNKNOWN_MDNS" => Self::Unknown,
+            "BONJOUR" => Self::Bonjour,
+            "OPENSCREEN" => Self::OpenScreen,
             _ => Self::default(),
         }
     }
@@ -81,15 +81,15 @@ impl<'a> From<&'a str> for MDNSBackend {
 impl Display for MDNSBackend {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MDNSBackend::Unknown => write!(f, "UNKNOWN_MDNS"),
-            MDNSBackend::Bonjour => write!(f, "BONJOUR"),
-            MDNSBackend::OpenScreen => write!(f, "OPENSCREEN"),
+            Self::Unknown => write!(f, "UNKNOWN_MDNS"),
+            Self::Bonjour => write!(f, "BONJOUR"),
+            Self::OpenScreen => write!(f, "OPENSCREEN"),
         }
     }
 }
 
 /// Structure representing current server status
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, Eq, PartialEq)]
 pub struct ServerStatus {
     /// Currently active USB backend
     pub usb_backend: UsbBackend,
@@ -162,6 +162,6 @@ impl TryFrom<Vec<u8>> for ServerStatus {
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         let mut reader = BytesReader::from_bytes(&value);
-        ServerStatus::from_reader(&mut reader, &value).map_err(|_| RustADBError::ConversionError)
+        Self::from_reader(&mut reader, &value).map_err(|_| RustADBError::ConversionError)
     }
 }

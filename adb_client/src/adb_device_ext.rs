@@ -100,8 +100,7 @@ pub trait ADBDeviceExt {
     /// Return a boxed instance representing this trait
     fn boxed(self) -> Box<dyn ADBDeviceExt>
     where
-        Self: Sized,
-        Self: 'static,
+        Self: Sized + 'static,
     {
         Box::new(self)
     }

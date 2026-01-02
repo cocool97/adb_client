@@ -59,7 +59,7 @@ impl ADBRsaKey {
     }
 
     pub fn new_from_pkcs8(pkcs8_content: &str) -> Result<Self> {
-        Ok(ADBRsaKey {
+        Ok(Self {
             private_key: RsaPrivateKey::from_pkcs8_pem(pkcs8_content)?,
         })
     }

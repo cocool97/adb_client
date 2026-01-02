@@ -27,8 +27,8 @@ pub(crate) enum ADBLocalCommand {
 impl Display for ADBLocalCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ADBLocalCommand::Sync => write!(f, "sync:"),
-            ADBLocalCommand::ShellCommand(command, shell_args) => {
+            Self::Sync => write!(f, "sync:"),
+            Self::ShellCommand(command, shell_args) => {
                 let args_s = shell_args.join(",");
                 write!(
                     f,
@@ -36,37 +36,35 @@ impl Display for ADBLocalCommand {
                     if shell_args.is_empty() { "" } else { "," }
                 )
             }
-            ADBLocalCommand::Shell => match std::env::var("TERM") {
+            Self::Shell => match std::env::var("TERM") {
                 Ok(term) => write!(f, "shell,TERM={term},raw:"),
                 Err(_) => write!(f, "shell,raw:"),
             },
-            ADBLocalCommand::Exec(command) => write!(f, "exec:{command}"),
-
-            ADBLocalCommand::Reboot(reboot_type) => {
+            Self::Exec(command) => write!(f, "exec:{command}"),
+            Self::Reboot(reboot_type) => {
                 write!(f, "reboot:{reboot_type}")
             }
-            ADBLocalCommand::Uninstall(package) => {
+            Self::Uninstall(package) => {
                 write!(f, "exec:cmd package 'uninstall' {package}")
             }
-            ADBLocalCommand::FrameBuffer => write!(f, "framebuffer:"),
-            ADBLocalCommand::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
-            ADBLocalCommand::Forward(remote, local) => {
+            Self::FrameBuffer => write!(f, "framebuffer:"),
+            Self::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
+            Self::Forward(remote, local) => {
                 write!(f, "host:forward:{local};{remote}")
             }
-            ADBLocalCommand::ForwardRemoveAll => write!(f, "host:killforward-all"),
-            ADBLocalCommand::Reverse(remote, local) => {
+            Self::ForwardRemoveAll => write!(f, "host:killforward-all"),
+            Self::Reverse(remote, local) => {
                 write!(f, "reverse:forward:{remote};{local}")
             }
-            ADBLocalCommand::ReverseRemoveAll => write!(f, "reverse:killforward-all"),
-
-            ADBLocalCommand::Reconnect => write!(f, "reconnect"),
-            ADBLocalCommand::Remount => write!(f, "remount:"),
-            ADBLocalCommand::DisableVerity => write!(f, "disable-verity:"),
-            ADBLocalCommand::EnableVerity => write!(f, "enable-verity:"),
-            ADBLocalCommand::TcpIp(port) => {
+            Self::ReverseRemoveAll => write!(f, "reverse:killforward-all"),
+            Self::Reconnect => write!(f, "reconnect"),
+            Self::Remount => write!(f, "remount:"),
+            Self::DisableVerity => write!(f, "disable-verity:"),
+            Self::EnableVerity => write!(f, "enable-verity:"),
+            Self::TcpIp(port) => {
                 write!(f, "tcpip:{port}")
             }
-            ADBLocalCommand::Usb => write!(f, "usb:"),
+            Self::Usb => write!(f, "usb:"),
         }
     }
 }

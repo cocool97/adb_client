@@ -25,10 +25,7 @@ pub struct ADBEmulatorDevice {
 impl ADBEmulatorDevice {
     /// Instantiates a new [`ADBEmulatorDevice`]
     pub fn new(identifier: String, ip_address: Option<Ipv4Addr>) -> Result<Self> {
-        let ip_address = match ip_address {
-            Some(ip_address) => ip_address,
-            None => Ipv4Addr::LOCALHOST,
-        };
+        let ip_address = ip_address.map_or(Ipv4Addr::LOCALHOST, |ip_address| ip_address);
 
         let groups = EMULATOR_REGEX
             .captures(&identifier)
@@ -51,7 +48,7 @@ impl ADBEmulatorDevice {
         })
     }
 
-    pub(crate) fn get_transport_mut(&mut self) -> &mut TCPEmulatorTransport {
+    pub(crate) const fn get_transport_mut(&mut self) -> &mut TCPEmulatorTransport {
         &mut self.transport
     }
 
@@ -68,7 +65,7 @@ impl TryFrom<ADBServerDevice> for ADBEmulatorDevice {
 
     fn try_from(value: ADBServerDevice) -> std::result::Result<Self, Self::Error> {
         match &value.identifier {
-            Some(device_identifier) => ADBEmulatorDevice::new(
+            Some(device_identifier) => Self::new(
                 device_identifier.clone(),
                 Some(*value.transport.get_socketaddr().ip()),
             ),

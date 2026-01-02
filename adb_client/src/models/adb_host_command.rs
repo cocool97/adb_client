@@ -25,29 +25,29 @@ pub(crate) enum ADBHostCommand {
 impl Display for ADBHostCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ADBHostCommand::Version => write!(f, "host:version"),
-            ADBHostCommand::Kill => write!(f, "host:kill"),
-            ADBHostCommand::Devices => write!(f, "host:devices"),
-            ADBHostCommand::DevicesLong => write!(f, "host:devices-l"),
-            ADBHostCommand::TrackDevices => write!(f, "host:track-devices"),
-            ADBHostCommand::TransportAny => write!(f, "host:transport-any"),
-            ADBHostCommand::TransportSerial(serial) => write!(f, "host:transport:{serial}"),
-            ADBHostCommand::Connect(addr) => write!(f, "host:connect:{addr}"),
-            ADBHostCommand::Disconnect(addr) => write!(f, "host:disconnect:{addr}"),
-            ADBHostCommand::Pair(addr, code) => {
+            Self::Version => write!(f, "host:version"),
+            Self::Kill => write!(f, "host:kill"),
+            Self::Devices => write!(f, "host:devices"),
+            Self::DevicesLong => write!(f, "host:devices-l"),
+            Self::TrackDevices => write!(f, "host:track-devices"),
+            Self::TransportAny => write!(f, "host:transport-any"),
+            Self::TransportSerial(serial) => write!(f, "host:transport:{serial}"),
+            Self::Connect(addr) => write!(f, "host:connect:{addr}"),
+            Self::Disconnect(addr) => write!(f, "host:disconnect:{addr}"),
+            Self::Pair(addr, code) => {
                 write!(f, "host:pair:{code}:{addr}")
             }
-            ADBHostCommand::MDNSCheck => write!(f, "host:mdns:check"),
-            ADBHostCommand::MDNSServices => write!(f, "host:mdns:services"),
-            ADBHostCommand::ServerStatus => write!(f, "host:server-status"),
-            ADBHostCommand::ReconnectOffline => write!(f, "host:reconnect-offline"),
-            ADBHostCommand::WaitForDevice(wait_for_device_state, wait_for_device_transport) => {
+            Self::MDNSCheck => write!(f, "host:mdns:check"),
+            Self::MDNSServices => write!(f, "host:mdns:services"),
+            Self::ServerStatus => write!(f, "host:server-status"),
+            Self::ReconnectOffline => write!(f, "host:reconnect-offline"),
+            Self::WaitForDevice(wait_for_device_state, wait_for_device_transport) => {
                 write!(
                     f,
                     "host:wait-for-{wait_for_device_transport}-{wait_for_device_state}"
                 )
             }
-            ADBHostCommand::HostFeatures => write!(f, "host:features"),
+            Self::HostFeatures => write!(f, "host:features"),
         }
     }
 }

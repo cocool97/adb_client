@@ -13,8 +13,8 @@ pub(crate) enum ADBCommand {
 impl Display for ADBCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ADBCommand::Host(host_command) => write!(f, "{host_command}"),
-            ADBCommand::Local(adb_local_command) => write!(f, "{adb_local_command}"),
+            Self::Host(host_command) => write!(f, "{host_command}"),
+            Self::Local(adb_local_command) => write!(f, "{adb_local_command}"),
         }
     }
 }

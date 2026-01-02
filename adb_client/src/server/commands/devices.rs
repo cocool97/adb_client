@@ -70,8 +70,7 @@ impl ADBServer {
             .devices()?
             .into_iter()
             .filter(|d| d.identifier.as_str() == name)
-            .collect::<Vec<DeviceShort>>()
-            .len();
+            .count();
         if nb_devices == 1 {
             Ok(ADBServerDevice::new(name.to_string(), self.socket_addr))
         } else {

@@ -14,9 +14,9 @@ pub enum ADBListItemType {
 impl Display for ADBListItemType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ADBListItemType::File(item) => write!(f, "file: {item}"),
-            ADBListItemType::Directory(item) => write!(f, "directory: {item}"),
-            ADBListItemType::Symlink(item) => write!(f, "symlink: {item}"),
+            Self::File(item) => write!(f, "file: {item}"),
+            Self::Directory(item) => write!(f, "directory: {item}"),
+            Self::Symlink(item) => write!(f, "symlink: {item}"),
         }
     }
 }

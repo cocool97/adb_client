@@ -9,7 +9,7 @@ use crate::{
 };
 
 impl ADBServerDevice {
-    fn handle_stat_command<S: AsRef<str>>(&mut self, path: S) -> Result<AdbStatResponse> {
+    fn handle_stat_command<S: AsRef<str>>(&self, path: S) -> Result<AdbStatResponse> {
         let mut len_buf = [0_u8; 4];
         LittleEndian::write_u32(&mut len_buf, u32::try_from(path.as_ref().len())?);
 

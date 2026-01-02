@@ -36,19 +36,19 @@ pub enum DeviceState {
 impl Display for DeviceState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DeviceState::Offline => write!(f, "offline"),
-            DeviceState::Device => write!(f, "device"),
-            DeviceState::NoDevice => write!(f, "no device"),
-            DeviceState::Authorizing => write!(f, "authorizing"),
-            DeviceState::Unauthorized => write!(f, "unauthorized"),
-            DeviceState::Connecting => write!(f, "connecting"),
-            DeviceState::NoPerm => write!(f, "noperm"),
-            DeviceState::Detached => write!(f, "detached"),
-            DeviceState::Bootloader => write!(f, "bootloader"),
-            DeviceState::Host => write!(f, "host"),
-            DeviceState::Recovery => write!(f, "recovery"),
-            DeviceState::Sideload => write!(f, "sideload"),
-            DeviceState::Rescue => write!(f, "rescue"),
+            Self::Offline => write!(f, "offline"),
+            Self::Device => write!(f, "device"),
+            Self::NoDevice => write!(f, "no device"),
+            Self::Authorizing => write!(f, "authorizing"),
+            Self::Unauthorized => write!(f, "unauthorized"),
+            Self::Connecting => write!(f, "connecting"),
+            Self::NoPerm => write!(f, "noperm"),
+            Self::Detached => write!(f, "detached"),
+            Self::Bootloader => write!(f, "bootloader"),
+            Self::Host => write!(f, "host"),
+            Self::Recovery => write!(f, "recovery"),
+            Self::Sideload => write!(f, "sideload"),
+            Self::Rescue => write!(f, "rescue"),
         }
     }
 }

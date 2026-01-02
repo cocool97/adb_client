@@ -14,10 +14,10 @@ pub enum SyncCommand {
 impl Display for SyncCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SyncCommand::List => write!(f, "LIST"),
-            SyncCommand::Recv => write!(f, "RECV"),
-            SyncCommand::Send => write!(f, "SEND"),
-            SyncCommand::Stat => write!(f, "STAT"),
+            Self::List => write!(f, "LIST"),
+            Self::Recv => write!(f, "RECV"),
+            Self::Send => write!(f, "SEND"),
+            Self::Stat => write!(f, "STAT"),
         }
     }
 }

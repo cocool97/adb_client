@@ -13,11 +13,11 @@ impl ADBSession {
         }
     }
 
-    pub fn local_id(self) -> u32 {
+    pub const fn local_id(self) -> u32 {
         self.local_id
     }
 
-    pub fn remote_id(self) -> u32 {
+    pub const fn remote_id(self) -> u32 {
         self.remote_id
     }
 }

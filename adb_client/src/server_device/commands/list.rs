@@ -25,7 +25,7 @@ impl ADBServerDevice {
         self.handle_list_command(path)
     }
 
-    fn handle_list_command<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {
+    fn handle_list_command<A: AsRef<str>>(&self, path: A) -> Result<Vec<ADBListItemType>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
         let mut len_buf = [0_u8; 4];

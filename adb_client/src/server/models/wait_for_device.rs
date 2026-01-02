@@ -17,9 +17,9 @@ pub enum WaitForDeviceTransport {
 impl Display for WaitForDeviceTransport {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            WaitForDeviceTransport::Usb => write!(f, "usb"),
-            WaitForDeviceTransport::Local => write!(f, "local"),
-            WaitForDeviceTransport::Any => write!(f, "any"),
+            Self::Usb => write!(f, "usb"),
+            Self::Local => write!(f, "local"),
+            Self::Any => write!(f, "any"),
         }
     }
 }
@@ -53,10 +53,10 @@ pub enum WaitForDeviceState {
 impl Display for WaitForDeviceState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            WaitForDeviceState::Device => write!(f, "device"),
-            WaitForDeviceState::Recovery => write!(f, "recovery"),
-            WaitForDeviceState::Sideload => write!(f, "sideload"),
-            WaitForDeviceState::Bootloader => write!(f, "bootloader"),
+            Self::Device => write!(f, "device"),
+            Self::Recovery => write!(f, "recovery"),
+            Self::Sideload => write!(f, "sideload"),
+            Self::Bootloader => write!(f, "bootloader"),
         }
     }
 }

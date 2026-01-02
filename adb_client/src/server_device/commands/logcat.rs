@@ -8,8 +8,8 @@ struct LogFilter<W: Write> {
 }
 
 impl<W: Write> LogFilter<W> {
-    pub fn new(writer: W) -> Self {
-        LogFilter {
+    pub const fn new(writer: W) -> Self {
+        Self {
             writer,
             buffer: Vec::new(),
         }

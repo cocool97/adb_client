@@ -16,8 +16,8 @@ struct ADBSendCommandWriter<W: Write> {
 }
 
 impl<W: Write> ADBSendCommandWriter<W> {
-    pub fn new(inner: W) -> Self {
-        ADBSendCommandWriter { inner }
+    pub const fn new(inner: W) -> Self {
+        Self { inner }
     }
 }
 
@@ -59,7 +59,7 @@ impl ADBServerDevice {
         self.handle_send_command(stream, path)
     }
 
-    fn handle_send_command<R: Read, S: AsRef<str>>(&mut self, input: R, to: S) -> Result<()> {
+    fn handle_send_command<R: Read, S: AsRef<str>>(&self, input: R, to: S) -> Result<()> {
         // Append the permission flags to the filename
         let to = to.as_ref().to_string() + ",0777";
 

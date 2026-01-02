@@ -48,13 +48,13 @@ impl TCPEmulatorTransport {
     }
 
     /// Send an authenticate request to this emulator
-    pub fn authenticate(&mut self) -> Result<()> {
+    pub fn authenticate(&self) -> Result<()> {
         let token = get_authentication_token()?;
         self.send_command(&ADBEmulatorCommand::Authenticate(token))
     }
 
     /// Send an [`ADBEmulatorCommand`] to this emulator
-    pub(crate) fn send_command(&mut self, command: &ADBEmulatorCommand) -> Result<()> {
+    pub(crate) fn send_command(&self, command: &ADBEmulatorCommand) -> Result<()> {
         let mut connection = self.get_raw_connection()?;
 
         // Send command
@@ -66,7 +66,7 @@ impl TCPEmulatorTransport {
         Ok(())
     }
 
-    fn check_error(&mut self, skipping: u8) -> Result<()> {
+    fn check_error(&self, skipping: u8) -> Result<()> {
         let mut reader = BufReader::new(self.get_raw_connection()?);
         for _ in 0..skipping {
             let mut line = String::new();

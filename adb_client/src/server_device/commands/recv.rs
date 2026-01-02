@@ -13,7 +13,7 @@ struct ADBRecvCommandReader<R: Read> {
 }
 
 impl<R: Read> ADBRecvCommandReader<R> {
-    pub fn new(inner: R) -> Self {
+    pub const fn new(inner: R) -> Self {
         Self {
             inner,
             remaining_data_bytes_to_read: 0,
@@ -81,11 +81,7 @@ impl ADBServerDevice {
         self.handle_recv_command(path, stream)
     }
 
-    fn handle_recv_command<S: AsRef<str>>(
-        &mut self,
-        from: S,
-        output: &mut dyn Write,
-    ) -> Result<()> {
+    fn handle_recv_command<S: AsRef<str>>(&self, from: S, output: &mut dyn Write) -> Result<()> {
         let mut raw_connection = self.transport.get_raw_connection()?;
 
         let from_as_bytes = from.as_ref().as_bytes();
