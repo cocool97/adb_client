@@ -20,9 +20,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let session = self.open_session(&ADBLocalCommand::Install(file_size))?;
 
-        let transport = self.get_transport().clone();
-
-        let mut writer = MessageWriter::new(transport, session.local_id(), session.remote_id());
+        let mut writer = MessageWriter::new(session);
 
         std::io::copy(&mut apk_file, &mut writer)?;
 

@@ -20,17 +20,14 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut send_buffer = bincode_serialize_to_vec(&send_buffer)?;
         send_buffer.append(&mut path_header.as_bytes().to_vec());
 
-        session.send_and_expect_okay(
-            self,
-            ADBTransportMessage::try_new(
-                MessageCommand::Write,
-                session.local_id(),
-                session.remote_id(),
-                &send_buffer,
-            )?,
-        )?;
+        session.send_and_expect_okay(ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            session.local_id(),
+            session.remote_id(),
+            &send_buffer,
+        )?)?;
 
-        session.push_file(self, stream)?;
+        session.push_file(stream)?;
         self.end_transaction(&mut session)?;
 
         Ok(())

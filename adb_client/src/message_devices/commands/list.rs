@@ -7,10 +7,10 @@ use crate::RustADBError;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::message_devices::adb_message_device::bincode_serialize_to_vec;
 use crate::message_devices::adb_message_transport::ADBMessageTransport;
+use crate::message_devices::adb_session::ADBSession;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::message_devices::message_commands::MessageSubcommand;
-use crate::message_devices::models::ADBSession;
 use crate::models::{ADBListItem, ADBListItemType};
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
@@ -40,12 +40,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     ///     payload          Wanted in
     ///                      Next payload
     fn read_bytes_from_transport(
+        session: &mut ADBSession<T>,
         requested_bytes: usize,
         current_index: &mut usize,
-        transport: &mut T,
         payload: &mut Vec<u8>,
-        local_id: u32,
-        remote_id: u32,
     ) -> Result<Vec<u8>> {
         if *current_index + requested_bytes <= payload.len() {
             // if there is enough bytes in this payload
@@ -62,11 +60,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             );
 
             // Request the next message
-            let send_message =
-                ADBTransportMessage::try_new(MessageCommand::Okay, local_id, remote_id, &[])?;
-            transport.write_message(send_message)?;
-            // Read the new message
-            *payload = transport.read_message()?.into_payload();
+            let send_message = ADBTransportMessage::try_new(
+                MessageCommand::Okay,
+                session.local_id(),
+                session.remote_id(),
+                &[],
+            )?;
+
+            *payload = session.send_and_expect_okay(send_message)?.into_payload();
+
             let bytes_read_from_new_payload = requested_bytes - bytes_read_from_existing_payload;
             slice.extend_from_slice(&payload[..bytes_read_from_new_payload]);
             *current_index = bytes_read_from_new_payload;
@@ -76,7 +78,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     fn handle_list<A: AsRef<str>>(
         &mut self,
-        session: &mut ADBSession,
+        session: &mut ADBSession<T>,
         path: A,
     ) -> Result<Vec<ADBListItemType>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
@@ -93,13 +95,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             let mut path_bytes: Vec<u8> = Vec::from(path.as_ref().as_bytes());
             serialized_message.append(&mut path_bytes);
 
-            let message = ADBTransportMessage::try_new(
+            session.send_and_expect_okay(ADBTransportMessage::try_new(
                 MessageCommand::Write,
                 session.local_id(),
                 session.remote_id(),
                 &serialized_message,
-            )?;
-            session.send_and_expect_okay(self, message)?;
+            )?)?;
         }
 
         let mut list_items = Vec::new();
@@ -111,12 +112,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             // Loop though the response for all the entries
             const STATUS_CODE_LENGTH_IN_BYTES: usize = 4;
             let status_code = Self::read_bytes_from_transport(
+                session,
                 STATUS_CODE_LENGTH_IN_BYTES,
                 &mut current_index,
-                transport,
                 &mut payload,
-                session.local_id(),
-                session.remote_id(),
             )?;
             match str::from_utf8(&status_code)? {
                 "DENT" => {
@@ -124,12 +123,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     const U32_SIZE_IN_BYTES: usize = 4;
                     const SIZE_OF_METADATA: usize = U32_SIZE_IN_BYTES * 4;
                     let metadata = Self::read_bytes_from_transport(
+                        session,
                         SIZE_OF_METADATA,
                         &mut current_index,
-                        transport,
                         &mut payload,
-                        session.local_id(),
-                        session.remote_id(),
                     )?;
                     let mode = metadata[..U32_SIZE_IN_BYTES].to_vec();
                     let size = metadata[U32_SIZE_IN_BYTES..2 * U32_SIZE_IN_BYTES].to_vec();
@@ -142,12 +139,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     let name_len = LittleEndian::read_u32(&name_len) as usize;
                     // Read the file name, since it requires the length from the name_len
                     let name_buf = Self::read_bytes_from_transport(
+                        session,
                         name_len,
                         &mut current_index,
-                        transport,
                         &mut payload,
-                        session.local_id(),
-                        session.remote_id(),
                     )?;
                     let name = String::from_utf8(name_buf)?;
 

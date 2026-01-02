@@ -5,9 +5,7 @@ use byteorder::ReadBytesExt;
 use crate::{
     AdbStatResponse, Result, RustADBError,
     message_devices::{
-        adb_message_device::{
-            ADBMessageDevice, bincode_deserialize_from_slice, bincode_serialize_to_vec,
-        },
+        adb_message_device::{bincode_deserialize_from_slice, bincode_serialize_to_vec},
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::ADBTransportMessage,
         message_commands::{MessageCommand, MessageSubcommand},
@@ -18,14 +16,16 @@ const BUFFER_SIZE: usize = 65535;
 
 /// Represent a session between an `ADBDevice` and remote `adbd`.
 #[derive(Debug)]
-pub(crate) struct ADBSession {
+pub(crate) struct ADBSession<T: ADBMessageTransport> {
+    transport: T,
     local_id: u32,
     remote_id: u32,
 }
 
-impl ADBSession {
-    pub fn new(local_id: u32, remote_id: u32) -> Self {
+impl<T: ADBMessageTransport> ADBSession<T> {
+    pub fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
         Self {
+            transport,
             local_id,
             remote_id,
         }
@@ -40,47 +40,37 @@ impl ADBSession {
     }
 
     /// Receive a message and acknowledge it by replying with an `OKAY` command
-    pub(crate) fn recv_and_reply_okay<T: ADBMessageTransport>(
-        &mut self,
-        device: &mut ADBMessageDevice<T>,
-    ) -> Result<ADBTransportMessage> {
-        let message = device.get_transport_mut().read_message()?;
-        device
-            .get_transport_mut()
-            .write_message(ADBTransportMessage::try_new(
-                MessageCommand::Okay,
-                self.local_id,
-                self.remote_id,
-                &[],
-            )?)?;
+    pub(crate) fn recv_and_reply_okay(&mut self) -> Result<ADBTransportMessage> {
+        let message = self.transport.read_message()?;
+        self.transport.write_message(ADBTransportMessage::try_new(
+            MessageCommand::Okay,
+            self.local_id,
+            self.remote_id,
+            &[],
+        )?)?;
         Ok(message)
     }
 
     /// Expect a message with an `OKAY` command after sending a message.
-    pub(crate) fn send_and_expect_okay<T: ADBMessageTransport>(
+    pub(crate) fn send_and_expect_okay(
         &mut self,
-        device: &mut ADBMessageDevice<T>,
         message: ADBTransportMessage,
     ) -> Result<ADBTransportMessage> {
-        device.get_transport_mut().write_message(message)?;
+        self.transport.write_message(message)?;
 
-        device
-            .get_transport_mut()
-            .read_message()
-            .and_then(|message| {
-                message.assert_command(MessageCommand::Okay)?;
-                Ok(message)
-            })
+        self.transport.read_message().and_then(|message| {
+            message.assert_command(MessageCommand::Okay)?;
+            Ok(message)
+        })
     }
 
-    pub(crate) fn recv_file<T: ADBMessageTransport, W: std::io::Write>(
+    pub(crate) fn recv_file<W: std::io::Write>(
         &mut self,
-        device: &mut ADBMessageDevice<T>,
         mut output: W,
     ) -> std::result::Result<(), RustADBError> {
         let mut len: Option<u64> = None;
         loop {
-            let payload = self.recv_and_reply_okay(device)?.into_payload();
+            let payload = self.recv_and_reply_okay()?.into_payload();
             let mut rdr = Cursor::new(&payload);
             while rdr.position() != payload.len() as u64 {
                 match len.take() {
@@ -111,11 +101,7 @@ impl ADBSession {
         Ok(())
     }
 
-    pub(crate) fn push_file<T: ADBMessageTransport, R: std::io::Read>(
-        &mut self,
-        device: &mut ADBMessageDevice<T>,
-        mut reader: R,
-    ) -> Result<()> {
+    pub(crate) fn push_file<R: std::io::Read>(&mut self, mut reader: R) -> Result<()> {
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         let amount_read = reader.read(&mut buffer)?;
         let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(amount_read)?);
@@ -130,7 +116,7 @@ impl ADBSession {
             &serialized_message,
         )?;
 
-        self.send_and_expect_okay(device, message)?;
+        self.send_and_expect_okay(message)?;
 
         loop {
             let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
@@ -148,10 +134,10 @@ impl ADBSession {
                         &serialized_message,
                     )?;
 
-                    self.send_and_expect_okay(device, message)?;
+                    self.send_and_expect_okay(message)?;
 
                     // Command should end with a Write => Okay
-                    let received = device.get_transport_mut().read_message()?;
+                    let received = self.transport.read_message()?;
                     match received.header().command() {
                         MessageCommand::Write => return Ok(()),
                         c => {
@@ -174,7 +160,7 @@ impl ADBSession {
                         &serialized_message,
                     )?;
 
-                    self.send_and_expect_okay(device, message)?;
+                    self.send_and_expect_okay(message)?;
                 }
                 Err(e) => {
                     return Err(RustADBError::IOError(e));
@@ -183,11 +169,7 @@ impl ADBSession {
         }
     }
 
-    pub(crate) fn stat_with_explicit_ids<T: ADBMessageTransport>(
-        &mut self,
-        device: &mut ADBMessageDevice<T>,
-        remote_path: &str,
-    ) -> Result<AdbStatResponse> {
+    pub(crate) fn stat_with_explicit_ids(&mut self, remote_path: &str) -> Result<AdbStatResponse> {
         let stat_buffer = MessageSubcommand::Stat.with_arg(u32::try_from(remote_path.len())?);
         let message = ADBTransportMessage::try_new(
             MessageCommand::Write,
@@ -195,18 +177,15 @@ impl ADBSession {
             self.remote_id(),
             &bincode_serialize_to_vec(&stat_buffer)?,
         )?;
-        self.send_and_expect_okay(device, message)?;
-        self.send_and_expect_okay(
-            device,
-            ADBTransportMessage::try_new(
-                MessageCommand::Write,
-                self.local_id(),
-                self.remote_id(),
-                remote_path.as_bytes(),
-            )?,
-        )?;
+        self.send_and_expect_okay(message)?;
+        self.send_and_expect_okay(ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            self.local_id(),
+            self.remote_id(),
+            remote_path.as_bytes(),
+        )?)?;
 
-        let response = device.get_transport_mut().read_message()?;
+        let response = self.transport.read_message()?;
         // Skip first 4 bytes as this is the literal "STAT".
         // Interesting part starts right after
 

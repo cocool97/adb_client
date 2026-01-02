@@ -1,47 +1,38 @@
-use std::io::{Error, ErrorKind, Result, Write};
+use std::io::{Result, Write};
 
 use crate::message_devices::{
-    adb_message_transport::ADBMessageTransport, adb_transport_message::ADBTransportMessage,
-    message_commands::MessageCommand,
+    adb_message_transport::ADBMessageTransport, adb_session::ADBSession,
+    adb_transport_message::ADBTransportMessage, message_commands::MessageCommand,
 };
 
 /// [`Write`] trait implementation to hide underlying ADB protocol write logic.
 ///
 /// Read received responses to check that message has been correctly received.
 pub struct MessageWriter<T: ADBMessageTransport> {
-    transport: T,
-    local_id: u32,
-    remote_id: u32,
+    session: ADBSession<T>,
 }
 
 impl<T: ADBMessageTransport> MessageWriter<T> {
-    pub fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
-        Self {
-            transport,
-            local_id,
-            remote_id,
-        }
+    pub fn new(session: ADBSession<T>) -> Self {
+        Self { session }
     }
 }
 
 impl<T: ADBMessageTransport> Write for MessageWriter<T> {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        let message =
-            ADBTransportMessage::try_new(MessageCommand::Write, self.local_id, self.remote_id, buf)
-                .map_err(std::io::Error::other)?;
-        self.transport
-            .write_message(message)
-            .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
+        let message = ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            self.session.local_id(),
+            self.session.remote_id(),
+            buf,
+        )
+        .map_err(std::io::Error::other)?;
 
-        match self.transport.read_message() {
-            Ok(response) => {
-                response
-                    .assert_command(MessageCommand::Okay)
-                    .map_err(Error::other)?;
-                Ok(buf.len())
-            }
-            Err(e) => Err(Error::other(e)),
-        }
+        self.session
+            .send_and_expect_okay(message)
+            .map_err(std::io::Error::other)?;
+
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> Result<()> {

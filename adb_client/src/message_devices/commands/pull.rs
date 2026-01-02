@@ -15,7 +15,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut session = self.open_synchronization_session()?;
         let source = source.as_ref();
 
-        let adb_stat_response = session.stat_with_explicit_ids(self, source)?;
+        let adb_stat_response = session.stat_with_explicit_ids(source)?;
 
         if adb_stat_response.file_perm == 0 {
             return Err(RustADBError::UnknownResponseType(
@@ -35,26 +35,20 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let recv_buffer = MessageSubcommand::Recv.with_arg(u32::try_from(source.len())?);
         let recv_buffer = bincode_serialize_to_vec(&recv_buffer)?;
-        session.send_and_expect_okay(
-            self,
-            ADBTransportMessage::try_new(
-                MessageCommand::Write,
-                session.local_id(),
-                session.remote_id(),
-                &recv_buffer,
-            )?,
-        )?;
-        session.send_and_expect_okay(
-            self,
-            ADBTransportMessage::try_new(
-                MessageCommand::Write,
-                session.local_id(),
-                session.remote_id(),
-                source.as_bytes(),
-            )?,
-        )?;
+        session.send_and_expect_okay(ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            session.local_id(),
+            session.remote_id(),
+            &recv_buffer,
+        )?)?;
+        session.send_and_expect_okay(ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            session.local_id(),
+            session.remote_id(),
+            source.as_bytes(),
+        )?)?;
 
-        session.recv_file(self, output)?;
+        session.recv_file(output)?;
         self.end_transaction(&mut session)?;
         Ok(())
     }

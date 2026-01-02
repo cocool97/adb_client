@@ -7,11 +7,12 @@ use crate::{
     Result, RustADBError,
     message_devices::{
         adb_message_transport::ADBMessageTransport,
+        adb_session::ADBSession,
         adb_transport_message::{
             ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN,
         },
         message_commands::{MessageCommand, MessageSubcommand},
-        models::{ADBRsaKey, ADBSession},
+        models::ADBRsaKey,
     },
     models::ADBLocalCommand,
 };
@@ -40,10 +41,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Instantiate a new [`ADBMessageTransport`]
     pub fn new(transport: T) -> Self {
         Self { transport }
-    }
-
-    pub(crate) fn get_transport(&self) -> &T {
-        &self.transport
     }
 
     pub(crate) fn get_transport_mut(&mut self) -> &mut T {
@@ -76,9 +73,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let message = ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign)?;
 
-        self.get_transport_mut().write_message(message)?;
+        self.transport.write_message(message)?;
 
-        let received_response = self.get_transport_mut().read_message()?;
+        let received_response = self.transport.read_message()?;
 
         if received_response.header().command() == MessageCommand::Cnxn {
             log::info!(
@@ -94,10 +91,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let message =
             ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey)?;
 
-        self.get_transport_mut().write_message(message)?;
+        self.transport.write_message(message)?;
 
         let response = self
-            .get_transport_mut()
+            .transport
             .read_message_with_timeout(Duration::from_secs(10))
             .and_then(|message| {
                 message.assert_command(MessageCommand::Cnxn)?;
@@ -111,11 +108,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         Ok(())
     }
 
-    pub(crate) fn open_synchronization_session(&mut self) -> Result<ADBSession> {
+    pub(crate) fn open_synchronization_session(&mut self) -> Result<ADBSession<T>> {
         self.open_session(&ADBLocalCommand::Sync)
     }
 
-    pub(crate) fn open_session(&mut self, cmd: &ADBLocalCommand) -> Result<ADBSession> {
+    pub(crate) fn open_session(&mut self, cmd: &ADBLocalCommand) -> Result<ADBSession<T>> {
         let mut rng = rand::rng();
         let local_id: u32 = rng.random();
 
@@ -125,9 +122,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             0,
             cmd.to_string().as_bytes(),
         )?;
-        self.get_transport_mut().write_message(message)?;
+        self.transport.write_message(message)?;
 
-        let response = self.get_transport_mut().read_message()?;
+        let response = self.transport.read_message()?;
 
         if response.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
@@ -143,20 +140,21 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             )));
         }
 
-        Ok(ADBSession::new(local_id, response.header().arg0()))
+        Ok(ADBSession::new(
+            self.transport.clone(),
+            local_id,
+            response.header().arg0(),
+        ))
     }
 
-    pub(crate) fn end_transaction(&mut self, session: &mut ADBSession) -> Result<()> {
+    pub(crate) fn end_transaction(&mut self, session: &mut ADBSession<T>) -> Result<()> {
         let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
-        session.send_and_expect_okay(
-            self,
-            ADBTransportMessage::try_new(
-                MessageCommand::Write,
-                session.local_id(),
-                session.remote_id(),
-                &bincode_serialize_to_vec(&quit_buffer)?,
-            )?,
-        )?;
+        session.send_and_expect_okay(ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            session.local_id(),
+            session.remote_id(),
+            &bincode_serialize_to_vec(&quit_buffer)?,
+        )?)?;
 
         let _discard_close = self.transport.read_message()?;
         Ok(())
