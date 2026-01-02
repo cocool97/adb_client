@@ -9,9 +9,6 @@ on:
     types: [created]
 
 jobs:
-  # ============================
-  # BUILD (multi-architecture)
-  # ============================
   build-python-packages:
     strategy:
       fail-fast: false
@@ -32,12 +29,17 @@ jobs:
       - name: Build Python packages
         run: maturin build --sdist --release -m pyadb_client/Cargo.toml
 
+      # ==========================
+      # PUBLISH (release only)
+      # ==========================
       - name: Publish Python packages to PyPI
-        run: maturin publish -m pyadb_client/Cargo.toml --non-interactive
+        if: github.event_name == 'release' && github.event.action == 'created'
+        run: maturin publish --skip-existing --non-interactive -m pyadb_client/Cargo.toml
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 
       - name: Publish GitHub release artifacts
+        if: github.event_name == 'release' && github.event.action == 'created'
         uses: softprops/action-gh-release@v2
         with:
           files: |
