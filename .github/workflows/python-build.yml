@@ -32,40 +32,8 @@ jobs:
       - name: Build Python packages
         run: maturin build --sdist --release -m pyadb_client/Cargo.toml
 
-      - name: Upload wheels as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.arch }}
-          path: target/wheels/*
-          if-no-files-found: error
-
-  # ================================
-  # PUBLISH (release creation only)
-  # ================================
-  publish:
-    name: Publish to PyPI & GitHub Release
-    if: github.event_name == 'release' && github.event.action == 'created'
-    needs: build-python-packages
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install maturin
-        run: pip install maturin==1.10.2
-
-      - name: Download wheels for x86_64
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-x86_64
-          path: dist/x86_64
-
-      - name: Download wheels for arm64
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-arm64
-          path: dist/arm64
-
       - name: Publish Python packages to PyPI
-        run: maturin publish dist/**/*.whl --non-interactive
+        run: maturin publish -m pyadb_client/Cargo.toml --non-interactive
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
 
@@ -73,4 +41,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/**/*.whl
+            target/wheels/*.whl
