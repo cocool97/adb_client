@@ -12,7 +12,7 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
-        let session = self.begin_synchronization()?;
+        let mut session = self.open_synchronization_session()?;
 
         let path_header = format!("{},0777", path.as_ref());
 
@@ -20,15 +20,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut send_buffer = bincode_serialize_to_vec(&send_buffer)?;
         send_buffer.append(&mut path_header.as_bytes().to_vec());
 
-        self.send_and_expect_okay(ADBTransportMessage::try_new(
+        session.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             &send_buffer,
         )?)?;
 
-        self.push_file(session, stream)?;
-        self.end_transaction(session)?;
+        session.push_file(stream)?;
+        self.end_transaction(&mut session)?;
 
         Ok(())
     }

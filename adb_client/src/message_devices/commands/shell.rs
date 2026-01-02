@@ -1,5 +1,4 @@
 use std::io::{ErrorKind, Read, Write};
-use std::time::Duration;
 
 use crate::models::ADBLocalCommand;
 use crate::{
@@ -18,37 +17,18 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         command: &dyn AsRef<str>,
         output: &mut dyn Write,
     ) -> Result<()> {
-        let session = self.open_session(&ADBLocalCommand::ShellCommand(
+        let mut session = self.open_session(&ADBLocalCommand::ShellCommand(
             command.as_ref().to_string(),
             Vec::new(),
         ))?;
 
-        let mut transport = self.get_transport().clone();
-
         loop {
-            let message = transport.read_message()?;
-            let command = message.header().command();
-
-            if command == MessageCommand::Clse {
+            let message = session.recv_and_reply_okay()?;
+            if message.header().command() == MessageCommand::Clse {
                 break;
             }
-
-            self.get_transport_mut()
-                .write_message(ADBTransportMessage::try_new(
-                    MessageCommand::Okay,
-                    session.local_id(),
-                    session.remote_id(),
-                    &[],
-                )?)?;
-
             output.write_all(&message.into_payload())?;
         }
-
-        // some devices will repeat the trailing CLSE command to ensure
-        // the client has acknowledged it. Read them quickly if present.
-        while let Ok(_discard_close_message) =
-            transport.read_message_with_timeout(Duration::from_millis(20))
-        {}
 
         Ok(())
     }
@@ -83,7 +63,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     ) -> Result<()> {
         let session = self.open_session(local_command)?;
 
-        let mut transport = self.get_transport().clone();
+        let local_id = session.local_id();
+        let remote_id = session.remote_id();
+
+        let mut transport = self.get_transport_mut().clone();
 
         // Reading thread, reads response from adbd
         std::thread::spawn(move || -> Result<()> {
@@ -91,12 +74,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 let message = transport.read_message()?;
 
                 // Acknowledge for more data
-                let response = ADBTransportMessage::try_new(
-                    MessageCommand::Okay,
-                    session.local_id(),
-                    session.remote_id(),
-                    &[],
-                )?;
+                let response =
+                    ADBTransportMessage::try_new(MessageCommand::Okay, local_id, remote_id, &[])?;
                 transport.write_message(response)?;
 
                 match message.header().command() {
@@ -110,9 +89,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
         });
 
-        let transport = self.get_transport().clone();
-        let mut shell_writer =
-            ShellMessageWriter::new(transport, session.local_id(), session.remote_id());
+        let transport = self.get_transport_mut().clone();
+        let mut shell_writer = ShellMessageWriter::new(transport, local_id, remote_id);
 
         // Read from given reader (that could be stdin e.g), and write content to device adbd
         if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {

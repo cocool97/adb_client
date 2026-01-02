@@ -19,4 +19,5 @@ path = "main.rs"
 [dependencies]
 adb_client = { path = "../../adb_client", default-features = false, features = [
     "mdns",
+    "usb"
 ] }

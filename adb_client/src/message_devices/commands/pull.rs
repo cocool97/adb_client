@@ -12,10 +12,10 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
-        let session = self.begin_synchronization()?;
+        let mut session = self.open_synchronization_session()?;
         let source = source.as_ref();
 
-        let adb_stat_response = self.stat_with_explicit_ids(session, source)?;
+        let adb_stat_response = session.stat_with_explicit_ids(source)?;
 
         if adb_stat_response.file_perm == 0 {
             return Err(RustADBError::UnknownResponseType(
@@ -35,21 +35,21 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let recv_buffer = MessageSubcommand::Recv.with_arg(u32::try_from(source.len())?);
         let recv_buffer = bincode_serialize_to_vec(&recv_buffer)?;
-        self.send_and_expect_okay(ADBTransportMessage::try_new(
+        session.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             &recv_buffer,
         )?)?;
-        self.send_and_expect_okay(ADBTransportMessage::try_new(
+        session.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
             source.as_bytes(),
         )?)?;
 
-        self.recv_file(session, output)?;
-        self.end_transaction(session)?;
+        session.recv_file(output)?;
+        self.end_transaction(&mut session)?;
         Ok(())
     }
 }
