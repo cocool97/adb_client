@@ -18,7 +18,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         command: &dyn AsRef<str>,
         output: &mut dyn Write,
     ) -> Result<()> {
-        let session = self.open_session(&ADBLocalCommand::ShellCommand(
+        let mut session = self.open_session(&ADBLocalCommand::ShellCommand(
             command.as_ref().to_string(),
             Vec::new(),
         ))?;
@@ -26,21 +26,10 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut transport = self.get_transport().clone();
 
         loop {
-            let message = transport.read_message()?;
-            let command = message.header().command();
-
-            if command == MessageCommand::Clse {
+            let message = session.recv_and_reply_okay(self)?;
+            if message.header().command() == MessageCommand::Clse {
                 break;
             }
-
-            self.get_transport_mut()
-                .write_message(ADBTransportMessage::try_new(
-                    MessageCommand::Okay,
-                    session.local_id(),
-                    session.remote_id(),
-                    &[],
-                )?)?;
-
             output.write_all(&message.into_payload())?;
         }
 
@@ -110,8 +99,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         });
 
         let transport = self.get_transport().clone();
-        let mut shell_writer =
-            ShellMessageWriter::new(transport, session.local_id(), session.remote_id());
+        let mut shell_writer = ShellMessageWriter::new(transport, local_id, remote_id);
 
         // Read from given reader (that could be stdin e.g), and write content to device adbd
         if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {

@@ -1,3 +1,21 @@
+use std::io::{Cursor, Read, Seek};
+
+use byteorder::ReadBytesExt;
+
+use crate::{
+    AdbStatResponse, Result, RustADBError,
+    message_devices::{
+        adb_message_device::{
+            ADBMessageDevice, bincode_deserialize_from_slice, bincode_serialize_to_vec,
+        },
+        adb_message_transport::ADBMessageTransport,
+        adb_transport_message::ADBTransportMessage,
+        message_commands::{MessageCommand, MessageSubcommand},
+    },
+};
+
+const BUFFER_SIZE: usize = 65535;
+
 /// Represent a session between an `ADBDevice` and remote `adbd`.
 #[derive(Debug)]
 pub(crate) struct ADBSession {
@@ -19,5 +37,179 @@ impl ADBSession {
 
     pub const fn remote_id(self) -> u32 {
         self.remote_id
+    }
+
+    /// Receive a message and acknowledge it by replying with an `OKAY` command
+    pub(crate) fn recv_and_reply_okay<T: ADBMessageTransport>(
+        &mut self,
+        device: &mut ADBMessageDevice<T>,
+    ) -> Result<ADBTransportMessage> {
+        let message = device.get_transport_mut().read_message()?;
+        device
+            .get_transport_mut()
+            .write_message(ADBTransportMessage::try_new(
+                MessageCommand::Okay,
+                self.local_id,
+                self.remote_id,
+                &[],
+            )?)?;
+        Ok(message)
+    }
+
+    /// Expect a message with an `OKAY` command after sending a message.
+    pub(crate) fn send_and_expect_okay<T: ADBMessageTransport>(
+        &mut self,
+        device: &mut ADBMessageDevice<T>,
+        message: ADBTransportMessage,
+    ) -> Result<ADBTransportMessage> {
+        device.get_transport_mut().write_message(message)?;
+
+        device
+            .get_transport_mut()
+            .read_message()
+            .and_then(|message| {
+                message.assert_command(MessageCommand::Okay)?;
+                Ok(message)
+            })
+    }
+
+    pub(crate) fn recv_file<T: ADBMessageTransport, W: std::io::Write>(
+        &mut self,
+        device: &mut ADBMessageDevice<T>,
+        mut output: W,
+    ) -> std::result::Result<(), RustADBError> {
+        let mut len: Option<u64> = None;
+        loop {
+            let payload = self.recv_and_reply_okay(device)?.into_payload();
+            let mut rdr = Cursor::new(&payload);
+            while rdr.position() != payload.len() as u64 {
+                match len.take() {
+                    Some(0) | None => {
+                        rdr.seek_relative(4)?;
+                        len.replace(u64::from(rdr.read_u32::<byteorder::LittleEndian>()?));
+                    }
+                    Some(length) => {
+                        let remaining_bytes = payload.len() as u64 - rdr.position();
+                        if length < remaining_bytes {
+                            std::io::copy(&mut rdr.by_ref().take(length), &mut output)?;
+                        } else {
+                            std::io::copy(&mut rdr.take(remaining_bytes), &mut output)?;
+                            len.replace(length - remaining_bytes);
+                            // this payload is now exhausted
+                            break;
+                        }
+                    }
+                }
+            }
+            if Cursor::new(&payload[(payload.len() - 8)..(payload.len() - 4)])
+                .read_u32::<byteorder::LittleEndian>()?
+                == MessageSubcommand::Done as u32
+            {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn push_file<T: ADBMessageTransport, R: std::io::Read>(
+        &mut self,
+        device: &mut ADBMessageDevice<T>,
+        mut reader: R,
+    ) -> Result<()> {
+        let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
+        let amount_read = reader.read(&mut buffer)?;
+        let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(amount_read)?);
+
+        let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
+        serialized_message.append(&mut buffer[..amount_read].to_vec());
+
+        let message = ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            self.local_id(),
+            self.remote_id(),
+            &serialized_message,
+        )?;
+
+        self.send_and_expect_okay(device, message)?;
+
+        loop {
+            let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
+
+            match reader.read(&mut buffer) {
+                Ok(0) => {
+                    // Currently file mtime is not forwarded
+                    let subcommand_data = MessageSubcommand::Done.with_arg(0);
+
+                    let serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
+                    let message = ADBTransportMessage::try_new(
+                        MessageCommand::Write,
+                        self.local_id(),
+                        self.remote_id(),
+                        &serialized_message,
+                    )?;
+
+                    self.send_and_expect_okay(device, message)?;
+
+                    // Command should end with a Write => Okay
+                    let received = device.get_transport_mut().read_message()?;
+                    match received.header().command() {
+                        MessageCommand::Write => return Ok(()),
+                        c => {
+                            return Err(RustADBError::ADBRequestFailed(format!(
+                                "Wrong command received {c}"
+                            )));
+                        }
+                    }
+                }
+                Ok(size) => {
+                    let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(size)?);
+
+                    let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
+                    serialized_message.append(&mut buffer[..size].to_vec());
+
+                    let message = ADBTransportMessage::try_new(
+                        MessageCommand::Write,
+                        self.local_id(),
+                        self.remote_id(),
+                        &serialized_message,
+                    )?;
+
+                    self.send_and_expect_okay(device, message)?;
+                }
+                Err(e) => {
+                    return Err(RustADBError::IOError(e));
+                }
+            }
+        }
+    }
+
+    pub(crate) fn stat_with_explicit_ids<T: ADBMessageTransport>(
+        &mut self,
+        device: &mut ADBMessageDevice<T>,
+        remote_path: &str,
+    ) -> Result<AdbStatResponse> {
+        let stat_buffer = MessageSubcommand::Stat.with_arg(u32::try_from(remote_path.len())?);
+        let message = ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            self.local_id(),
+            self.remote_id(),
+            &bincode_serialize_to_vec(&stat_buffer)?,
+        )?;
+        self.send_and_expect_okay(device, message)?;
+        self.send_and_expect_okay(
+            device,
+            ADBTransportMessage::try_new(
+                MessageCommand::Write,
+                self.local_id(),
+                self.remote_id(),
+                remote_path.as_bytes(),
+            )?,
+        )?;
+
+        let response = device.get_transport_mut().read_message()?;
+        // Skip first 4 bytes as this is the literal "STAT".
+        // Interesting part starts right after
+
+        bincode_deserialize_from_slice(&response.into_payload()[4..])
     }
 }

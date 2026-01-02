@@ -10,17 +10,18 @@ use crate::message_devices::adb_message_transport::ADBMessageTransport;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::message_devices::message_commands::MessageSubcommand;
+use crate::message_devices::models::ADBSession;
 use crate::models::{ADBListItem, ADBListItemType};
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// List the entries in the given directory on the device.
     /// note: path uses internal file paths, so Documents is at /storage/emulated/0/Documents
     pub(crate) fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {
-        let session = self.begin_synchronization()?;
+        let mut session = self.open_synchronization_session()?;
 
-        let output = self.handle_list(path, session.local_id(), session.remote_id());
+        let output = self.handle_list(&mut session, path);
 
-        self.end_transaction(&session)?;
+        self.end_transaction(&mut session)?;
         output
     }
 
@@ -75,9 +76,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     fn handle_list<A: AsRef<str>>(
         &mut self,
+        session: &mut ADBSession,
         path: A,
-        local_id: u32,
-        remote_id: u32,
     ) -> Result<Vec<ADBListItemType>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
@@ -95,11 +95,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
             let message = ADBTransportMessage::try_new(
                 MessageCommand::Write,
-                local_id,
-                remote_id,
+                session.local_id(),
+                session.remote_id(),
                 &serialized_message,
             )?;
-            self.send_and_expect_okay(message)?;
+            session.send_and_expect_okay(self, message)?;
         }
 
         let mut list_items = Vec::new();
@@ -115,8 +115,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 &mut current_index,
                 transport,
                 &mut payload,
-                local_id,
-                remote_id,
+                session.local_id(),
+                session.remote_id(),
             )?;
             match str::from_utf8(&status_code)? {
                 "DENT" => {
@@ -128,8 +128,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         &mut current_index,
                         transport,
                         &mut payload,
-                        local_id,
-                        remote_id,
+                        session.local_id(),
+                        session.remote_id(),
                     )?;
                     let mode = metadata[..U32_SIZE_IN_BYTES].to_vec();
                     let size = metadata[U32_SIZE_IN_BYTES..2 * U32_SIZE_IN_BYTES].to_vec();
@@ -146,8 +146,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         &mut current_index,
                         transport,
                         &mut payload,
-                        local_id,
-                        remote_id,
+                        session.local_id(),
+                        session.remote_id(),
                     )?;
                     let name = String::from_utf8(name_buf)?;
 
