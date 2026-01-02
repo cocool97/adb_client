@@ -8,17 +8,17 @@ use crate::message_devices::{
 /// [`Write`] trait implementation to hide underlying ADB protocol write logic.
 ///
 /// Read received responses to check that message has been correctly received.
-pub struct MessageWriter<T: ADBMessageTransport> {
-    session: ADBSession<T>,
+pub struct MessageWriter<'session, T: ADBMessageTransport> {
+    session: &'session mut ADBSession<T>,
 }
 
-impl<T: ADBMessageTransport> MessageWriter<T> {
-    pub fn new(session: ADBSession<T>) -> Self {
+impl<'session, T: ADBMessageTransport> MessageWriter<'session, T> {
+    pub fn new(session: &'session mut ADBSession<T>) -> Self {
         Self { session }
     }
 }
 
-impl<T: ADBMessageTransport> Write for MessageWriter<T> {
+impl<T: ADBMessageTransport> Write for MessageWriter<'_, T> {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         let message = ADBTransportMessage::try_new(
             MessageCommand::Write,

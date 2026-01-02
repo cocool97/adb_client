@@ -31,11 +31,15 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         }
     }
 
-    pub const fn local_id(self) -> u32 {
+    pub fn get_transport_mut(&mut self) -> &mut T {
+        &mut self.transport
+    }
+
+    pub const fn local_id(&self) -> u32 {
         self.local_id
     }
 
-    pub const fn remote_id(self) -> u32 {
+    pub const fn remote_id(&self) -> u32 {
         self.remote_id
     }
 

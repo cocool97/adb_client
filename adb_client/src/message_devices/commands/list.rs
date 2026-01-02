@@ -59,15 +59,20 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 &payload[*current_index..*current_index + bytes_read_from_existing_payload],
             );
 
-            // Request the next message
-            let send_message = ADBTransportMessage::try_new(
-                MessageCommand::Okay,
-                session.local_id(),
-                session.remote_id(),
-                &[],
-            )?;
+            let local_id = session.local_id();
+            let remote_id = session.remote_id();
 
-            *payload = session.send_and_expect_okay(send_message)?.into_payload();
+            // Request the next message
+            session
+                .get_transport_mut()
+                .write_message(ADBTransportMessage::try_new(
+                    MessageCommand::Okay,
+                    local_id,
+                    remote_id,
+                    &[],
+                )?)?;
+
+            *payload = session.get_transport_mut().read_message()?.into_payload();
 
             let bytes_read_from_new_payload = requested_bytes - bytes_read_from_existing_payload;
             slice.extend_from_slice(&payload[..bytes_read_from_new_payload]);

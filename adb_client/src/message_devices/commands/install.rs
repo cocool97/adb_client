@@ -18,13 +18,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let file_size = apk_file.metadata()?.len();
 
-        let session = self.open_session(&ADBLocalCommand::Install(file_size))?;
+        let mut session = self.open_session(&ADBLocalCommand::Install(file_size))?;
 
-        let mut writer = MessageWriter::new(session);
+        {
+            // Read data from apk_file and write it to the underlying session
+            let mut writer = MessageWriter::new(&mut session);
+            std::io::copy(&mut apk_file, &mut writer)?;
+        }
 
-        std::io::copy(&mut apk_file, &mut writer)?;
-
-        let final_status = self.get_transport_mut().read_message()?;
+        let final_status = session.get_transport_mut().read_message()?;
 
         match final_status.into_payload().as_slice() {
             b"Success\n" => {
