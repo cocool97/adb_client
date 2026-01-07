@@ -80,9 +80,9 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
             log::info!("Starting installation of APK {}...", path.display());
             device.install(&path)?;
         }
-        DeviceCommands::Uninstall { package } => {
+        DeviceCommands::Uninstall { package, user } => {
             log::info!("Uninstalling the package {package}...");
-            device.uninstall(&package)?;
+            device.uninstall(&package, user.as_deref())?;
         }
         DeviceCommands::Framebuffer { path } => {
             device.framebuffer(&path)?;
