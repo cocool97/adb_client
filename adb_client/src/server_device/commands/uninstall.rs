@@ -8,12 +8,13 @@ use crate::{
 
 impl ADBServerDevice {
     /// Uninstall a package from device
-    pub fn uninstall(&mut self, package_name: &str) -> Result<()> {
+    pub fn uninstall(&mut self, package_name: &str, user: Option<&str>) -> Result<()> {
         self.set_serial_transport()?;
 
         self.transport
             .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Uninstall(
                 package_name.to_string(),
+                user.map(|u| u.to_string()),
             )))?;
 
         let mut data = [0; 1024];

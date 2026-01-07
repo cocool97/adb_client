@@ -142,8 +142,8 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
-    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
-        self.inner.uninstall(package)
+    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
+        self.inner.uninstall(package, user)
     }
 
     #[inline]

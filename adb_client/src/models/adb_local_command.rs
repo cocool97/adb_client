@@ -18,7 +18,7 @@ pub(crate) enum ADBLocalCommand {
     Remount,
     DisableVerity,
     EnableVerity,
-    Uninstall(String),
+    Uninstall(String, Option<String>),
     Install(u64),
     TcpIp(u16),
     Usb,
@@ -44,8 +44,12 @@ impl Display for ADBLocalCommand {
             Self::Reboot(reboot_type) => {
                 write!(f, "reboot:{reboot_type}")
             }
-            Self::Uninstall(package) => {
+            Self::Uninstall(package, user) => {
+                if let Some(user) = user {
+                    write!(f, "exec:cmd package 'uninstall' --user {user} {package}")
+                } else {
                 write!(f, "exec:cmd package 'uninstall' {package}")
+                }
             }
             Self::FrameBuffer => write!(f, "framebuffer:"),
             Self::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),

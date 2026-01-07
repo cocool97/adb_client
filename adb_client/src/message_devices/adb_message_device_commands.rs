@@ -62,8 +62,8 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     }
 
     #[inline]
-    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
-        self.uninstall(package)
+    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
+        self.uninstall(package, user)
     }
 
     #[inline]

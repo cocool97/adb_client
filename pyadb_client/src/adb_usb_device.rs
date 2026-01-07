@@ -48,8 +48,9 @@ impl PyADBUSBDevice {
     }
 
     /// Uninstall a package installed on the device
-    pub fn uninstall(&mut self, package: &str) -> Result<()> {
-        Ok(self.0.uninstall(&package)?)
+    #[pyo3(signature = (package, user=None))]
+    pub fn uninstall(&mut self, package: &str, user: Option<String>) -> Result<()> {
+        Ok(self.0.uninstall(&package, user.as_deref())?)
     }
 }
 

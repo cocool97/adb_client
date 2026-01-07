@@ -98,8 +98,8 @@ impl ADBDeviceExt for ADBServerDevice {
         self.install(apk_path)
     }
 
-    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()> {
-        self.uninstall(package.as_ref())
+    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
+        self.uninstall(package.as_ref(), user)
     }
 
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {

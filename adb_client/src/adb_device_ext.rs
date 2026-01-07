@@ -66,7 +66,7 @@ pub trait ADBDeviceExt {
     fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()>;
 
     /// Uninstall the package `package` from device.
-    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()>;
+    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()>;
 
     /// Enable dm-verity on the device
     fn enable_verity(&mut self) -> Result<()>;
