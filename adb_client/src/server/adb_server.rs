@@ -43,6 +43,11 @@ impl ADBServer {
         }
     }
 
+    /// Get the server address
+    pub fn socket_addr(&self) -> Option<SocketAddrV4> {
+        self.socket_addr
+    }
+
     /// Start an instance of `adb-server`
     pub fn start(envs: &HashMap<String, String>, adb_path: &Option<String>) {
         // ADB Server is local, we start it if not already running
