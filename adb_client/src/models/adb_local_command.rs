@@ -22,6 +22,7 @@ pub(crate) enum ADBLocalCommand {
     Install(u64),
     TcpIp(u16),
     Usb,
+    Root,
 }
 
 impl Display for ADBLocalCommand {
@@ -48,7 +49,7 @@ impl Display for ADBLocalCommand {
                 if let Some(user) = user {
                     write!(f, "exec:cmd package 'uninstall' --user {user} {package}")
                 } else {
-                write!(f, "exec:cmd package 'uninstall' {package}")
+                    write!(f, "exec:cmd package 'uninstall' {package}")
                 }
             }
             Self::FrameBuffer => write!(f, "framebuffer:"),
@@ -69,6 +70,7 @@ impl Display for ADBLocalCommand {
                 write!(f, "tcpip:{port}")
             }
             Self::Usb => write!(f, "usb:"),
+            Self::Root => write!(f, "root:"),
         }
     }
 }

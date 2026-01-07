@@ -51,6 +51,10 @@ impl PyADBServerDevice {
     pub fn uninstall(&mut self, package: &str, user: Option<String>) -> Result<()> {
         Ok(self.0.uninstall(package, user.as_deref())?)
     }
+
+    /// Restart adb daemon with root permissions
+    pub fn root(&mut self) -> Result<()> {
+        Ok(self.0.root()?)
     }
 }
 

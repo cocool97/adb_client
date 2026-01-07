@@ -16,3 +16,4 @@ mod transport;
 mod uninstall;
 mod usb;
 mod verity;
+mod root;
