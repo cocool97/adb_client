@@ -7,10 +7,14 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn uninstall(&mut self, package_name: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
+    pub(crate) fn uninstall(
+        &mut self,
+        package_name: &dyn AsRef<str>,
+        user: Option<&str>,
+    ) -> Result<()> {
         self.open_session(&ADBLocalCommand::Uninstall(
             package_name.as_ref().to_string(),
-            user.map(|u| u.to_string()),
+            user.map(ToString::to_string),
         ))?;
 
         let final_status = self.get_transport_mut().read_message()?;

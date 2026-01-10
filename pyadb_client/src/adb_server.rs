@@ -50,7 +50,7 @@ impl PyADBServer {
     }
 
     /// Disconnect device over tcp with address and port
-    pub fn disconnect_device(&mut self, address: String) -> Result<()> {
+    pub fn disconnect_device(&mut self, address: &str) -> Result<()> {
         let socket_address = address.parse::<SocketAddrV4>()?;
         Ok(self.0.disconnect_device(socket_address)?)
     }

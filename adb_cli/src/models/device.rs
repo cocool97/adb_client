@@ -38,12 +38,11 @@ pub enum DeviceCommands {
     },
     /// Uninstall a package from the device
     Uninstall {
-        /// Name of the package to uninstall
-        #[clap(short = 'p', long = "package")]
-        package: String,
-        /// User id of the package to uninstall (optional)
-        #[clap(short = 'u', long = "user", default_value = None)]
+        /// User id of the package to uninstall
+        #[clap(short = 'u', long = "user")]
         user: Option<String>,
+        /// Name of the package to uninstall
+        package: String,
     },
     /// Dump framebuffer of device
     Framebuffer {

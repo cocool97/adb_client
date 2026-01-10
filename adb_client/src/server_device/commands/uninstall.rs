@@ -14,7 +14,7 @@ impl ADBServerDevice {
         self.transport
             .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Uninstall(
                 package_name.to_string(),
-                user.map(|u| u.to_string()),
+                user.map(ToString::to_string),
             )))?;
 
         let mut data = [0; 1024];
