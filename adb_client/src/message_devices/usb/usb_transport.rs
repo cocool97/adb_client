@@ -189,6 +189,11 @@ impl ADBTransport for USBTransport {
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {
+        if self.handle.is_none() {
+            // device has not been initialized, nothing to do
+            return Ok(());
+        }
+
         let message = ADBTransportMessage::try_new(MessageCommand::Clse, 0, 0, &[])?;
         if let Err(e) = self.write_message(message) {
             log::error!("error while sending CLSE message: {e}");
