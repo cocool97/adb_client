@@ -92,8 +92,12 @@ impl USBTransport {
     }
 
     fn configure_endpoint(handle: &DeviceHandle<GlobalContext>, endpoint: &Endpoint) -> Result<()> {
-        handle.claim_interface(endpoint.iface)?;
-        Ok(())
+        match handle.claim_interface(endpoint.iface) {
+            Ok(()) => Ok(()),
+            // busy state likely indicates an ADB server is running and has taken the lock over the device
+            Err(rusb::Error::Busy) => Err(RustADBError::DeviceBusy),
+            Err(err) => Err(err.into()),
+        }
     }
 
     fn find_endpoints(handle: &DeviceHandle<GlobalContext>) -> Result<(Endpoint, Endpoint)> {
@@ -185,6 +189,11 @@ impl ADBTransport for USBTransport {
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {
+        if self.handle.is_none() {
+            // device has not been initialized, nothing to do
+            return Ok(());
+        }
+
         let message = ADBTransportMessage::try_new(MessageCommand::Clse, 0, 0, &[])?;
         if let Err(e) = self.write_message(message) {
             log::error!("error while sending CLSE message: {e}");
