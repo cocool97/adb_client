@@ -92,8 +92,12 @@ impl USBTransport {
     }
 
     fn configure_endpoint(handle: &DeviceHandle<GlobalContext>, endpoint: &Endpoint) -> Result<()> {
-        handle.claim_interface(endpoint.iface)?;
-        Ok(())
+        match handle.claim_interface(endpoint.iface) {
+            Ok(()) => Ok(()),
+            // busy state likely indicates an ADB server is running and has taken the lock over the device
+            Err(rusb::Error::Busy) => Err(RustADBError::DeviceBusy),
+            Err(err) => Err(err.into()),
+        }
     }
 
     fn find_endpoints(handle: &DeviceHandle<GlobalContext>) -> Result<(Endpoint, Endpoint)> {
