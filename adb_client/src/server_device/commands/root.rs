@@ -1,4 +1,8 @@
-use crate::{server_device::ADBServerDevice, Result, models::{ADBCommand, ADBLocalCommand}};
+use crate::{
+    Result,
+    models::{ADBCommand, ADBLocalCommand},
+    server_device::ADBServerDevice,
+};
 
 impl ADBServerDevice {
     /// Restart adb daemon with root permissions

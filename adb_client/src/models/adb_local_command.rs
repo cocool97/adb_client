@@ -46,11 +46,11 @@ impl Display for ADBLocalCommand {
                 write!(f, "reboot:{reboot_type}")
             }
             Self::Uninstall(package, user) => {
+                write!(f, "exec:cmd package 'uninstall'")?;
                 if let Some(user) = user {
-                    write!(f, "exec:cmd package 'uninstall' --user {user} {package}")
-                } else {
-                    write!(f, "exec:cmd package 'uninstall' {package}")
+                    write!(f, " --user {user}")?;
                 }
+                write!(f, " {package}")
             }
             Self::FrameBuffer => write!(f, "framebuffer:"),
             Self::Install(size) => write!(f, "exec:cmd package 'install' -S {size}"),
