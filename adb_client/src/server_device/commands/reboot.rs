@@ -1,10 +1,11 @@
 use crate::{
     Result,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand, RebootType},
     server_device::ADBServerDevice,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Reboots the device
     pub fn reboot(&mut self, reboot_type: RebootType) -> Result<()> {
         self.set_serial_transport()?;

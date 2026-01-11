@@ -1,10 +1,11 @@
 use crate::{
     Result,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand},
     server_device::ADBServerDevice,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Disable verity on the device
     pub fn disable_verity(&mut self) -> Result<()> {
         self.set_serial_transport()?;

@@ -4,11 +4,12 @@ use byteorder::{ByteOrder, LittleEndian};
 
 use crate::{
     AdbStatResponse, Result, RustADBError,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand, SyncCommand},
     server_device::ADBServerDevice,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     fn handle_stat_command<S: AsRef<str>>(&self, path: S) -> Result<AdbStatResponse> {
         let mut len_buf = [0_u8; 4];
         LittleEndian::write_u32(&mut len_buf, u32::try_from(path.as_ref().len())?);

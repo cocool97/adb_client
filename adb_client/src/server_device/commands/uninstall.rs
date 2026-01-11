@@ -2,11 +2,12 @@ use std::io::Read;
 
 use crate::{
     Result,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand},
     server_device::ADBServerDevice,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Uninstall a package from device
     pub fn uninstall(&mut self, package_name: &str) -> Result<()> {
         self.set_serial_transport()?;

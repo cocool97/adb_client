@@ -14,3 +14,11 @@ pub trait ADBDisconnectableTransport {
     /// Shuts down the connection to this transport.
     fn disconnect(&mut self) -> Result<()>;
 }
+
+/// Internal `TypeState` representing a connected transport.
+#[derive(Debug)]
+pub struct Connected;
+
+/// Internal `TypeState` representing a disconnected transport.
+#[derive(Debug)]
+pub struct NotConnected;

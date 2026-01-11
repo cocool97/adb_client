@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{ADBDeviceExt, Result, server_device::ADBServerDevice};
+use crate::{ADBDeviceExt, Result, adb_transport::Connected, server_device::ADBServerDevice};
 
 struct LogFilter<W: Write> {
     writer: W,
@@ -46,7 +46,7 @@ impl<W: Write> Write for LogFilter<W> {
     }
 }
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Get logs from device
     pub fn get_logs<W: Write>(&mut self, output: W) -> Result<()> {
         self.shell_command(&"exec logcat", &mut LogFilter::new(output))

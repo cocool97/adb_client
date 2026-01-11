@@ -1,5 +1,6 @@
 use crate::{
     Result,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand, SyncCommand},
     server_device::ADBServerDevice,
 };
@@ -66,7 +67,7 @@ impl<R: Read> Read for ADBRecvCommandReader<R> {
 
 const BUFFER_SIZE: usize = 65535;
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Receives path to stream from the device.
     pub fn pull(&mut self, path: &dyn AsRef<str>, stream: &mut dyn Write) -> Result<()> {
         self.set_serial_transport()?;

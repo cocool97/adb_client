@@ -1,10 +1,11 @@
 use crate::{
     Result,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand},
     server_device::ADBServerDevice,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Forward socket connection
     pub fn forward(&mut self, remote: String, local: String) -> Result<()> {
         self.set_serial_transport()?;

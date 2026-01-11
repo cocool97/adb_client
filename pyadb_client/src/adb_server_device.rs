@@ -1,4 +1,4 @@
-use adb_client::{ADBDeviceExt, server_device::ADBServerDevice};
+use adb_client::{ADBDeviceExt, Connected, server_device::ADBServerDevice};
 use anyhow::Result;
 use pyo3::{pyclass, pymethods};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
@@ -7,7 +7,7 @@ use std::{fs::File, path::PathBuf};
 #[gen_stub_pyclass]
 #[pyclass]
 /// Represent a device connected to the ADB server
-pub struct PyADBServerDevice(pub ADBServerDevice);
+pub struct PyADBServerDevice(pub ADBServerDevice<Connected>);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -52,8 +52,8 @@ impl PyADBServerDevice {
     }
 }
 
-impl From<ADBServerDevice> for PyADBServerDevice {
-    fn from(value: ADBServerDevice) -> Self {
+impl From<ADBServerDevice<Connected>> for PyADBServerDevice {
+    fn from(value: ADBServerDevice<Connected>) -> Self {
         Self(value)
     }
 }
