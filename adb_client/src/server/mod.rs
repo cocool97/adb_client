@@ -5,6 +5,6 @@ mod commands;
 mod models;
 mod tcp_server_transport;
 
-pub use adb_server::ADBServer;
+pub use adb_server::{ADBServer, start_adb_server};
 pub use models::*;
 pub use tcp_server_transport::TCPServerTransport;

@@ -9,11 +9,11 @@ use crate::{
     server_device::ADBServerDevice,
 };
 
-impl ADBServer {
+impl ADBServer<Connected> {
     /// Gets a list of connected devices.
     pub fn devices(&mut self) -> Result<Vec<DeviceShort>> {
         let devices = self
-            .connect()?
+            .get_transport()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::Devices), true)?;
 
         let mut vec_devices: Vec<DeviceShort> = vec![];
@@ -31,7 +31,7 @@ impl ADBServer {
     /// Gets an extended list of connected devices including the device paths in the state.
     pub fn devices_long(&mut self) -> Result<Vec<DeviceLong>> {
         let devices_long = self
-            .connect()?
+            .get_transport()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::DevicesLong), true)?;
 
         let mut vec_devices: Vec<DeviceLong> = vec![];
@@ -83,7 +83,7 @@ impl ADBServer {
 
     /// Tracks new devices showing up.
     pub fn track_devices(&mut self, callback: impl Fn(DeviceShort) -> Result<()>) -> Result<()> {
-        self.connect()?
+        self.get_transport()?
             .send_adb_request(&ADBCommand::Host(ADBHostCommand::TrackDevices))?;
 
         loop {

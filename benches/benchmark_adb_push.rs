@@ -4,6 +4,7 @@ use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use rand::{Rng, rng};
 use std::fs::File;
 use std::io::Write;
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::process::Command;
 use std::time::Duration;
 
@@ -32,7 +33,7 @@ fn generate_test_file(size_in_bytes: usize) -> Result<()> {
 
 /// Use `adb_client` crate to push a file on device
 fn bench_adb_client_push() -> Result<()> {
-    let mut client = ADBServer::default();
+    let mut client = ADBServer::new(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 5037)).connect()?;
     let mut device = client.get_device()?;
     let f = File::open(LOCAL_TEST_FILE_PATH)?;
     Ok(device.push(f, REMOTE_TEST_FILE_PATH)?)

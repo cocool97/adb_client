@@ -1,13 +1,13 @@
 use crate::{
-    Result,
+    Connected, Result,
     models::{ADBCommand, ADBHostCommand},
     server::ADBServer,
 };
 
-impl ADBServer {
+impl ADBServer<Connected> {
     /// Reconnect the device
     pub fn reconnect_offline(&mut self) -> Result<()> {
-        self.connect()?
+        self.get_transport()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::ReconnectOffline), false)
             .map(|_| ())
     }
