@@ -1,11 +1,12 @@
 use crate::{
     Result,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand, RemountInfo},
     server_device::ADBServerDevice,
 };
 use std::io::Read;
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Remounts the device filesystem as read-write
     pub fn remount(&mut self) -> Result<Vec<RemountInfo>> {
         self.set_serial_transport()?;

@@ -5,11 +5,12 @@ use image::{ImageBuffer, Rgba};
 
 use crate::{
     Result, RustADBError,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand, FrameBufferInfoV1, FrameBufferInfoV2},
     server_device::ADBServerDevice,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Inner method requesting framebuffer from Android device
     pub(crate) fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
         self.set_serial_transport()?;

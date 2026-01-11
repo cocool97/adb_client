@@ -9,7 +9,7 @@ mod utils;
 
 use adb_client::ADBDeviceExt;
 use adb_client::mdns::MDNSDiscoveryService;
-use adb_client::server::ADBServer;
+use adb_client::server::start_adb_server;
 use adb_client::server_device::ADBServerDevice;
 use adb_client::tcp::ADBTcpDevice;
 use adb_client::usb::{ADBDeviceInfo, ADBUSBDevice, find_all_connected_adb_devices};
@@ -124,12 +124,12 @@ fn inner_main() -> ADBCliResult<()> {
             // Must start server to communicate with device, but only if this is a local one.
             let server_address_ip = server_command.address.ip();
             if server_address_ip.is_loopback() || server_address_ip.is_unspecified() {
-                ADBServer::start(&HashMap::default(), &None);
+                start_adb_server(&HashMap::<String, String>::default(), &None);
             }
 
             let device = match server_command.serial {
-                Some(serial) => ADBServerDevice::new(serial, Some(server_command.address)),
-                None => ADBServerDevice::autodetect(Some(server_command.address)),
+                Some(serial) => ADBServerDevice::new(serial, Some(server_command.address))?,
+                None => ADBServerDevice::autodetect(Some(server_command.address))?,
             };
 
             match server_command.command {

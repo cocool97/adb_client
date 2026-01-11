@@ -7,7 +7,7 @@ use rustls::{
 
 use crate::{
     Result, RustADBError,
-    adb_transport::ADBTransport,
+    adb_transport::{ADBConnectableTransport, ADBDisconnectableTransport, ADBTransport},
     message_devices::{
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::{ADBTransportMessage, ADBTransportMessageHeader},
@@ -176,13 +176,17 @@ impl TcpTransport {
     }
 }
 
-impl ADBTransport for TcpTransport {
+impl ADBTransport for TcpTransport {}
+
+impl ADBConnectableTransport for TcpTransport {
     fn connect(&mut self) -> Result<()> {
         let stream = TcpStream::connect(self.address)?;
         self.current_connection = Some(Arc::new(Mutex::new(CurrentConnection::Tcp(stream))));
         Ok(())
     }
+}
 
+impl ADBDisconnectableTransport for TcpTransport {
     fn disconnect(&mut self) -> Result<()> {
         log::debug!("disconnecting...");
         if let Some(current_connection) = &self.current_connection {

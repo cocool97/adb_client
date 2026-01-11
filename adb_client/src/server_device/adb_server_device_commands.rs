@@ -5,6 +5,7 @@ use std::{
 
 use crate::{
     ADBDeviceExt, ADBListItemType, Result, RustADBError,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand, AdbStatResponse, HostFeatures, RemountInfo},
 };
 
@@ -12,7 +13,7 @@ use super::ADBServerDevice;
 
 const BUFFER_SIZE: usize = 65535;
 
-impl ADBDeviceExt for ADBServerDevice {
+impl ADBDeviceExt for ADBServerDevice<Connected> {
     fn shell_command(&mut self, command: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
@@ -123,7 +124,7 @@ impl ADBDeviceExt for ADBServerDevice {
     }
 }
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     fn bidirectional_session(
         &mut self,
         server_cmd: &ADBCommand,

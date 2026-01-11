@@ -1,14 +1,14 @@
 use crate::{
-    Result,
+    Connected, Result,
     models::{ADBCommand, ADBHostCommand},
     server::{ADBServer, models::ServerStatus},
 };
 
-impl ADBServer {
+impl ADBServer<Connected> {
     /// Check ADB server status
     pub fn server_status(&mut self) -> Result<ServerStatus> {
         let status = self
-            .connect()?
+            .get_transport()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::ServerStatus), true)?;
 
         ServerStatus::try_from(status)

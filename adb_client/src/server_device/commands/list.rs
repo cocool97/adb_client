@@ -1,5 +1,6 @@
 use crate::{
     Result, RustADBError,
+    adb_transport::Connected,
     models::{ADBCommand, ADBListItem, ADBListItemType, ADBLocalCommand, SyncCommand},
     server_device::ADBServerDevice,
 };
@@ -9,7 +10,7 @@ use std::{
     str,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Lists files in path on the device.
     /// note: path uses internal file paths, so Documents is at /storage/emulated/0/Documents
     pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {

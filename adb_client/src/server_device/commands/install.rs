@@ -2,12 +2,13 @@ use std::{fs::File, io::Read, path::Path};
 
 use crate::{
     Result,
+    adb_transport::Connected,
     models::{ADBCommand, ADBLocalCommand},
     server_device::ADBServerDevice,
     utils::check_extension_is_apk,
 };
 
-impl ADBServerDevice {
+impl ADBServerDevice<Connected> {
     /// Install an APK on device
     pub fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
         let mut apk_file = File::open(&apk_path)?;

@@ -2,17 +2,18 @@ use std::io::Read;
 
 use crate::{
     Result, RustADBError,
+    adb_transport::Connected,
     emulator::ADBEmulatorDevice,
     models::{ADBCommand, ADBHostCommand},
     server::{ADBServer, DeviceLong, DeviceShort},
     server_device::ADBServerDevice,
 };
 
-impl ADBServer {
+impl ADBServer<Connected> {
     /// Gets a list of connected devices.
     pub fn devices(&mut self) -> Result<Vec<DeviceShort>> {
         let devices = self
-            .connect()?
+            .get_transport()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::Devices), true)?;
 
         let mut vec_devices: Vec<DeviceShort> = vec![];
@@ -30,7 +31,7 @@ impl ADBServer {
     /// Gets an extended list of connected devices including the device paths in the state.
     pub fn devices_long(&mut self) -> Result<Vec<DeviceLong>> {
         let devices_long = self
-            .connect()?
+            .get_transport()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::DevicesLong), true)?;
 
         let mut vec_devices: Vec<DeviceLong> = vec![];
@@ -46,14 +47,14 @@ impl ADBServer {
     }
 
     /// Get a device, assuming that only this device is connected.
-    pub fn get_device(&mut self) -> Result<ADBServerDevice> {
+    pub fn get_device(&mut self) -> Result<ADBServerDevice<Connected>> {
         let mut devices = self.devices()?.into_iter();
         match devices.next() {
             Some(device) => match devices.next() {
                 Some(_) => Err(RustADBError::DeviceNotFound(
                     "too many devices connected".to_string(),
                 )),
-                None => Ok(ADBServerDevice::new(device.identifier, self.socket_addr)),
+                None => ADBServerDevice::new(device.identifier, self.socket_addr),
             },
             None => Err(RustADBError::DeviceNotFound(
                 "no device connected".to_string(),
@@ -65,14 +66,14 @@ impl ADBServer {
     /// - There is no device connected => Error
     /// - There is a single device connected => Ok
     /// - There are more than 1 device connected => Error
-    pub fn get_device_by_name(&mut self, name: &str) -> Result<ADBServerDevice> {
+    pub fn get_device_by_name(&mut self, name: &str) -> Result<ADBServerDevice<Connected>> {
         let nb_devices = self
             .devices()?
             .into_iter()
             .filter(|d| d.identifier.as_str() == name)
             .count();
         if nb_devices == 1 {
-            Ok(ADBServerDevice::new(name.to_string(), self.socket_addr))
+            ADBServerDevice::new(name.to_string(), self.socket_addr)
         } else {
             Err(RustADBError::DeviceNotFound(format!(
                 "could not find device {name}"
@@ -82,7 +83,7 @@ impl ADBServer {
 
     /// Tracks new devices showing up.
     pub fn track_devices(&mut self, callback: impl Fn(DeviceShort) -> Result<()>) -> Result<()> {
-        self.connect()?
+        self.get_transport()?
             .send_adb_request(&ADBCommand::Host(ADBHostCommand::TrackDevices))?;
 
         loop {

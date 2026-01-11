@@ -5,6 +5,7 @@ use std::str::FromStr;
 use byteorder::{ByteOrder, LittleEndian};
 
 use crate::ADBTransport;
+use crate::adb_transport::{ADBConnectableTransport, ADBDisconnectableTransport};
 use crate::models::{ADBCommand, AdbRequestStatus, SyncCommand};
 use crate::{Result, RustADBError};
 
@@ -152,16 +153,9 @@ impl TCPServerTransport {
     }
 }
 
-impl ADBTransport for TCPServerTransport {
-    fn disconnect(&mut self) -> Result<()> {
-        if let Some(conn) = &mut self.tcp_stream {
-            conn.shutdown(std::net::Shutdown::Both)?;
-            log::trace!("Disconnected from {}", conn.peer_addr()?);
-        }
+impl ADBTransport for TCPServerTransport {}
 
-        Ok(())
-    }
-
+impl ADBConnectableTransport for TCPServerTransport {
     fn connect(&mut self) -> Result<()> {
         if let Some(previous) = &self.tcp_stream {
             // Ignoring underlying error, we will recreate a new connection
@@ -171,6 +165,17 @@ impl ADBTransport for TCPServerTransport {
         tcp_stream.set_nodelay(true)?;
         self.tcp_stream = Some(tcp_stream);
         log::trace!("Successfully connected to {}", self.socket_addr);
+
+        Ok(())
+    }
+}
+
+impl ADBDisconnectableTransport for TCPServerTransport {
+    fn disconnect(&mut self) -> Result<()> {
+        if let Some(conn) = &mut self.tcp_stream {
+            conn.shutdown(std::net::Shutdown::Both)?;
+            log::trace!("Disconnected from {}", conn.peer_addr()?);
+        }
 
         Ok(())
     }

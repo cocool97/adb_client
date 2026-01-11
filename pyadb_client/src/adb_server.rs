@@ -1,8 +1,8 @@
 use std::net::SocketAddrV4;
 
-use adb_client::server::ADBServer;
+use adb_client::{Connected, server::ADBServer};
 use anyhow::Result;
-use pyo3::{PyResult, pyclass, pymethods};
+use pyo3::{pyclass, pymethods};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::{PyADBServerDevice, PyDeviceShort};
@@ -10,16 +10,16 @@ use crate::{PyADBServerDevice, PyDeviceShort};
 #[gen_stub_pyclass]
 #[pyclass]
 /// Represent an instance of an ADB Server
-pub struct PyADBServer(ADBServer);
+pub struct PyADBServer(ADBServer<Connected>);
 
 #[gen_stub_pymethods]
 #[pymethods]
 impl PyADBServer {
     #[new]
     /// Instantiate a new `PyADBServer` instance
-    pub fn new(address: &str) -> PyResult<Self> {
+    pub fn new(address: &str) -> Result<Self> {
         let address = address.parse::<SocketAddrV4>()?;
-        Ok(ADBServer::new(address).into())
+        Ok(ADBServer::new(address).connect()?.into())
     }
 
     /// List available devices
@@ -43,8 +43,8 @@ impl PyADBServer {
     }
 }
 
-impl From<ADBServer> for PyADBServer {
-    fn from(value: ADBServer) -> Self {
+impl From<ADBServer<Connected>> for PyADBServer {
+    fn from(value: ADBServer<Connected>) -> Self {
         Self(value)
     }
 }

@@ -1,15 +1,15 @@
 use crate::{
-    Result, RustADBError,
+    Connected, Result, RustADBError,
     models::{ADBCommand, ADBHostCommand},
     server::ADBServer,
 };
 use std::net::SocketAddrV4;
 
-impl ADBServer {
+impl ADBServer<Connected> {
     /// Connect device over tcp with address and port
     pub fn disconnect_device(&mut self, address: SocketAddrV4) -> Result<()> {
         let response = self
-            .connect()?
+            .get_transport()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::Disconnect(address)), true)?;
 
         match String::from_utf8(response) {
