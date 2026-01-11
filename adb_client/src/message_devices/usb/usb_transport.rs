@@ -7,7 +7,7 @@ use rusb::{
 
 use crate::{
     Result, RustADBError,
-    adb_transport::ADBTransport,
+    adb_transport::{ADBConnectableTransport, ADBDisconnectableTransport, ADBTransport},
     message_devices::{
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::{ADBTransportMessage, ADBTransportMessageHeader},
@@ -169,7 +169,9 @@ impl USBTransport {
     }
 }
 
-impl ADBTransport for USBTransport {
+impl ADBTransport for USBTransport {}
+
+impl ADBConnectableTransport for USBTransport {
     fn connect(&mut self) -> crate::Result<()> {
         let device = self.device.open()?;
 
@@ -187,7 +189,9 @@ impl ADBTransport for USBTransport {
 
         Ok(())
     }
+}
 
+impl ADBDisconnectableTransport for USBTransport {
     fn disconnect(&mut self) -> crate::Result<()> {
         if self.handle.is_none() {
             // device has not been initialized, nothing to do

@@ -5,7 +5,9 @@ use std::{
 };
 
 use crate::{
-    Result, RustADBError, adb_transport::ADBTransport, emulator::models::ADBEmulatorCommand,
+    Result, RustADBError,
+    adb_transport::{ADBConnectableTransport, ADBDisconnectableTransport, ADBTransport},
+    emulator::models::ADBEmulatorCommand,
 };
 
 /// Return authentication token stored in `$HOME/.emulator_console_auth_token`
@@ -87,16 +89,9 @@ impl TCPEmulatorTransport {
     }
 }
 
-impl ADBTransport for TCPEmulatorTransport {
-    fn disconnect(&mut self) -> Result<()> {
-        if let Some(conn) = &mut self.tcp_stream {
-            conn.shutdown(std::net::Shutdown::Both)?;
-            log::trace!("Disconnected from {}", conn.peer_addr()?);
-        }
+impl ADBTransport for TCPEmulatorTransport {}
 
-        Ok(())
-    }
-
+impl ADBConnectableTransport for TCPEmulatorTransport {
     /// Connect to current emulator and authenticate
     fn connect(&mut self) -> Result<()> {
         if self.tcp_stream.is_none() {
@@ -120,6 +115,17 @@ impl ADBTransport for TCPEmulatorTransport {
             self.authenticate()?;
 
             log::trace!("Authentication successful");
+        }
+
+        Ok(())
+    }
+}
+
+impl ADBDisconnectableTransport for TCPEmulatorTransport {
+    fn disconnect(&mut self) -> Result<()> {
+        if let Some(conn) = &mut self.tcp_stream {
+            conn.shutdown(std::net::Shutdown::Both)?;
+            log::trace!("Disconnected from {}", conn.peer_addr()?);
         }
 
         Ok(())

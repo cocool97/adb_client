@@ -4,7 +4,9 @@ use std::{
 };
 
 use crate::{
-    ADBTransport, Result, RustADBError, emulator::tcp_emulator_transport::TCPEmulatorTransport,
+    Result, RustADBError,
+    adb_transport::{ADBConnectableTransport, ADBDisconnectableTransport},
+    emulator::tcp_emulator_transport::TCPEmulatorTransport,
     server_device::ADBServerDevice,
 };
 use regex::Regex;

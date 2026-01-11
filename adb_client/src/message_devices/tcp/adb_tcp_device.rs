@@ -2,6 +2,7 @@ use std::io::Write;
 use std::path::Path;
 use std::{io::Read, net::SocketAddr};
 
+use crate::adb_transport::{ADBConnectableTransport, ADBDisconnectableTransport};
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::message_devices::adb_message_transport::ADBMessageTransport;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
@@ -10,7 +11,7 @@ use crate::message_devices::models::{ADBRsaKey, read_adb_private_key};
 use crate::models::RemountInfo;
 use crate::tcp::tcp_transport::TcpTransport;
 use crate::utils::get_default_adb_key_path;
-use crate::{ADBDeviceExt, ADBListItemType, ADBTransport, Result};
+use crate::{ADBDeviceExt, ADBListItemType, Result};
 
 /// Represent a device reached and available over TCP.
 #[derive(Debug)]

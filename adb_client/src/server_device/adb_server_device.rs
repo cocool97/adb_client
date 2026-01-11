@@ -1,5 +1,6 @@
 use crate::{
-    ADBTransport, Result,
+    Result,
+    adb_transport::{ADBConnectableTransport, ADBDisconnectableTransport},
     models::{ADBCommand, ADBHostCommand},
     server::TCPServerTransport,
 };

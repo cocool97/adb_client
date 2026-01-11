@@ -1,6 +1,7 @@
-use crate::ADBTransport;
 use crate::Result;
 use crate::RustADBError;
+use crate::adb_transport::ADBConnectableTransport;
+use crate::adb_transport::ADBDisconnectableTransport;
 use crate::server::tcp_server_transport::TCPServerTransport;
 use std::collections::HashMap;
 use std::net::SocketAddrV4;
