@@ -52,6 +52,11 @@ impl PyADBUSBDevice {
     pub fn uninstall(&mut self, package: &str, user: Option<&str>) -> Result<()> {
         Ok(self.0.uninstall(&package, user)?)
     }
+
+    /// Restart adb daemon with root permissions
+    pub fn root(&mut self) -> Result<()> {
+        Ok(self.0.root()?)
+    }
 }
 
 impl From<ADBUSBDevice> for PyADBUSBDevice {

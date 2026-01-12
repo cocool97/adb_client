@@ -57,8 +57,11 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     }
 
     #[inline]
-    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
-        self.install(apk_path)
+    fn root(&mut self) -> Result<()> {
+        self.root()
+    }
+
+    #[inline]
     }
 
     #[inline]

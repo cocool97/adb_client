@@ -90,6 +90,10 @@ impl ADBDeviceExt for ADBServerDevice {
         self.reboot(reboot_type)
     }
 
+    fn root(&mut self) -> Result<()> {
+        self.root()
+    }
+
     fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
         self.push(stream, path)
     }

@@ -137,8 +137,11 @@ impl ADBDeviceExt for ADBTcpDevice {
     }
 
     #[inline]
-    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
-        self.inner.install(apk_path)
+    fn root(&mut self) -> Result<()> {
+        self.inner.root()
+    }
+
+    #[inline]
     }
 
     #[inline]
