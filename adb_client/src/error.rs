@@ -74,6 +74,11 @@ pub enum RustADBError {
     #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error("USB Error: {0}")]
     UsbError(#[from] rusb::Error),
+    /// Selected device is busy.
+    #[cfg(feature = "usb")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
+    #[error("Device is busy. Is ADB server running?")]
+    DeviceBusy,
     /// USB device not found
     #[error("USB Device not found: {0} {1}")]
     USBDeviceNotFound(u16, u16),
