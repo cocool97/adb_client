@@ -42,6 +42,9 @@ pub trait ADBDeviceExt {
     /// Remount the device partitions as read-write
     fn remount(&mut self) -> Result<Vec<RemountInfo>>;
 
+    /// Restart adb daemon with root permissions
+    fn root(&mut self) -> Result<()>;
+
     /// Run `activity` from `package` on device. Return the command output.
     fn run_activity(
         &mut self,

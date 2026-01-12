@@ -54,4 +54,6 @@ pub enum DeviceCommands {
         /// Path to list files from
         path: String,
     },
+    /// Restart adb daemon with root permissions
+    Root,
 }
