@@ -33,6 +33,9 @@ pub enum DeviceCommands {
     },
     /// Install an APK on device
     Install {
+        /// User id to install the package for
+        #[clap(short = 'u', long = "user")]
+        user: Option<String>,
         /// Path to APK file. Extension must be ".apk"
         path: PathBuf,
     },

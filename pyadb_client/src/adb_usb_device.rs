@@ -43,8 +43,9 @@ impl PyADBUSBDevice {
 
     /// Install a package installed on the device
     #[expect(clippy::needless_pass_by_value)]
-    pub fn install(&mut self, apk_path: PathBuf) -> Result<()> {
-        Ok(self.0.install(&apk_path)?)
+    #[pyo3(signature = (apk_path, user=None))]
+    pub fn install(&mut self, apk_path: PathBuf, user: Option<&str>) -> Result<()> {
+        Ok(self.0.install(&apk_path, user)?)
     }
 
     /// Uninstall a package installed on the device

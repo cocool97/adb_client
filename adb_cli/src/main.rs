@@ -80,9 +80,9 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
             let output = device.run_activity(&package, &activity)?;
             std::io::stdout().write_all(&output)?;
         }
-        DeviceCommands::Install { path } => {
+        DeviceCommands::Install { path, user } => {
             log::info!("Starting installation of APK {}...", path.display());
-            device.install(&path)?;
+            device.install(&path, user.as_deref())?;
         }
         DeviceCommands::Uninstall { package, user } => {
             log::info!("Uninstalling the package {package}...");

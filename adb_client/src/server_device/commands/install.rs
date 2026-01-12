@@ -9,7 +9,7 @@ use crate::{
 
 impl ADBServerDevice {
     /// Install an APK on device
-    pub fn install<P: AsRef<Path>>(&mut self, apk_path: P) -> Result<()> {
+    pub fn install<P: AsRef<Path>>(&mut self, apk_path: P, user: Option<&str>) -> Result<()> {
         let mut apk_file = File::open(&apk_path)?;
 
         check_extension_is_apk(&apk_path)?;
@@ -19,7 +19,10 @@ impl ADBServerDevice {
         self.set_serial_transport()?;
 
         self.transport
-            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Install(file_size)))?;
+            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Install(
+                file_size,
+                user.map(ToString::to_string),
+            )))?;
 
         let mut raw_connection = self.transport.get_raw_connection()?;
 

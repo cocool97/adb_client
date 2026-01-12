@@ -98,8 +98,8 @@ impl ADBDeviceExt for ADBServerDevice {
         self.push(stream, path)
     }
 
-    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
-        self.install(apk_path)
+    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
+        self.install(apk_path, user)
     }
 
     fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
