@@ -13,7 +13,7 @@ use super::ADBServerDevice;
 const BUFFER_SIZE: usize = 65535;
 
 impl ADBDeviceExt for ADBServerDevice {
-    fn shell_command(&mut self, command: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
+    fn shell_command(&mut self, command: &dyn AsRef<str>, mut stdout: Option<&mut dyn Write>, mut stderr: Option<&mut dyn Write>) -> Result<Option<u8>> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -44,19 +44,80 @@ impl ADBDeviceExt for ADBServerDevice {
                 args,
             )))?;
 
+        // Now decode the shell v2 protocol packets, reference:
+        // https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/shell_protocol.h
+
+        let mut exit = None;
+        let mut input = std::io::BufReader::new(self.transport.get_raw_connection()?);
+
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {
-            match self.transport.get_raw_connection()?.read(&mut buffer) {
-                Ok(size) => {
-                    if size == 0 {
-                        return Ok(());
-                    }
-                    output.write_all(&buffer[..size])?;
-                }
-                Err(e) => {
-                    return Err(RustADBError::IOError(e));
+            if let Err(err) = input.read_exact(&mut buffer[0..1]) {
+                match err.kind() {
+                    ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => return Ok(None),
+                    _ => return Err(RustADBError::IOError(err)),
                 }
             }
+            let channel = buffer[0];
+            if let Err(err) = input.read_exact(&mut buffer[0..4]) {
+                match err.kind() {
+                    ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => return Ok(None),
+                    _ => return Err(RustADBError::IOError(err)),
+                }
+            }
+            let payload_size = u32::from_le_bytes([buffer[0], buffer[1], buffer[2], buffer[3]]) as usize;
+            if payload_size == 0 {
+                continue;
+            }
+
+            match channel {
+                // stdout or stderr
+                1 | 2 => {
+                    let mut remainder = payload_size;
+                    // read the payload
+                    while remainder > 0 {
+                        let to_read = std::cmp::min(remainder, BUFFER_SIZE);
+                        match input.read(&mut buffer[0..to_read]) {
+                            Ok(size) => {
+                                if size == 0 {
+                                    return Ok(exit);
+                                }
+                                if channel == 1 && let Some(ref mut stdout) = stdout {
+                                    stdout.write_all(&buffer[..size])?;
+                                } else if channel == 2 && let Some(ref mut stderr) = stderr {
+                                    stderr.write_all(&buffer[..size])?;
+                                } else if channel == 2 && let Some(ref mut merged) = stdout {
+                                    merged.write_all(&buffer[..size])?;
+                                }
+                                remainder -= size;
+                            },
+                            Err(e) => {
+                                return Err(RustADBError::IOError(e));
+                            }
+                        }
+                    }
+                }
+                3 => {
+                    // exit status channel
+                    if payload_size != 1 {
+                        return Err(RustADBError::ADBShellV2ParseError(format!("Spurious exit status packet with size of {payload_size} (should be 1)")));
+                    }
+                    if let Err(err) = input.read_exact(&mut buffer[0..1]) {
+                        match err.kind() {
+                            ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => return Ok(None),
+                            _ => return Err(RustADBError::IOError(err)),
+                        }
+                    }
+                    exit = Some(buffer[0]);
+                    continue;
+                }
+                _ => {
+                    // Ignore unknown channels
+                    continue;
+                }
+            }
+
+
         }
     }
 

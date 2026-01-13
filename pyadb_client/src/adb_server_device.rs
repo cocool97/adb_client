@@ -22,7 +22,7 @@ impl PyADBServerDevice {
     /// Run shell commands on device and return the output (stdout + stderr merged)
     pub fn shell_command(&mut self, command: &str) -> Result<Vec<u8>> {
         let mut output = Vec::new();
-        self.0.shell_command(&command, &mut output)?;
+        self.0.shell_command(&command, Some(&mut output), None)?;
         Ok(output)
     }
 
