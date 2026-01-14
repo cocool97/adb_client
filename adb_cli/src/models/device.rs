@@ -33,11 +33,17 @@ pub enum DeviceCommands {
     },
     /// Install an APK on device
     Install {
+        /// User id to install the package for
+        #[clap(short = 'u', long = "user")]
+        user: Option<String>,
         /// Path to APK file. Extension must be ".apk"
         path: PathBuf,
     },
     /// Uninstall a package from the device
     Uninstall {
+        /// User id of the package to uninstall
+        #[clap(short = 'u', long = "user")]
+        user: Option<String>,
         /// Name of the package to uninstall
         package: String,
     },
@@ -51,4 +57,6 @@ pub enum DeviceCommands {
         /// Path to list files from
         path: String,
     },
+    /// Restart adb daemon with root permissions
+    Root,
 }

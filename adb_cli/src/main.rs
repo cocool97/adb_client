@@ -72,17 +72,21 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
             device.push(&mut input, &path)?;
             log::info!("Uploaded {filename} to {path}");
         }
+        DeviceCommands::Root => {
+            device.root()?;
+            log::info!("Restarted adbd as root");
+        }
         DeviceCommands::Run { package, activity } => {
             let output = device.run_activity(&package, &activity)?;
             std::io::stdout().write_all(&output)?;
         }
-        DeviceCommands::Install { path } => {
+        DeviceCommands::Install { path, user } => {
             log::info!("Starting installation of APK {}...", path.display());
-            device.install(&path)?;
+            device.install(&path, user.as_deref())?;
         }
-        DeviceCommands::Uninstall { package } => {
+        DeviceCommands::Uninstall { package, user } => {
             log::info!("Uninstalling the package {package}...");
-            device.uninstall(&package)?;
+            device.uninstall(&package, user.as_deref())?;
         }
         DeviceCommands::Framebuffer { path } => {
             device.framebuffer(&path)?;

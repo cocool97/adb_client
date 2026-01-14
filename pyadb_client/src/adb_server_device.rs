@@ -42,13 +42,20 @@ impl PyADBServerDevice {
 
     /// Install a package installed on the device
     #[expect(clippy::needless_pass_by_value)]
-    pub fn install(&mut self, apk_path: PathBuf) -> Result<()> {
-        Ok(self.0.install(&apk_path)?)
+    #[pyo3(signature = (apk_path, user=None))]
+    pub fn install(&mut self, apk_path: PathBuf, user: Option<&str>) -> Result<()> {
+        Ok(self.0.install(&apk_path, user)?)
     }
 
     /// Uninstall a package installed on the device
-    pub fn uninstall(&mut self, package: &str) -> Result<()> {
-        Ok(self.0.uninstall(package)?)
+    #[pyo3(signature = (package, user=None))]
+    pub fn uninstall(&mut self, package: &str, user: Option<&str>) -> Result<()> {
+        Ok(self.0.uninstall(package, user)?)
+    }
+
+    /// Restart adb daemon with root permissions
+    pub fn root(&mut self) -> Result<()> {
+        Ok(self.0.root()?)
     }
 }
 

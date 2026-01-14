@@ -1,6 +1,6 @@
 use std::net::SocketAddrV4;
 
-use adb_client::server::ADBServer;
+use adb_client::{server::ADBServer, server_device::ADBServerDevice};
 use anyhow::Result;
 use pyo3::{PyResult, pyclass, pymethods};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
@@ -40,6 +40,19 @@ impl PyADBServer {
     /// Get a device by its name, as shown in `.devices()` output
     pub fn get_device_by_name(&mut self, name: &str) -> Result<PyADBServerDevice> {
         Ok(self.0.get_device_by_name(name)?.into())
+    }
+
+    /// Connect device over tcp with address and port
+    pub fn connect_device(&mut self, address: String) -> Result<PyADBServerDevice> {
+        let socket_address = address.parse::<SocketAddrV4>()?;
+        self.0.connect_device(socket_address)?;
+        Ok(ADBServerDevice::new(address, self.0.socket_addr()).into())
+    }
+
+    /// Disconnect device over tcp with address and port
+    pub fn disconnect_device(&mut self, address: &str) -> Result<()> {
+        let socket_address = address.parse::<SocketAddrV4>()?;
+        Ok(self.0.disconnect_device(socket_address)?)
     }
 }
 

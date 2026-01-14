@@ -9,6 +9,7 @@ mod reconnect;
 mod recv;
 mod remount;
 mod reverse;
+mod root;
 mod send;
 mod stat;
 mod tcpip;

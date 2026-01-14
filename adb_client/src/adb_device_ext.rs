@@ -42,6 +42,9 @@ pub trait ADBDeviceExt {
     /// Remount the device partitions as read-write
     fn remount(&mut self) -> Result<Vec<RemountInfo>>;
 
+    /// Restart adb daemon with root permissions
+    fn root(&mut self) -> Result<()>;
+
     /// Run `activity` from `package` on device. Return the command output.
     fn run_activity(
         &mut self,
@@ -63,10 +66,10 @@ pub trait ADBDeviceExt {
     }
 
     /// Install an APK pointed to by `apk_path` on device.
-    fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()>;
+    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()>;
 
     /// Uninstall the package `package` from device.
-    fn uninstall(&mut self, package: &dyn AsRef<str>) -> Result<()>;
+    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()>;
 
     /// Enable dm-verity on the device
     fn enable_verity(&mut self) -> Result<()>;

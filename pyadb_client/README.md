@@ -34,6 +34,21 @@ device = server.get_device()
 print(device, device.identifier)
 ```
 
+### Connect and Disconnect with device id
+
+```python
+from pyadb_client import PyADBServer
+
+server = PyADBServer("127.0.0.1:5037")
+
+# Connect to a device with device id
+device = server.connect_device("192.168.1.100:5555")
+print(f"Connected to {device.identifier}")
+
+# Disconnect from a device with device id
+server.disconnect_device("192.168.1.100:5555")
+```
+
 ### Push a file on device
 
 ```python

@@ -11,14 +11,17 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn install(&mut self, apk_path: &dyn AsRef<Path>) -> Result<()> {
+    pub(crate) fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
         let mut apk_file = File::open(apk_path)?;
 
         check_extension_is_apk(apk_path)?;
 
         let file_size = apk_file.metadata()?.len();
 
-        let mut session = self.open_session(&ADBLocalCommand::Install(file_size))?;
+        let mut session = self.open_session(&ADBLocalCommand::Install(
+            file_size,
+            user.map(ToString::to_string),
+        ))?;
 
         {
             // Read data from apk_file and write it to the underlying session

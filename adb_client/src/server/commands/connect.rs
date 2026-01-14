@@ -14,6 +14,7 @@ impl ADBServer {
 
         match String::from_utf8(response) {
             Ok(s) if s.starts_with("connected to") => Ok(()),
+            Ok(s) if s.starts_with("already connected to") => Ok(()),
             Ok(s) => Err(RustADBError::ADBRequestFailed(s)),
             Err(e) => Err(e.into()),
         }
