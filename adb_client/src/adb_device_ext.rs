@@ -9,7 +9,12 @@ use crate::{RebootType, Result};
 /// Trait representing all features available on ADB devices.
 pub trait ADBDeviceExt {
     /// Runs command in a shell on the device, and write its output and error streams into output.
-    fn shell_command(&mut self, command: &dyn AsRef<str>, stdout: Option<&mut dyn Write>, stderr: Option<&mut dyn Write>) -> Result<Option<u8>>;
+    fn shell_command(
+        &mut self,
+        command: &dyn AsRef<str>,
+        stdout: Option<&mut dyn Write>,
+        stderr: Option<&mut dyn Write>,
+    ) -> Result<Option<u8>>;
 
     /// Starts an interactive shell session on the device.
     /// Input data is read from reader and write to writer.
@@ -57,7 +62,7 @@ pub trait ADBDeviceExt {
                 activity.as_ref()
             ),
             Some(&mut output),
-            None
+            None,
         )?;
 
         Ok(output)

@@ -102,7 +102,12 @@ impl ADBTcpDevice {
 
 impl ADBDeviceExt for ADBTcpDevice {
     #[inline]
-    fn shell_command(&mut self, command: &dyn AsRef<str>, stdout: Option<&mut dyn Write>, stderr: Option<&mut dyn Write>) -> Result<Option<u8>> {
+    fn shell_command(
+        &mut self,
+        command: &dyn AsRef<str>,
+        stdout: Option<&mut dyn Write>,
+        stderr: Option<&mut dyn Write>,
+    ) -> Result<Option<u8>> {
         self.inner.shell_command(command, stdout, stderr)
     }
 
