@@ -35,6 +35,7 @@ pub enum MessageSubcommand {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 pub struct SubcommandWithArg {
     subcommand: MessageSubcommand,
     arg: u32,

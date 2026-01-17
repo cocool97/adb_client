@@ -4,7 +4,7 @@ use crate::{
     Result, RustADBError,
     message_devices::{
         message_commands::MessageCommand,
-        utils::{bincode_deserialize_from_slice, bincode_serialize_to_vec},
+        utils::{deserialize_from_slice, serialize_to_vec},
     },
 };
 
@@ -71,7 +71,7 @@ impl ADBTransportMessageHeader {
     }
 
     pub fn as_bytes(&self) -> Result<Vec<u8>> {
-        bincode_serialize_to_vec(self)
+        serialize_to_vec(self)
     }
 }
 
@@ -121,6 +121,6 @@ impl TryFrom<[u8; 24]> for ADBTransportMessageHeader {
     type Error = RustADBError;
 
     fn try_from(value: [u8; 24]) -> Result<Self> {
-        bincode_deserialize_from_slice(&value)
+        deserialize_from_slice(&value)
     }
 }

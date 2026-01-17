@@ -7,7 +7,7 @@ use crate::{
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::ADBTransportMessage,
         message_commands::{MessageCommand, MessageSubcommand},
-        utils::bincode_serialize_to_vec,
+        utils::serialize_to_vec,
     },
 };
 
@@ -35,7 +35,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         )?;
 
         let recv_buffer = MessageSubcommand::Recv.with_arg(u32::try_from(source.len())?);
-        let recv_buffer = bincode_serialize_to_vec(&recv_buffer)?;
+        let recv_buffer = serialize_to_vec(&recv_buffer)?;
         session.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
             session.local_id(),

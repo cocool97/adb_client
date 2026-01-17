@@ -11,7 +11,7 @@ use crate::{
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::ADBTransportMessage,
         message_commands::{MessageCommand, MessageSubcommand},
-        utils::{bincode_deserialize_from_slice, bincode_serialize_to_vec},
+        utils::{deserialize_from_slice, serialize_to_vec},
     },
 };
 
@@ -113,7 +113,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         let amount_read = reader.read(&mut buffer)?;
         let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(amount_read)?);
 
-        let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
+        let mut serialized_message = serialize_to_vec(&subcommand_data)?;
         serialized_message.append(&mut buffer[..amount_read].to_vec());
 
         let message = ADBTransportMessage::try_new(
@@ -133,7 +133,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
                     // Currently file mtime is not forwarded
                     let subcommand_data = MessageSubcommand::Done.with_arg(0);
 
-                    let serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
+                    let serialized_message = serialize_to_vec(&subcommand_data)?;
                     let message = ADBTransportMessage::try_new(
                         MessageCommand::Write,
                         self.local_id(),
@@ -157,7 +157,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
                 Ok(size) => {
                     let subcommand_data = MessageSubcommand::Data.with_arg(u32::try_from(size)?);
 
-                    let mut serialized_message = bincode_serialize_to_vec(&subcommand_data)?;
+                    let mut serialized_message = serialize_to_vec(&subcommand_data)?;
                     serialized_message.append(&mut buffer[..size].to_vec());
 
                     let message = ADBTransportMessage::try_new(
@@ -182,7 +182,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
             MessageCommand::Write,
             self.local_id(),
             self.remote_id(),
-            &bincode_serialize_to_vec(&stat_buffer)?,
+            &serialize_to_vec(&stat_buffer)?,
         )?;
         self.send_and_expect_okay(message)?;
         self.send_and_expect_okay(ADBTransportMessage::try_new(
@@ -196,7 +196,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         // Skip first 4 bytes as this is the literal "STAT".
         // Interesting part starts right after
 
-        bincode_deserialize_from_slice(&response.into_payload()[4..])
+        deserialize_from_slice(&response.into_payload()[4..])
     }
 }
 

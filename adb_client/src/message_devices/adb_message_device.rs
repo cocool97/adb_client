@@ -11,7 +11,7 @@ use crate::{
         },
         message_commands::{MessageCommand, MessageSubcommand},
         models::ADBRsaKey,
-        utils::bincode_serialize_to_vec,
+        utils::serialize_to_vec,
     },
     models::ADBLocalCommand,
 };
@@ -139,7 +139,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             MessageCommand::Write,
             session.local_id(),
             session.remote_id(),
-            &bincode_serialize_to_vec(&quit_buffer)?,
+            &serialize_to_vec(&quit_buffer)?,
         )?)?;
 
         let _discard_close = self.transport.read_message()?;
