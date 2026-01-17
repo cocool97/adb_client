@@ -3,10 +3,11 @@ use std::io::Read;
 use crate::{
     Result,
     message_devices::{
-        adb_message_device::{ADBMessageDevice, bincode_serialize_to_vec},
+        adb_message_device::ADBMessageDevice,
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::ADBTransportMessage,
         message_commands::{MessageCommand, MessageSubcommand},
+        utils::bincode_serialize_to_vec,
     },
 };
 
