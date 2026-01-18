@@ -15,3 +15,5 @@ mod commands;
 mod message_commands;
 mod models;
 mod utils;
+
+pub use utils::BinaryDecodable;

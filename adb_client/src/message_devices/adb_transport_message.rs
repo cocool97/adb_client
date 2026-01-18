@@ -1,11 +1,8 @@
-use serde::{Deserialize, Serialize};
+use byteorder::{ByteOrder, LittleEndian};
 
 use crate::{
-    Result, RustADBError,
-    message_devices::{
-        message_commands::MessageCommand,
-        utils::{deserialize_from_slice, serialize_to_vec},
-    },
+    BinaryDecodable, Result, RustADBError,
+    message_devices::{message_commands::MessageCommand, utils::BinaryEncodable},
 };
 
 pub const AUTH_TOKEN: u32 = 1;
@@ -18,7 +15,7 @@ pub struct ADBTransportMessage {
     payload: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 #[repr(C)]
 pub struct ADBTransportMessageHeader {
     command: MessageCommand, /* command identifier constant      */
@@ -41,23 +38,23 @@ impl ADBTransportMessageHeader {
         })
     }
 
-    pub fn command(&self) -> MessageCommand {
+    pub const fn command(&self) -> MessageCommand {
         self.command
     }
 
-    pub fn arg0(&self) -> u32 {
+    pub const fn arg0(&self) -> u32 {
         self.arg0
     }
 
-    pub fn arg1(&self) -> u32 {
+    pub const fn arg1(&self) -> u32 {
         self.arg1
     }
 
-    pub fn data_length(&self) -> u32 {
+    pub const fn data_length(&self) -> u32 {
         self.data_length
     }
 
-    pub fn data_crc32(&self) -> u32 {
+    pub const fn data_crc32(&self) -> u32 {
         self.data_crc32
     }
 
@@ -70,8 +67,42 @@ impl ADBTransportMessageHeader {
         command_u32 ^ 0xFFFF_FFFF
     }
 
-    pub fn as_bytes(&self) -> Result<Vec<u8>> {
-        serialize_to_vec(self)
+    pub fn as_bytes(&self) -> Vec<u8> {
+        self.encode()
+    }
+}
+
+impl BinaryEncodable for ADBTransportMessageHeader {
+    fn encode(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.command.encode());
+        bytes.extend_from_slice(&self.arg0.to_le_bytes());
+        bytes.extend_from_slice(&self.arg1.to_le_bytes());
+        bytes.extend_from_slice(&self.data_length.to_le_bytes());
+        bytes.extend_from_slice(&self.data_crc32.to_le_bytes());
+        bytes.extend_from_slice(&self.magic.to_le_bytes());
+        bytes
+    }
+}
+
+impl BinaryDecodable for ADBTransportMessageHeader {
+    fn decode(data: &[u8]) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        if data.len() != std::mem::size_of::<Self>() {
+            return Err(RustADBError::ConversionError);
+        }
+
+        Ok(Self {
+            command: MessageCommand::try_from(LittleEndian::read_u32(&data[0..4]))
+                .map_err(|_| RustADBError::ConversionError)?,
+            arg0: LittleEndian::read_u32(&data[4..8]),
+            arg1: LittleEndian::read_u32(&data[8..12]),
+            data_length: LittleEndian::read_u32(&data[12..16]),
+            data_crc32: LittleEndian::read_u32(&data[16..20]),
+            magic: LittleEndian::read_u32(&data[20..24]),
+        })
     }
 }
 
@@ -121,6 +152,6 @@ impl TryFrom<[u8; 24]> for ADBTransportMessageHeader {
     type Error = RustADBError;
 
     fn try_from(value: [u8; 24]) -> Result<Self> {
-        deserialize_from_slice(&value)
+        Self::decode(&value)
     }
 }

@@ -5,11 +5,11 @@ use std::{
     time::{Duration, UNIX_EPOCH},
 };
 
+use crate::{BinaryDecodable, RustADBError};
 use byteorder::LittleEndian;
-use serde::{Deserialize, Serialize};
 
 /// Represents a `stat` response
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug)]
 pub struct AdbStatResponse {
     /// File permissions
     pub file_perm: u32,
@@ -17,6 +17,20 @@ pub struct AdbStatResponse {
     pub file_size: u32,
     /// File modification time
     pub mod_time: u32,
+}
+
+impl BinaryDecodable for AdbStatResponse {
+    fn decode(bytes: &[u8]) -> crate::Result<Self> {
+        if bytes.len() != std::mem::size_of::<Self>() {
+            return Err(RustADBError::ConversionError);
+        }
+
+        Ok(Self {
+            file_perm: LittleEndian::read_u32(&bytes[0..4]),
+            file_size: LittleEndian::read_u32(&bytes[4..8]),
+            mod_time: LittleEndian::read_u32(&bytes[8..]),
+        })
+    }
 }
 
 impl From<[u8; 12]> for AdbStatResponse {

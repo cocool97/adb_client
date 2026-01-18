@@ -1,36 +1,34 @@
-use bincode::config::{Configuration, Fixint, LittleEndian, NoLimit};
+use crate::Result;
 
-use serde::{Serialize, de::DeserializeOwned};
-
-use crate::{Result, RustADBError};
-
-const BINCODE_CONFIG: Configuration<LittleEndian, Fixint, NoLimit> = bincode::config::legacy();
-
-pub(crate) fn serialize_to_vec<E: Serialize>(val: E) -> crate::Result<Vec<u8>> {
-    bincode::serde::encode_to_vec(val, BINCODE_CONFIG).map_err(|_e| RustADBError::ConversionError)
+pub trait BinaryEncodable {
+    fn encode(&self) -> Vec<u8>;
 }
 
-pub(crate) fn deserialize_from_slice<D: DeserializeOwned>(data: &[u8]) -> Result<D> {
-    let (response, _) = bincode::serde::decode_from_slice(data, BINCODE_CONFIG)
-        .map_err(|_e| RustADBError::ConversionError)?;
-
-    Ok(response)
+/// Internal trait representing binary decoding capabilities.
+pub trait BinaryDecodable {
+    /// Decode binary data into a struct.
+    fn decode(data: &[u8]) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::message_devices::{
-        message_commands::{MessageSubcommand, SubcommandWithArg},
-        utils::{deserialize_from_slice, serialize_to_vec},
+    use crate::{
+        BinaryDecodable,
+        message_devices::{
+            message_commands::{MessageSubcommand, SubcommandWithArg},
+            utils::BinaryEncodable,
+        },
     };
 
     #[test]
     fn test_bincode_serialize_deserialize_to_vec() {
         let quit_buffer = MessageSubcommand::Quit.with_arg(42u32);
 
-        let serialized = serialize_to_vec(&quit_buffer).expect("cannot serialize struct");
+        let serialized = &quit_buffer.encode();
         let deserialized: SubcommandWithArg =
-            deserialize_from_slice(&serialized).expect("cannot deserialize struct");
+            SubcommandWithArg::decode(serialized).expect("cannot deserialize struct");
 
         assert_eq!(
             quit_buffer, deserialized,
@@ -42,7 +40,7 @@ mod tests {
     fn test_bincode_serialize_data_format() {
         let quit_buffer = MessageSubcommand::Quit.with_arg(42u32);
 
-        let serialized = serialize_to_vec(&quit_buffer).expect("cannot serialize struct");
+        let serialized = &quit_buffer.encode();
 
         // First 4 bytes should be the command value as u32
         assert_eq!(

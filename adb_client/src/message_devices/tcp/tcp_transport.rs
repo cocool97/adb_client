@@ -254,7 +254,7 @@ impl ADBMessageTransport for TcpTransport {
         message: ADBTransportMessage,
         write_timeout: Duration,
     ) -> Result<()> {
-        let message_bytes = message.header().as_bytes()?;
+        let message_bytes = message.header().as_bytes();
         let raw_connection_lock = self.get_current_connection()?;
         let mut raw_connection = raw_connection_lock.lock()?;
 

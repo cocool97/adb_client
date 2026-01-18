@@ -10,7 +10,7 @@ use crate::message_devices::adb_session::ADBSession;
 use crate::message_devices::adb_transport_message::ADBTransportMessage;
 use crate::message_devices::message_commands::MessageCommand;
 use crate::message_devices::message_commands::MessageSubcommand;
-use crate::message_devices::utils::serialize_to_vec;
+use crate::message_devices::utils::BinaryEncodable;
 use crate::models::{ADBListItem, ADBListItemType};
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
@@ -94,7 +94,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
             let subcommand_data = MessageSubcommand::List;
 
-            let mut serialized_message = serialize_to_vec(subcommand_data)?;
+            let mut serialized_message = subcommand_data.encode();
 
             serialized_message.append(&mut len_buf);
             let mut path_bytes: Vec<u8> = Vec::from(path.as_ref().as_bytes());

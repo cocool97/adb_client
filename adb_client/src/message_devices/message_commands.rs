@@ -1,8 +1,13 @@
-use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
+use byteorder::{ByteOrder, LittleEndian};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::fmt::Display;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize_repr, Deserialize_repr)]
+use crate::{
+    RustADBError,
+    message_devices::utils::{BinaryDecodable, BinaryEncodable},
+};
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u32)]
 pub enum MessageCommand {
     /// Connect to a device
@@ -21,7 +26,13 @@ pub enum MessageCommand {
     Stls = 0x534C_5453,
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Serialize_repr, Deserialize_repr)]
+impl BinaryEncodable for MessageCommand {
+    fn encode(&self) -> Vec<u8> {
+        u32::from(*self).to_le_bytes().to_vec()
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, IntoPrimitive)]
 #[repr(u32)]
 pub enum MessageSubcommand {
     Stat = 0x5441_5453,
@@ -34,7 +45,13 @@ pub enum MessageSubcommand {
     List = 0x5453_494C,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+impl BinaryEncodable for MessageSubcommand {
+    fn encode(&self) -> Vec<u8> {
+        u32::from(*self).to_le_bytes().to_vec()
+    }
+}
+
+#[derive(Debug)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 pub struct SubcommandWithArg {
     subcommand: MessageSubcommand,
@@ -47,6 +64,33 @@ impl MessageSubcommand {
             subcommand: self,
             arg,
         }
+    }
+}
+
+impl BinaryEncodable for SubcommandWithArg {
+    fn encode(&self) -> Vec<u8> {
+        let sc: u32 = self.subcommand as u32;
+        let mut buffer = Vec::new();
+        buffer.extend(sc.to_le_bytes());
+        buffer.extend(self.arg.to_le_bytes());
+        buffer
+    }
+}
+
+impl BinaryDecodable for SubcommandWithArg {
+    fn decode(data: &[u8]) -> crate::Result<Self>
+    where
+        Self: Sized,
+    {
+        if data.len() < std::mem::size_of::<Self>() {
+            return Err(RustADBError::ConversionError);
+        }
+
+        Ok(Self {
+            subcommand: MessageSubcommand::try_from(LittleEndian::read_u32(&data[0..4]))
+                .map_err(|_| RustADBError::ConversionError)?,
+            arg: LittleEndian::read_u32(&data[4..8]),
+        })
     }
 }
 
