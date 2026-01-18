@@ -9,6 +9,9 @@ pub enum RustADBError {
     /// Indicates that an error occurred with I/O.
     #[error(transparent)]
     IOError(#[from] std::io::Error),
+    /// Indicates that an error occurred during ADB shell v2 parsing.
+    #[error("ADB shell v2 parsing error: {0}")]
+    ADBShellV2ParseError(String),
     /// Indicates that an error occurred when sending ADB request.
     #[error("ADB request failed - {0}")]
     ADBRequestFailed(String),

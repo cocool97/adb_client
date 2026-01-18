@@ -15,8 +15,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn shell_command(
         &mut self,
         command: &dyn AsRef<str>,
-        output: &mut dyn Write,
-    ) -> Result<()> {
+        mut stdout: Option<&mut dyn Write>,
+        _stderr: Option<&mut dyn Write>,
+    ) -> Result<Option<u8>> {
         let mut session = self.open_session(&ADBLocalCommand::ShellCommand(
             command.as_ref().to_string(),
             Vec::new(),
@@ -27,10 +28,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             if message.header().command() == MessageCommand::Clse {
                 break;
             }
-            output.write_all(&message.into_payload())?;
+            // should this just write for ::Write messages?
+            if let Some(ref mut stdout) = stdout {
+                stdout.write_all(&message.into_payload())?;
+            }
         }
 
-        Ok(())
+        Ok(None)
     }
 
     /// Starts an interactive shell session on the device.
