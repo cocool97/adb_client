@@ -14,3 +14,6 @@ mod adb_transport_message;
 mod commands;
 mod message_commands;
 mod models;
+mod utils;
+
+pub use utils::BinaryDecodable;

@@ -24,9 +24,8 @@ usb = ["dep:rusb"]
 
 [dependencies]
 base64 = { version = "0.22.1" }
-bincode = { version = "2.0.1", features = ["serde"] }
 byteorder = { version = "1.5.0" }
-chrono = { version = "0.4.42", default-features = false, features = ["std"] }
+chrono = { version = "0.4.43", default-features = false, features = ["std"] }
 image = { version = "0.25.9", default-features = false, features = ["png"] }
 log = { version = "0.4.29" }
 num-bigint = { version = "0.8.6", package = "num-bigint-dig" }
@@ -38,28 +37,27 @@ rcgen = { version = "0.14.6", default-features = false, features = [
     "pem",
 ] }
 regex = { version = "1.12.2", features = ["perf", "std", "unicode"] }
-rsa = { version = "0.9.7" }
-rustls = { version = "0.23.35" }
-rustls-pki-types = { version = "1.13.2" }
-serde = { version = "1.0.228", features = ["derive"] }
-serde_repr = { version = "0.1.20" }
+rsa = { version = "0.9.10" }
+rustls = { version = "0.23.36" }
+rustls-pki-types = { version = "1.14.0" }
 sha1 = { version = "0.10.6", features = ["oid"] }
-thiserror = { version = "2.0.17" }
+thiserror = { version = "2.0.18" }
 
 #########
 # `mdns` feature-specific dependencies
-mdns-sd = { version = "0.17.1", default-features = false, features = [
+mdns-sd = { version = "0.17.2", default-features = false, features = [
     "logging",
 ], optional = true }
 #########
 #########
 # USB-only dependencies
 rusb = { version = "0.9.4", features = ["vendored"], optional = true }
+num_enum = { version = "0.7.5" }
 #########
 
 [dev-dependencies]
 anyhow = { version = "1.0.100" }
-criterion = { version = "0.7.0" } # Used for benchmarks
+criterion = { version = "0.8.1" } # Used for benchmarks
 
 [[bench]]
 harness = false

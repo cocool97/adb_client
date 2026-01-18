@@ -219,7 +219,7 @@ impl ADBMessageTransport for USBTransport {
         message: ADBTransportMessage,
         timeout: Duration,
     ) -> Result<()> {
-        let message_bytes = message.header().as_bytes()?;
+        let message_bytes = message.header().as_bytes();
         self.write_bulk_data(&message_bytes, timeout)?;
 
         log::trace!("successfully write header: {} bytes", message_bytes.len());
