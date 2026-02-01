@@ -17,4 +17,13 @@ pub enum EmuCommand {
     },
     /// Rotate device screen from 90°
     Rotate,
+    /// Get the AVD discovery path of this emulator
+    AvdDiscoveryPath,
+    /// Get the gRPC control protocol port of this emulator
+    AvdGrpcPort,
+    /// Send a raw console command to the emulator
+    Raw {
+        /// The raw console command to send
+        command: String,
+    },
 }
