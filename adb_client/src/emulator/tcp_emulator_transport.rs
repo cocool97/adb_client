@@ -50,40 +50,38 @@ impl TCPEmulatorTransport {
     /// Send an authenticate request to this emulator
     pub fn authenticate(&self) -> Result<()> {
         let token = get_authentication_token()?;
-        self.send_command(&ADBEmulatorCommand::Authenticate(token))
+        let _ = self.send_command(&ADBEmulatorCommand::Authenticate(token))?;
+        Ok(())
     }
 
     /// Send an [`ADBEmulatorCommand`] to this emulator
-    pub(crate) fn send_command(&self, command: &ADBEmulatorCommand) -> Result<()> {
+    pub(crate) fn send_command(&self, command: &ADBEmulatorCommand) -> Result<String> {
         let mut connection = self.get_raw_connection()?;
 
         // Send command
         connection.write_all(command.to_string().as_bytes())?;
 
-        // Check is an error occurred skipping lines depending on command
-        self.check_error(command.skip_response_lines())?;
-
-        Ok(())
+        // Read response lines while checking for "OK" or "KO: " errors
+        self.read_response()
     }
 
-    fn check_error(&self, skipping: u8) -> Result<()> {
+    fn read_response(&self) -> Result<String> {
         let mut reader = BufReader::new(self.get_raw_connection()?);
-        for _ in 0..skipping {
-            let mut line = String::new();
+        let mut response = String::new();
+        let mut line = String::new();
+        loop {
+            line.clear();
             reader.read_line(&mut line)?;
             if line.starts_with("KO:") {
                 return Err(RustADBError::ADBRequestFailed(line));
             }
+            if line.trim() == "OK" {
+                break;
+            }
+            response.push_str(&line);
         }
 
-        let mut line = String::new();
-        reader.read_line(&mut line)?;
-
-        if line.starts_with("OK") {
-            return Ok(());
-        }
-
-        Err(RustADBError::ADBRequestFailed(line))
+        Ok(response)
     }
 }
 
