@@ -28,7 +28,7 @@ impl ADBTermios {
         })
     }
 
-    pub fn set_adb_termios(&mut self) -> ADBCliResult<()> {
+    pub fn set_adb_termios(&self) -> ADBCliResult<()> {
         Ok(tcsetattr(self.fd, TCSANOW, &self.new_termios)?)
     }
 }

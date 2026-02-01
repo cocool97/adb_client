@@ -3,7 +3,7 @@ use std::{fmt::Display, net::SocketAddrV4};
 use crate::server::{WaitForDeviceState, WaitForDeviceTransport};
 
 /// ADB commands that relates to the host and are handled by the ADB server.
-pub(crate) enum ADBHostCommand {
+pub enum ADBHostCommand {
     Version,
     Kill,
     Devices,

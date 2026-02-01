@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::RebootType;
 
 /// ADB commands that relates to an actual device.
-pub(crate) enum ADBLocalCommand {
+pub enum ADBLocalCommand {
     ShellCommand(String, Vec<String>),
     Shell,
     Exec(String),

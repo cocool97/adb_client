@@ -64,15 +64,20 @@ impl TryFrom<ADBServerDevice> for ADBEmulatorDevice {
     type Error = RustADBError;
 
     fn try_from(value: ADBServerDevice) -> std::result::Result<Self, Self::Error> {
-        match &value.identifier {
-            Some(device_identifier) => Self::new(
-                device_identifier.clone(),
-                Some(*value.transport.get_socketaddr().ip()),
-            ),
-            None => Err(RustADBError::DeviceNotFound(
-                "cannot connect to an emulator device without knowing its identifier".to_string(),
-            )),
-        }
+        value.identifier.as_ref().map_or_else(
+            || {
+                Err(RustADBError::DeviceNotFound(
+                    "cannot connect to an emulator device without knowing its identifier"
+                        .to_string(),
+                ))
+            },
+            |device_identifier| {
+                Self::new(
+                    device_identifier.clone(),
+                    Some(*value.transport.get_socketaddr().ip()),
+                )
+            },
+        )
     }
 }
 

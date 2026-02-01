@@ -19,7 +19,7 @@ const BUFFER_SIZE: usize = 65535;
 
 /// Represent a session between an `ADBDevice` and remote `adbd`.
 #[derive(Debug)]
-pub(crate) struct ADBSession<T: ADBMessageTransport> {
+pub struct ADBSession<T: ADBMessageTransport> {
     transport: T,
     local_id: u32,
     remote_id: u32,
@@ -34,7 +34,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         }
     }
 
-    pub fn get_transport_mut(&mut self) -> &mut T {
+    pub const fn get_transport_mut(&mut self) -> &mut T {
         &mut self.transport
     }
 

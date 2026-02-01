@@ -38,7 +38,7 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
                 // Using a scope here would call drop() too early..
                 #[cfg(any(target_os = "linux", target_os = "macos"))]
                 {
-                    let mut adb_termios = ADBTermios::new(&std::io::stdin())?;
+                    let adb_termios = ADBTermios::new(&std::io::stdin())?;
                     adb_termios.set_adb_termios()?;
                     device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
                 }

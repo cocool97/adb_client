@@ -10,12 +10,12 @@ mod reboot_type;
 mod remount_info;
 mod sync_command;
 
-pub(crate) use adb_command::ADBCommand;
-pub(crate) use adb_host_command::ADBHostCommand;
-pub(crate) use adb_local_command::ADBLocalCommand;
-pub(crate) use adb_request_status::AdbRequestStatus;
+pub use adb_command::ADBCommand;
+pub use adb_host_command::ADBHostCommand;
+pub use adb_local_command::ADBLocalCommand;
+pub use adb_request_status::AdbRequestStatus;
 pub use adb_stat_response::AdbStatResponse;
-pub(crate) use framebuffer_info::{FrameBufferInfoV1, FrameBufferInfoV2};
+pub use framebuffer_info::{FrameBufferInfoV1, FrameBufferInfoV2};
 pub use host_features::HostFeatures;
 pub use list_info::{ADBListItem, ADBListItemType};
 pub use reboot_type::RebootType;

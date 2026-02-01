@@ -5,7 +5,7 @@ use clap::Parser;
 
 use super::DeviceCommands;
 
-fn parse_hex_id(id: &str) -> Result<u16, ParseIntError> {
+const fn parse_hex_id(id: &str) -> Result<u16, ParseIntError> {
     u16::from_str_radix(id, 16)
 }
 

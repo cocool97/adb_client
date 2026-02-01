@@ -13,7 +13,7 @@ fn read_next(chunks: &mut U32ChunkIter) -> Result<u32> {
 }
 
 #[derive(Debug)]
-pub(crate) struct FrameBufferInfoV1 {
+pub struct FrameBufferInfoV1 {
     pub _bpp: u32,
     pub size: u32,
     pub width: u32,
@@ -54,7 +54,7 @@ impl TryFrom<[u8; std::mem::size_of::<Self>()]> for FrameBufferInfoV1 {
 }
 
 #[derive(Debug)]
-pub(crate) struct FrameBufferInfoV2 {
+pub struct FrameBufferInfoV2 {
     pub _bpp: u32,
     pub _color_space: u32,
     pub size: u32,

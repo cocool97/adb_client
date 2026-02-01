@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::models::{ADBHostCommand, ADBLocalCommand};
 
 /// Represent all ADB commands available (either through a server (host) or a device (local)).
-pub(crate) enum ADBCommand {
+pub enum ADBCommand {
     /// Commands executed on an ADB server.
     Host(ADBHostCommand),
     /// Commands executed on an ADB device.

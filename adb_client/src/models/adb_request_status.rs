@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::RustADBError;
 
-#[derive(PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum AdbRequestStatus {
     Okay,
     Fail,

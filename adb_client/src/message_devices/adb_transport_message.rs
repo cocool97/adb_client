@@ -62,7 +62,7 @@ impl ADBTransportMessageHeader {
         data.iter().map(|&x| u32::from(x)).sum()
     }
 
-    fn compute_magic(command: MessageCommand) -> u32 {
+    const fn compute_magic(command: MessageCommand) -> u32 {
         let command_u32 = command as u32;
         command_u32 ^ 0xFFFF_FFFF
     }
@@ -114,7 +114,10 @@ impl ADBTransportMessage {
         })
     }
 
-    pub fn from_header_and_payload(header: ADBTransportMessageHeader, payload: Vec<u8>) -> Self {
+    pub const fn from_header_and_payload(
+        header: ADBTransportMessageHeader,
+        payload: Vec<u8>,
+    ) -> Self {
         Self { header, payload }
     }
 
@@ -135,11 +138,11 @@ impl ADBTransportMessage {
         ))
     }
 
-    pub fn header(&self) -> &ADBTransportMessageHeader {
+    pub const fn header(&self) -> &ADBTransportMessageHeader {
         &self.header
     }
 
-    pub fn payload(&self) -> &Vec<u8> {
+    pub const fn payload(&self) -> &Vec<u8> {
         &self.payload
     }
 

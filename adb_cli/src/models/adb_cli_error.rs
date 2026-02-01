@@ -12,8 +12,8 @@ pub enum ADBCliError {
 impl Display for ADBCliError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ADBCliError::Standard(error) => write!(f, "{error}"),
-            ADBCliError::MayNeedAnIssue(error) => {
+            Self::Standard(error) => write!(f, "{error}"),
+            Self::MayNeedAnIssue(error) => {
                 write!(
                     f,
                     r"Error: {error}

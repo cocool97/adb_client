@@ -26,9 +26,9 @@ impl TryFrom<u8> for ShellChannel {
 
     fn try_from(value: u8) -> std::result::Result<Self, Self::Error> {
         match value {
-            1 => Ok(ShellChannel::Stdout),
-            2 => Ok(ShellChannel::Stderr),
-            3 => Ok(ShellChannel::ExitStatus),
+            1 => Ok(Self::Stdout),
+            2 => Ok(Self::Stderr),
+            3 => Ok(Self::ExitStatus),
             _ => Err(std::io::Error::new(
                 ErrorKind::InvalidData,
                 "Invalid channel",

@@ -45,7 +45,7 @@ impl ADBServer {
 
     /// Get the server address
     #[must_use]
-    pub fn socket_addr(&self) -> Option<SocketAddrV4> {
+    pub const fn socket_addr(&self) -> Option<SocketAddrV4> {
         self.socket_addr
     }
 
