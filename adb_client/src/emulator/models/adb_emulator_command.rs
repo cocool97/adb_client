@@ -6,7 +6,7 @@ pub enum ADBEmulatorCommand {
     AvdGrpcPort,
     Sms(String, String),
     Rotate,
-    Raw(String)
+    Raw(String),
 }
 
 impl Display for ADBEmulatorCommand {
