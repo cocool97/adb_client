@@ -48,7 +48,7 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
                     device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
                 }
             } else {
-                device.shell_command(&commands.join(" "), &mut std::io::stdout())?;
+                device.shell_command(&commands.join(" "), Some(&mut std::io::stdout()), None)?;
             }
         }
         DeviceCommands::Pull {

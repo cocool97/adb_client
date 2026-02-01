@@ -3,6 +3,8 @@ use std::{
     path::Path,
 };
 
+use byteorder::ReadBytesExt;
+
 use crate::{
     ADBDeviceExt, ADBListItemType, Result, RustADBError,
     models::{ADBCommand, ADBLocalCommand, AdbStatResponse, HostFeatures, RemountInfo},
@@ -12,8 +14,36 @@ use super::ADBServerDevice;
 
 const BUFFER_SIZE: usize = 65535;
 
+#[derive(Eq, PartialEq)]
+enum ShellChannel {
+    Stdout,
+    Stderr,
+    ExitStatus,
+}
+
+impl TryFrom<u8> for ShellChannel {
+    type Error = std::io::Error;
+
+    fn try_from(value: u8) -> std::result::Result<Self, Self::Error> {
+        match value {
+            1 => Ok(ShellChannel::Stdout),
+            2 => Ok(ShellChannel::Stderr),
+            3 => Ok(ShellChannel::ExitStatus),
+            _ => Err(std::io::Error::new(
+                ErrorKind::InvalidData,
+                "Invalid channel",
+            )),
+        }
+    }
+}
+
 impl ADBDeviceExt for ADBServerDevice {
-    fn shell_command(&mut self, command: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
+    fn shell_command(
+        &mut self,
+        command: &dyn AsRef<str>,
+        mut stdout: Option<&mut dyn Write>,
+        mut stderr: Option<&mut dyn Write>,
+    ) -> Result<Option<u8>> {
         let supported_features = self.host_features()?;
         if !supported_features.contains(&HostFeatures::ShellV2)
             && !supported_features.contains(&HostFeatures::Cmd)
@@ -44,17 +74,86 @@ impl ADBDeviceExt for ADBServerDevice {
                 args,
             )))?;
 
+        // Now decode the shell v2 protocol packets, reference:
+        // https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/shell_protocol.h
+
+        let mut exit = None;
+        let mut input = std::io::BufReader::new(self.transport.get_raw_connection()?);
+
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {
-            match self.transport.get_raw_connection()?.read(&mut buffer) {
-                Ok(size) => {
-                    if size == 0 {
-                        return Ok(());
-                    }
-                    output.write_all(&buffer[..size])?;
+            // 1 byte of channel
+            // 4 bytes of payload size
+            let mut pckt_metadata = vec![0; 5];
+            if let Err(err) = input.read_exact(&mut pckt_metadata) {
+                match err.kind() {
+                    ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => return Ok(None),
+                    _ => return Err(RustADBError::IOError(err)),
                 }
-                Err(e) => {
-                    return Err(RustADBError::IOError(e));
+            }
+
+            let (channel, payload_size) = {
+                let channel = pckt_metadata[0];
+                let payload_size = u32::from_le_bytes(pckt_metadata[1..5].try_into()?) as usize;
+                (ShellChannel::try_from(channel)?, payload_size)
+            };
+
+            if payload_size == 0 {
+                continue;
+            }
+
+            match channel {
+                ShellChannel::Stdout | ShellChannel::Stderr => {
+                    let mut remainder = payload_size;
+                    while remainder > 0 {
+                        let to_read = std::cmp::min(remainder, BUFFER_SIZE);
+                        match input.read(&mut buffer[0..to_read]) {
+                            Ok(size) => {
+                                if size == 0 {
+                                    return Ok(exit);
+                                }
+
+                                match channel {
+                                    ShellChannel::Stdout => {
+                                        if let Some(stdout) = stdout.as_mut() {
+                                            stdout.write_all(&buffer[..size])?;
+                                        }
+                                    }
+                                    ShellChannel::Stderr => {
+                                        // first stderr if existing, else a merged output into stdout
+                                        if let Some(writer) = stderr.as_mut() {
+                                            writer.write_all(&buffer[..size])?;
+                                        } else if let Some(writer) = stdout.as_mut() {
+                                            writer.write_all(&buffer[..size])?;
+                                        }
+                                    }
+                                    ShellChannel::ExitStatus => {
+                                        // unreachable
+                                    }
+                                }
+
+                                remainder -= size;
+                            }
+                            Err(e) => {
+                                return Err(RustADBError::IOError(e));
+                            }
+                        }
+                    }
+                }
+                ShellChannel::ExitStatus => {
+                    if payload_size != 1 {
+                        return Err(RustADBError::ADBShellV2ParseError(format!(
+                            "Spurious exit status packet with size of {payload_size} (should be 1)"
+                        )));
+                    }
+
+                    match input.read_u8() {
+                        Ok(status) => exit = Some(status),
+                        Err(err) => match err.kind() {
+                            ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => return Ok(None),
+                            _ => return Err(RustADBError::IOError(err)),
+                        },
+                    }
                 }
             }
         }

@@ -43,6 +43,7 @@ impl From<adb_client::RustADBError> for ADBCliError {
             | RustADBError::FramebufferConversionError
             | RustADBError::UnimplementedFramebufferImageVersion(_)
             | RustADBError::IOError(_)
+            | RustADBError::ADBShellV2ParseError(_)
             | RustADBError::ADBRequestFailed(_)
             | RustADBError::UnknownDeviceState(_)
             | RustADBError::Utf8StrError(_)

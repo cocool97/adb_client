@@ -7,7 +7,7 @@ use adb_client::{server::ADBServer, ADBDeviceExt};
 
 let mut server = ADBServer::default();
 let mut device = server.get_device().expect("cannot get device");
-device.shell_command(&"df -h", &mut std::io::stdout());
+device.shell_command(&"df -h", Some(&mut std::io::stdout()), None);
 ```
 
 ## Push a file to the device
