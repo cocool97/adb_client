@@ -3,7 +3,6 @@ use std::path::Path;
 use std::{io::Read, net::SocketAddr};
 
 use crate::message_devices::adb_message_device::ADBMessageDevice;
-use crate::message_devices::models::{ADBRsaKey, read_adb_private_key};
 use crate::models::RemountInfo;
 use crate::tcp::tcp_transport::TcpTransport;
 use crate::utils::get_default_adb_key_path;
@@ -26,20 +25,9 @@ impl ADBTcpDevice {
         address: SocketAddr,
         private_key_path: P,
     ) -> Result<Self> {
-        let private_key = if let Some(private_key) = read_adb_private_key(&private_key_path)? {
-            private_key
-        } else {
-            log::warn!(
-                "No private key found at path {}. Using a temporary random one.",
-                private_key_path.as_ref().display()
-            );
-            ADBRsaKey::new_random()?
-        };
-
-        let mut device = ADBMessageDevice::new(TcpTransport::new(address)?);
-        device.connect(&private_key)?;
-
-        Ok(Self { inner: device })
+        Ok(Self {
+            inner: ADBMessageDevice::new(TcpTransport::new(address)?, private_key_path)?,
+        })
     }
 }
 

@@ -8,8 +8,6 @@ use crate::ADBListItemType;
 use crate::Result;
 use crate::RustADBError;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
-use crate::message_devices::models::ADBRsaKey;
-use crate::message_devices::models::read_adb_private_key;
 use crate::models::RemountInfo;
 use crate::usb::usb_transport::USBTransport;
 use crate::usb::utils;
@@ -53,20 +51,9 @@ impl ADBUSBDevice {
         transport: USBTransport,
         private_key_path: P,
     ) -> Result<Self> {
-        let private_key = if let Some(private_key) = read_adb_private_key(&private_key_path)? {
-            private_key
-        } else {
-            log::warn!(
-                "No private key found at path {}. Using a temporary random one.",
-                private_key_path.as_ref().display()
-            );
-            ADBRsaKey::new_random()?
-        };
-
-        let mut device = ADBMessageDevice::new(transport);
-        device.connect(&private_key)?;
-
-        Ok(Self { inner: device })
+        Ok(Self {
+            inner: ADBMessageDevice::new(transport, private_key_path)?,
+        })
     }
 
     /// autodetect connected ADB devices and establish a connection with the first device found

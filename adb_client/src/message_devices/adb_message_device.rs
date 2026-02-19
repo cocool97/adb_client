@@ -1,5 +1,5 @@
 use rand::Rng;
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
 use crate::{
     Result, RustADBError,
@@ -10,7 +10,7 @@ use crate::{
             ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN,
         },
         message_commands::{MessageCommand, MessageSubcommand},
-        models::ADBRsaKey,
+        models::{ADBRsaKey, read_adb_private_key},
         utils::BinaryEncodable,
     },
     models::ADBLocalCommand,
@@ -19,14 +19,27 @@ use crate::{
 /// Generic structure representing an ADB device reachable over an [`ADBMessageTransport`].
 /// Structure is totally agnostic over which transport is truly used.
 #[derive(Debug)]
-pub struct ADBMessageDevice<T: ADBMessageTransport> {
+pub(crate) struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Instantiate a new [`ADBMessageTransport`]
-    pub fn new(transport: T) -> Self {
-        Self { transport }
+    pub fn new<P: AsRef<Path>>(transport: T, adb_private_key_path: P) -> Result<Self> {
+        let private_key = if let Some(private_key) = read_adb_private_key(&adb_private_key_path)? {
+            private_key
+        } else {
+            log::warn!(
+                "No private key found at path {}. Generating a new random.",
+                adb_private_key_path.as_ref().display()
+            );
+            ADBRsaKey::new_random()?
+        };
+
+        let mut message_device = Self { transport };
+        message_device.connect(&private_key)?;
+
+        Ok(message_device)
     }
 
     pub(crate) fn get_transport_mut(&mut self) -> &mut T {
@@ -34,7 +47,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 
     /// Send initial connect
-    pub fn connect(&mut self, private_key: &ADBRsaKey) -> Result<()> {
+    fn connect(&mut self, private_key: &ADBRsaKey) -> Result<()> {
         self.get_transport_mut().connect()?;
 
         let message = ADBTransportMessage::try_new(
