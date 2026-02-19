@@ -33,7 +33,51 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         &mut self.transport
     }
 
-    pub(crate) fn auth_handshake(
+    /// Send initial connect
+    pub fn connect(&mut self, private_key: &ADBRsaKey) -> Result<()> {
+        self.get_transport_mut().connect()?;
+
+        let message = ADBTransportMessage::try_new(
+            MessageCommand::Cnxn,
+            0x0100_0000,
+            1_048_576,
+            format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
+        )?;
+
+        self.get_transport_mut().write_message(message)?;
+
+        let message = self.get_transport_mut().read_message()?;
+
+        // Check if a client is requesting a secure connection and upgrade it if necessary
+        match message.header().command() {
+            MessageCommand::Stls => {
+                self.get_transport_mut()
+                    .write_message(ADBTransportMessage::try_new(
+                        MessageCommand::Stls,
+                        1,
+                        0,
+                        &[],
+                    )?)?;
+                self.get_transport_mut().upgrade_connection()?;
+                log::debug!("Connection successfully upgraded from TCP to TLS");
+                Ok(())
+            }
+            MessageCommand::Cnxn => {
+                log::debug!("Unencrypted connection established");
+                Ok(())
+            }
+            MessageCommand::Auth => {
+                log::debug!("Authentication required");
+                self.auth_handshake(message, private_key)
+            }
+            _ => Err(crate::RustADBError::WrongResponseReceived(
+                "Expected CNXN, STLS or AUTH command".to_string(),
+                message.header().command().to_string(),
+            )),
+        }
+    }
+
+    fn auth_handshake(
         &mut self,
         message: ADBTransportMessage,
         private_key: &ADBRsaKey,
@@ -144,5 +188,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let _discard_close = self.transport.read_message()?;
         Ok(())
+    }
+}
+
+impl<T: ADBMessageTransport> Drop for ADBMessageDevice<T> {
+    fn drop(&mut self) {
+        // Best effort here
+        let _ = self.get_transport_mut().disconnect();
     }
 }

@@ -116,64 +116,6 @@ impl TcpTransport {
             )))
             .cloned()
     }
-
-    pub(crate) fn upgrade_connection(&mut self) -> Result<()> {
-        let Some(current_connection) = self.current_connection.clone() else {
-            return Err(RustADBError::UpgradeError(
-                "cannot upgrade a non-existing connection...".into(),
-            ));
-        };
-
-        {
-            let mut current_conn_locked = current_connection.lock()?;
-            match &*current_conn_locked {
-                CurrentConnection::Tcp(tcp_stream) => {
-                    // TODO: Check if we cannot be more precise
-
-                    let pk_content = read_to_string(&self.private_key_path)?;
-
-                    let key_pair =
-                        KeyPair::from_pkcs8_pem_and_sign_algo(&pk_content, &PKCS_RSA_SHA256)?;
-
-                    let certificate = certificate_from_pk(&key_pair)?;
-                    let private_key = PrivatePkcs8KeyDer::from_pem_file(&self.private_key_path)?;
-
-                    let mut client_config = ClientConfig::builder()
-                        .dangerous()
-                        .with_custom_certificate_verifier(Arc::new(NoCertificateVerification {}))
-                        .with_client_auth_cert(certificate, private_key.into())?;
-
-                    client_config.key_log = Arc::new(KeyLogFile::new());
-
-                    let rc_config = Arc::new(client_config);
-                    let server_name = self.address.ip().into();
-                    let conn = ClientConnection::new(rc_config, server_name)?;
-                    let owned = tcp_stream.try_clone()?;
-                    let client = StreamOwned::new(conn, owned);
-
-                    // Update current connection state to now use TLS protocol
-                    *current_conn_locked = CurrentConnection::Tls(Box::new(client));
-                }
-                CurrentConnection::Tls(_) => {
-                    return Err(RustADBError::UpgradeError(
-                        "cannot upgrade a TLS connection...".into(),
-                    ));
-                }
-            }
-        }
-
-        let message = self.read_message()?;
-        match message.header().command() {
-            MessageCommand::Cnxn => {
-                let device_infos = String::from_utf8(message.into_payload())?;
-                log::debug!("received device info: {device_infos}");
-                Ok(())
-            }
-            c => Err(RustADBError::ADBRequestFailed(format!(
-                "Wrong command received {c}"
-            ))),
-        }
-    }
 }
 
 impl ADBTransport for TcpTransport {
@@ -282,6 +224,64 @@ impl ADBMessageTransport for TcpTransport {
         }
 
         Ok(())
+    }
+
+    fn upgrade_connection(&mut self) -> Result<()> {
+        let Some(current_connection) = self.current_connection.clone() else {
+            return Err(RustADBError::UpgradeError(
+                "cannot upgrade a non-existing connection...".into(),
+            ));
+        };
+
+        {
+            let mut current_conn_locked = current_connection.lock()?;
+            match &*current_conn_locked {
+                CurrentConnection::Tcp(tcp_stream) => {
+                    // TODO: Check if we cannot be more precise
+
+                    let pk_content = read_to_string(&self.private_key_path)?;
+
+                    let key_pair =
+                        KeyPair::from_pkcs8_pem_and_sign_algo(&pk_content, &PKCS_RSA_SHA256)?;
+
+                    let certificate = certificate_from_pk(&key_pair)?;
+                    let private_key = PrivatePkcs8KeyDer::from_pem_file(&self.private_key_path)?;
+
+                    let mut client_config = ClientConfig::builder()
+                        .dangerous()
+                        .with_custom_certificate_verifier(Arc::new(NoCertificateVerification {}))
+                        .with_client_auth_cert(certificate, private_key.into())?;
+
+                    client_config.key_log = Arc::new(KeyLogFile::new());
+
+                    let rc_config = Arc::new(client_config);
+                    let server_name = self.address.ip().into();
+                    let conn = ClientConnection::new(rc_config, server_name)?;
+                    let owned = tcp_stream.try_clone()?;
+                    let client = StreamOwned::new(conn, owned);
+
+                    // Update current connection state to now use TLS protocol
+                    *current_conn_locked = CurrentConnection::Tls(Box::new(client));
+                }
+                CurrentConnection::Tls(_) => {
+                    return Err(RustADBError::UpgradeError(
+                        "cannot upgrade a TLS connection...".into(),
+                    ));
+                }
+            }
+        }
+
+        let message = self.read_message()?;
+        match message.header().command() {
+            MessageCommand::Cnxn => {
+                let device_infos = String::from_utf8(message.into_payload())?;
+                log::debug!("received device info: {device_infos}");
+                Ok(())
+            }
+            c => Err(RustADBError::ADBRequestFailed(format!(
+                "Wrong command received {c}"
+            ))),
+        }
     }
 }
 

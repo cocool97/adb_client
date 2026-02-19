@@ -10,6 +10,13 @@ const DEFAULT_WRITE_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// Trait representing a transport able to read and write messages.
 pub trait ADBMessageTransport: ADBTransport + Clone + Send + 'static {
+    /// An upgrade of the connection has been asked by the device.
+    /// Some transports may not need this feature, a blanket implementation is provided as default implementation.
+    fn upgrade_connection(&mut self) -> Result<()> {
+        log::trace!("not upgrade needed fot this transport");
+        Ok(())
+    }
+
     /// Read a message using given timeout on the underlying transport
     fn read_message_with_timeout(&mut self, read_timeout: Duration) -> Result<ADBTransportMessage>;
 

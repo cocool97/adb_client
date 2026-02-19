@@ -3,19 +3,15 @@ use std::path::Path;
 use std::{io::Read, net::SocketAddr};
 
 use crate::message_devices::adb_message_device::ADBMessageDevice;
-use crate::message_devices::adb_message_transport::ADBMessageTransport;
-use crate::message_devices::adb_transport_message::ADBTransportMessage;
-use crate::message_devices::message_commands::MessageCommand;
 use crate::message_devices::models::{ADBRsaKey, read_adb_private_key};
 use crate::models::RemountInfo;
 use crate::tcp::tcp_transport::TcpTransport;
 use crate::utils::get_default_adb_key_path;
-use crate::{ADBDeviceExt, ADBListItemType, ADBTransport, Result};
+use crate::{ADBDeviceExt, ADBListItemType, Result};
 
 /// Represent a device reached and available over TCP.
 #[derive(Debug)]
 pub struct ADBTcpDevice {
-    private_key: ADBRsaKey,
     inner: ADBMessageDevice<TcpTransport>,
 }
 
@@ -40,63 +36,10 @@ impl ADBTcpDevice {
             ADBRsaKey::new_random()?
         };
 
-        let mut device = Self {
-            private_key,
-            inner: ADBMessageDevice::new(TcpTransport::new(address)?),
-        };
+        let mut device = ADBMessageDevice::new(TcpTransport::new(address)?);
+        device.connect(&private_key)?;
 
-        device.connect()?;
-
-        Ok(device)
-    }
-
-    /// Send initial connect
-    pub fn connect(&mut self) -> Result<()> {
-        self.get_transport_mut().connect()?;
-
-        let message = ADBTransportMessage::try_new(
-            MessageCommand::Cnxn,
-            0x0100_0000,
-            1_048_576,
-            format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
-        )?;
-
-        self.get_transport_mut().write_message(message)?;
-
-        let message = self.get_transport_mut().read_message()?;
-
-        // Check if a client is requesting a secure connection and upgrade it if necessary
-        match message.header().command() {
-            MessageCommand::Stls => {
-                self.get_transport_mut()
-                    .write_message(ADBTransportMessage::try_new(
-                        MessageCommand::Stls,
-                        1,
-                        0,
-                        &[],
-                    )?)?;
-                self.get_transport_mut().upgrade_connection()?;
-                log::debug!("Connection successfully upgraded from TCP to TLS");
-                Ok(())
-            }
-            MessageCommand::Cnxn => {
-                log::debug!("Unencrypted connection established");
-                Ok(())
-            }
-            MessageCommand::Auth => {
-                log::debug!("Authentication required");
-                self.inner.auth_handshake(message, &self.private_key)
-            }
-            _ => Err(crate::RustADBError::WrongResponseReceived(
-                "Expected CNXN, STLS or AUTH command".to_string(),
-                message.header().command().to_string(),
-            )),
-        }
-    }
-
-    #[inline]
-    fn get_transport_mut(&mut self) -> &mut TcpTransport {
-        self.inner.get_transport_mut()
+        Ok(Self { inner: device })
     }
 }
 
@@ -184,12 +127,5 @@ impl ADBDeviceExt for ADBTcpDevice {
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         self.inner.exec(command, reader, writer)
-    }
-}
-
-impl Drop for ADBTcpDevice {
-    fn drop(&mut self) {
-        // Best effort here
-        let _ = self.get_transport_mut().disconnect();
     }
 }
