@@ -1,10 +1,12 @@
 use rand::RngExt;
-use std::{path::Path, time::Duration};
+use std::path::Path;
 
 use crate::{
     Result, RustADBError,
+    adb_transport::ADBTransport,
     message_devices::{
         adb_message_transport::ADBMessageTransport,
+        adb_multiplexer::ADBMessageMultiplexer,
         adb_session::ADBSession,
         adb_transport_message::{
             ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN,
@@ -20,7 +22,7 @@ use crate::{
 /// Structure is totally agnostic over which transport is truly used.
 #[derive(Debug)]
 pub(crate) struct ADBMessageDevice<T: ADBMessageTransport> {
-    transport: T,
+    multiplexer: ADBMessageMultiplexer<T>,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
@@ -36,19 +38,17 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             ADBRsaKey::new_random()?
         };
 
-        let mut message_device = Self { transport };
+        let mut message_device = Self {
+            multiplexer: ADBMessageMultiplexer::new(transport),
+        };
         message_device.connect(&private_key)?;
 
         Ok(message_device)
     }
 
-    pub(crate) fn get_transport_mut(&mut self) -> &mut T {
-        &mut self.transport
-    }
-
     /// Send initial connect
     fn connect(&mut self, private_key: &ADBRsaKey) -> Result<()> {
-        self.get_transport_mut().connect()?;
+        self.multiplexer.connect()?;
 
         let message = ADBTransportMessage::try_new(
             MessageCommand::Cnxn,
@@ -57,21 +57,21 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
         )?;
 
-        self.get_transport_mut().write_message(message)?;
+        self.multiplexer.write_message(message)?;
 
-        let message = self.get_transport_mut().read_message()?;
+        let message = self.multiplexer.read_authentication_message()?;
 
         // Check if a client is requesting a secure connection and upgrade it if necessary
         match message.header().command() {
             MessageCommand::Stls => {
-                self.get_transport_mut()
+                self.multiplexer
                     .write_message(ADBTransportMessage::try_new(
                         MessageCommand::Stls,
                         1,
                         0,
                         &[],
                     )?)?;
-                self.get_transport_mut().upgrade_connection()?;
+                self.multiplexer.upgrade_connection()?;
                 log::debug!("Connection successfully upgraded from TCP to TLS");
                 Ok(())
             }
@@ -116,15 +116,17 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let message = ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign)?;
 
-        self.transport.write_message(message)?;
+        self.multiplexer.write_message(message)?;
 
-        let received_response = self.transport.read_message()?;
+        let received_response = self.multiplexer.read_authentication_message()?;
 
         if received_response.header().command() == MessageCommand::Cnxn {
             log::info!(
                 "Authentication OK, device info {}",
                 String::from_utf8(received_response.into_payload())?
             );
+            // Authentication is OK, we can now consider sessions
+            self.multiplexer.set_authenticated();
             return Ok(());
         }
 
@@ -134,11 +136,11 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let message =
             ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey)?;
 
-        self.transport.write_message(message)?;
+        self.multiplexer.write_message(message)?;
 
         let response = self
-            .transport
-            .read_message_with_timeout(Duration::from_secs(10))
+            .multiplexer
+            .read_authentication_message()
             .and_then(|message| {
                 message.assert_command(MessageCommand::Cnxn)?;
                 Ok(message)
@@ -148,6 +150,9 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             "Authentication OK, device info {}",
             String::from_utf8(response.into_payload())?
         );
+        // Authentication is OK, we can now consider sessions
+        self.multiplexer.set_authenticated();
+
         Ok(())
     }
 
@@ -165,9 +170,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             0,
             cmd.to_string().as_bytes(),
         )?;
-        self.transport.write_message(message)?;
+        log::debug!("here");
+        self.multiplexer.write_message(message)?;
+        log::debug!("after");
 
-        let response = self.transport.read_message()?;
+        let response = self.multiplexer.read_message(local_id)?;
+        log::debug!("got message from multiplexer");
 
         if response.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
@@ -184,13 +192,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
 
         Ok(ADBSession::new(
-            self.transport.clone(),
+            self.multiplexer.clone(),
             local_id,
             response.header().arg0(),
         ))
     }
 
-    pub(crate) fn end_transaction(&mut self, session: &mut ADBSession<T>) -> Result<()> {
+    pub(crate) fn end_transaction(session: &mut ADBSession<T>) -> Result<()> {
         let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
         session.send_and_expect_okay(ADBTransportMessage::try_new(
             MessageCommand::Write,
@@ -199,7 +207,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             &quit_buffer.encode(),
         )?)?;
 
-        let _discard_close = self.transport.read_message()?;
+        let _discard_close = session.read_message()?;
         Ok(())
     }
 }
@@ -207,6 +215,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 impl<T: ADBMessageTransport> Drop for ADBMessageDevice<T> {
     fn drop(&mut self) {
         // Best effort here
-        let _ = self.get_transport_mut().disconnect();
+        let _ = self.multiplexer.disconnect();
     }
 }

@@ -93,7 +93,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         };
 
         session
-            .get_transport_mut()
             .read_message()
             .and_then(|message| message.assert_command(MessageCommand::Clse))?;
 

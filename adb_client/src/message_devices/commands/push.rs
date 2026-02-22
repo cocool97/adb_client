@@ -29,7 +29,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         )?)?;
 
         session.push_file(stream)?;
-        self.end_transaction(&mut session)?;
+        Self::end_transaction(&mut session)?;
 
         Ok(())
     }

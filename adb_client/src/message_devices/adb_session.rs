@@ -7,8 +7,10 @@ use byteorder::ReadBytesExt;
 
 use crate::{
     AdbStatResponse, BinaryDecodable, Result, RustADBError,
+    adb_transport::ADBTransport,
     message_devices::{
         adb_message_transport::ADBMessageTransport,
+        adb_multiplexer::ADBMessageMultiplexer,
         adb_transport_message::ADBTransportMessage,
         message_commands::{MessageCommand, MessageSubcommand},
         utils::BinaryEncodable,
@@ -18,24 +20,20 @@ use crate::{
 const BUFFER_SIZE: usize = 65535;
 
 /// Represent a session between an `ADBDevice` and remote `adbd`.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ADBSession<T: ADBMessageTransport> {
-    transport: T,
+    multiplexer: ADBMessageMultiplexer<T>,
     local_id: u32,
     remote_id: u32,
 }
 
 impl<T: ADBMessageTransport> ADBSession<T> {
-    pub fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
+    pub fn new(multiplexer: ADBMessageMultiplexer<T>, local_id: u32, remote_id: u32) -> Self {
         Self {
-            transport,
+            multiplexer,
             local_id,
             remote_id,
         }
-    }
-
-    pub const fn get_transport_mut(&mut self) -> &mut T {
-        &mut self.transport
     }
 
     pub const fn local_id(&self) -> u32 {
@@ -48,13 +46,14 @@ impl<T: ADBMessageTransport> ADBSession<T> {
 
     /// Receive a message and acknowledge it by replying with an `OKAY` command
     pub(crate) fn recv_and_reply_okay(&mut self) -> Result<ADBTransportMessage> {
-        let message = self.transport.read_message()?;
-        self.transport.write_message(ADBTransportMessage::try_new(
-            MessageCommand::Okay,
-            self.local_id,
-            self.remote_id,
-            &[],
-        )?)?;
+        let message = self.multiplexer.read_message(self.local_id())?;
+        self.multiplexer
+            .write_message(ADBTransportMessage::try_new(
+                MessageCommand::Okay,
+                self.local_id,
+                self.remote_id,
+                &[],
+            )?)?;
         Ok(message)
     }
 
@@ -63,12 +62,14 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         &mut self,
         message: ADBTransportMessage,
     ) -> Result<ADBTransportMessage> {
-        self.transport.write_message(message)?;
+        self.multiplexer.write_message(message)?;
 
-        self.transport.read_message().and_then(|message| {
-            message.assert_command(MessageCommand::Okay)?;
-            Ok(message)
-        })
+        self.multiplexer
+            .read_message(self.local_id())
+            .and_then(|message| {
+                message.assert_command(MessageCommand::Okay)?;
+                Ok(message)
+            })
     }
 
     pub(crate) fn recv_file<W: std::io::Write>(
@@ -143,7 +144,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
                     self.send_and_expect_okay(message)?;
 
                     // Command should end with a Write => Okay
-                    let received = self.transport.read_message()?;
+                    let received = self.multiplexer.read_message(self.local_id)?;
                     match received.header().command() {
                         MessageCommand::Write => return Ok(()),
                         c => {
@@ -191,7 +192,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
             remote_path.as_bytes(),
         )?)?;
 
-        let response = self.transport.read_message()?;
+        let response = self.multiplexer.read_message(self.local_id())?;
         // Skip first 4 bytes as this is the literal "STAT".
         // Interesting part starts right after
 
@@ -204,8 +205,34 @@ impl<T: ADBMessageTransport> Drop for ADBSession<T> {
         // some devices will repeat the trailing CLSE command to ensure
         // the client has acknowledged it. Read them quickly if present.
         while let Ok(_discard_close_message) = self
-            .transport
-            .read_message_with_timeout(Duration::from_millis(20))
+            .multiplexer
+            .read_message_with_timeout(Some(self.local_id()), Duration::from_millis(20))
         {}
+    }
+}
+
+impl<T: ADBMessageTransport> ADBTransport for ADBSession<T> {
+    fn connect(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn disconnect(&mut self) -> Result<()> {
+        Ok(())
+    }
+}
+
+impl<T: ADBMessageTransport> ADBMessageTransport for ADBSession<T> {
+    fn read_message_with_timeout(&mut self, read_timeout: Duration) -> Result<ADBTransportMessage> {
+        self.multiplexer
+            .read_message_with_timeout(Some(self.local_id()), read_timeout)
+    }
+
+    fn write_message_with_timeout(
+        &mut self,
+        message: ADBTransportMessage,
+        write_timeout: Duration,
+    ) -> Result<()> {
+        self.multiplexer
+            .write_message_with_timeout(message, write_timeout)
     }
 }
