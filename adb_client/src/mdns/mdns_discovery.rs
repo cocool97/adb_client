@@ -37,9 +37,12 @@ impl MDNSDiscoveryService {
             loop {
                 while let Ok(event) = receiver.recv() {
                     if let ServiceEvent::ServiceResolved(service_info) = event {
-                        sender
-                            .send(MDNSDevice::from(service_info))
-                            .map_err(|_| RustADBError::SendError)?;
+                        match MDNSDevice::try_from(service_info) {
+                            Ok(device) => {
+                                sender.send(device).map_err(|_| RustADBError::SendError)?;
+                            }
+                            Err(e) => log::error!("got error with device: {e}"),
+                        }
                     }
                 }
             }

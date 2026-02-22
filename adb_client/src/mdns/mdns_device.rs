@@ -2,9 +2,12 @@ use std::{
     collections::HashSet,
     fmt::Display,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
+    num::NonZeroU16,
 };
 
 use mdns_sd::{ResolvedService, ScopedIp};
+
+use crate::RustADBError;
 
 /// Represent a device found from mdns search
 #[derive(Debug)]
@@ -13,6 +16,8 @@ pub struct MDNSDevice {
     pub fullname: String,
     /// Device IP addresses
     addresses: HashSet<IpAddr>,
+    /// Device port
+    port: NonZeroU16,
 }
 
 impl MDNSDevice {
@@ -20,6 +25,12 @@ impl MDNSDevice {
     #[must_use]
     pub fn addresses(&self) -> HashSet<IpAddr> {
         self.addresses.clone()
+    }
+
+    /// Return the port of this device
+    #[must_use]
+    pub fn port(&self) -> NonZeroU16 {
+        self.port
     }
 
     /// Return all IPv4 addresses linked to this device
@@ -49,18 +60,27 @@ impl MDNSDevice {
     }
 }
 
-impl From<Box<ResolvedService>> for MDNSDevice {
-    fn from(value: Box<ResolvedService>) -> Self {
-        Self {
+impl TryFrom<Box<ResolvedService>> for MDNSDevice {
+    type Error = RustADBError;
+
+    fn try_from(value: Box<ResolvedService>) -> Result<Self, Self::Error> {
+        let fullname = value.fullname.clone();
+        Ok(Self {
             fullname: value.fullname,
+            port: NonZeroU16::new(value.port).ok_or(RustADBError::UnknownDeviceState(format!(
+                "device {} has a non-u16 port: {}",
+                fullname.clone(),
+                value.port
+            )))?,
             addresses: value.addresses.iter().map(ScopedIp::to_ip_addr).collect(),
-        }
+        })
     }
 }
 
 impl Display for MDNSDevice {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Device fullname: {}", self.fullname)?;
+        writeln!(f, "Device port: {}", self.port)?;
         writeln!(f, "IPv4 Addresses: {:?}", self.ipv4_addresses())?;
         write!(f, "IPv6 Addresses: {:?}", self.ipv6_addresses())?;
 
