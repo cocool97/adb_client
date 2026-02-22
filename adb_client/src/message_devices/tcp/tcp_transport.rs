@@ -91,7 +91,7 @@ fn certificate_from_pk(key_pair: &KeyPair) -> Result<Vec<CertificateDer<'static>
 
 impl TcpTransport {
     /// Instantiate a new [`TcpTransport`]
-    pub fn new(address: SocketAddr) -> Result<Self> {
+    pub fn new<A: Into<SocketAddr>>(address: A) -> Result<Self> {
         Ok(Self::new_with_custom_private_key(
             address,
             get_default_adb_key_path()?,
@@ -99,9 +99,12 @@ impl TcpTransport {
     }
 
     /// Instantiate a new [`TcpTransport`] using a given private key
-    pub fn new_with_custom_private_key(address: SocketAddr, private_key_path: PathBuf) -> Self {
+    pub fn new_with_custom_private_key<A: Into<SocketAddr>>(
+        address: A,
+        private_key_path: PathBuf,
+    ) -> Self {
         Self {
-            address,
+            address: address.into(),
             current_connection: None,
             private_key_path,
         }

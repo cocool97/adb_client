@@ -16,13 +16,13 @@ pub struct ADBTcpDevice {
 
 impl ADBTcpDevice {
     /// Instantiate a new [`ADBTcpDevice`]
-    pub fn new(address: SocketAddr) -> Result<Self> {
+    pub fn new<A: Into<SocketAddr>>(address: A) -> Result<Self> {
         Self::new_with_custom_private_key(address, get_default_adb_key_path()?)
     }
 
     /// Instantiate a new [`ADBTcpDevice`] using a custom private key path
-    pub fn new_with_custom_private_key<P: AsRef<Path>>(
-        address: SocketAddr,
+    pub fn new_with_custom_private_key<P: AsRef<Path>, A: Into<SocketAddr>>(
+        address: A,
         private_key_path: P,
     ) -> Result<Self> {
         Ok(Self {
