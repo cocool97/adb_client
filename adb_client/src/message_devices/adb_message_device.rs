@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 use std::{path::Path, time::Duration};
 
 use crate::{
