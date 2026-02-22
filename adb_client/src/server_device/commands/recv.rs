@@ -32,7 +32,9 @@ impl<R: Read> Read for ADBRecvCommandReader<R> {
             match &header[..] {
                 b"DATA" => {
                     let length = self.inner.read_u32::<LittleEndian>()? as usize;
-                    let effective_read = self.inner.read(&mut buf[0..length])?;
+                    // ensuring read data is at most the buffer length
+                    let min_data_to_read = std::cmp::min(length, buf.len());
+                    let effective_read = self.inner.read(&mut buf[0..min_data_to_read])?;
                     self.remaining_data_bytes_to_read = length - effective_read;
 
                     Ok(effective_read)
