@@ -3,7 +3,7 @@ use std::{fmt::Display, str::FromStr};
 use crate::RustADBError;
 
 /// Represents the connection state of the device.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DeviceState {
     /// The device is not connected to adb or is not responding.
     Offline,
