@@ -219,6 +219,10 @@ fn inner_main() -> ADBCliResult<()> {
 
             return Ok(service.shutdown()?);
         }
+        MainCommand::Version => {
+            println!("{} {}", env!("CARGO_PKG_NAME"), utils::long_version());
+            return Ok(());
+        }
     };
 
     run_command(device, commands)?;
