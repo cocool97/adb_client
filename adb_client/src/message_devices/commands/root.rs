@@ -9,9 +9,9 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn root(&mut self) -> Result<()> {
-        self.open_session(&ADBLocalCommand::Root)?;
+        let mut session = self.open_session(&ADBLocalCommand::Root)?;
 
-        self.get_transport_mut()
+        session
             .read_message()
             .and_then(|message| message.assert_command(MessageCommand::Okay))
     }

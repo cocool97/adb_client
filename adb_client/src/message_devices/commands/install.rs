@@ -29,7 +29,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             std::io::copy(&mut apk_file, &mut writer)?;
         }
 
-        let final_status = session.get_transport_mut().read_message()?;
+        let final_status = session.read_message()?;
 
         match final_status.into_payload().as_slice() {
             b"Success\n" => {
@@ -37,7 +37,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     "APK file {} successfully installed",
                     apk_path.as_ref().display()
                 );
-                self.get_transport_mut()
+                session
                     .read_message()?
                     .assert_command(MessageCommand::Clse)?;
                 Ok(())

@@ -70,7 +70,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let local_id = session.local_id();
         let remote_id = session.remote_id();
 
-        let mut transport = self.get_transport_mut().clone();
+        let mut transport = session.clone();
 
         // Reading thread, reads response from adbd
         std::thread::spawn(move || -> Result<()> {
@@ -93,7 +93,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
         });
 
-        let transport = self.get_transport_mut().clone();
+        let transport = session.clone();
         let mut shell_writer = ShellMessageWriter::new(transport, local_id, remote_id);
 
         // Read from given reader (that could be stdin e.g), and write content to device adbd

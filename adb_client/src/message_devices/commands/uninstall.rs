@@ -12,12 +12,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         package_name: &dyn AsRef<str>,
         user: Option<&str>,
     ) -> Result<()> {
-        self.open_session(&ADBLocalCommand::Uninstall(
+        let mut session = self.open_session(&ADBLocalCommand::Uninstall(
             package_name.as_ref().to_string(),
             user.map(ToString::to_string),
         ))?;
 
-        let final_status = self.get_transport_mut().read_message()?;
+        let final_status = session.read_message()?;
 
         match final_status.into_payload().as_slice() {
             b"Success\n" => {

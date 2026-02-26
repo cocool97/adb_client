@@ -9,15 +9,15 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn remount(&mut self) -> Result<Vec<RemountInfo>> {
-        self.open_session(&ADBLocalCommand::Remount)?;
+        let mut session = self.open_session(&ADBLocalCommand::Remount)?;
 
-        let response = self.get_transport_mut().read_message()?;
+        let response = session.read_message()?;
 
         response.assert_command(MessageCommand::Okay)?;
 
         let mut response_str: Vec<String> = Vec::new();
         loop {
-            let response = self.get_transport_mut().read_message()?;
+            let response = session.read_message()?;
 
             if response.header().command() != MessageCommand::Write {
                 break;

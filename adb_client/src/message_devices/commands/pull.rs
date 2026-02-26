@@ -24,7 +24,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             ));
         }
 
-        self.get_transport_mut().write_message_with_timeout(
+        session.write_message_with_timeout(
             ADBTransportMessage::try_new(
                 MessageCommand::Okay,
                 session.local_id(),
@@ -49,7 +49,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         )?)?;
 
         session.recv_file(output)?;
-        self.end_transaction(&mut session)?;
+        Self::end_transaction(&mut session)?;
         Ok(())
     }
 }

@@ -9,17 +9,17 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn enable_verity(&mut self) -> Result<()> {
-        self.open_session(&ADBLocalCommand::EnableVerity)?;
+        let mut session = self.open_session(&ADBLocalCommand::EnableVerity)?;
 
-        self.get_transport_mut()
+        session
             .read_message()
             .and_then(|message| message.assert_command(MessageCommand::Okay))
     }
 
     pub(crate) fn disable_verity(&mut self) -> Result<()> {
-        self.open_session(&ADBLocalCommand::DisableVerity)?;
+        let mut session = self.open_session(&ADBLocalCommand::DisableVerity)?;
 
-        self.get_transport_mut()
+        session
             .read_message()
             .and_then(|message| message.assert_command(MessageCommand::Okay))
     }

@@ -9,9 +9,9 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn reboot(&mut self, reboot_type: RebootType) -> Result<()> {
-        self.open_session(&ADBLocalCommand::Reboot(reboot_type))?;
+        let mut session = self.open_session(&ADBLocalCommand::Reboot(reboot_type))?;
 
-        self.get_transport_mut()
+        session
             .read_message()
             .and_then(|message| message.assert_command(MessageCommand::Okay))
     }
