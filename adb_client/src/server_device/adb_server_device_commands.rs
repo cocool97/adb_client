@@ -143,7 +143,7 @@ impl ADBServerDevice {
 
         let mut input = self.transport.get_raw_connection()?;
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
-        
+
         loop {
             match input.read(&mut buffer) {
                 Ok(0) => break,
@@ -152,12 +152,10 @@ impl ADBServerDevice {
                         stdout.write_all(&buffer[..size])?;
                     }
                 }
-                Err(e) => {
-                    match e.kind() {
-                        ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => break,
-                        _ => return Err(RustADBError::IOError(e)),
-                    }
-                }
+                Err(e) => match e.kind() {
+                    ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => break,
+                    _ => return Err(RustADBError::IOError(e)),
+                },
             }
         }
 
