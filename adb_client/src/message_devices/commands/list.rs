@@ -3,7 +3,6 @@ use byteorder::LittleEndian;
 use std::str;
 
 use crate::Result;
-use crate::RustADBError;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::message_devices::adb_message_transport::ADBMessageTransport;
 use crate::message_devices::adb_session::ADBSession;
@@ -161,12 +160,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                         size,
                     };
 
-                    // Bits 14 to 16 are the file type
-                    let item_type = match (mode >> 13) & 0b111 {
-                        0b010 => ADBListItemType::Directory(entry),
-                        0b100 => ADBListItemType::File(entry),
-                        0b101 => ADBListItemType::Symlink(entry),
-                        type_code => return Err(RustADBError::UnknownFileMode(type_code)),
+                    let item_type = match ((mode >> 13) & 0b111) as u8 {
+                        0b000 => ADBListItemType::Fifo(entry), // FIFO/named pipe
+                        0b001 => ADBListItemType::CharacterDevice(entry), // Character device
+                        0b010 => ADBListItemType::Directory(entry), // Directory
+                        0b011 => ADBListItemType::BlockDevice(entry), // Block device
+                        0b100 => ADBListItemType::File(entry), // Regular file
+                        0b101 => ADBListItemType::Symlink(entry), // Symbolic link
+                        0b110 => ADBListItemType::Socket(entry), // Socket
+                        _ => ADBListItemType::Other(entry),    // Other type
                     };
 
                     list_items.push(item_type);
