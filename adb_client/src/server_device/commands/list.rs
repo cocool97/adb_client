@@ -70,14 +70,14 @@ impl ADBServerDevice {
                     };
 
                     let item_type = match ((mode >> 13) & 0b111) as u8 {
-                        0b000 => ADBListItemType::Fifo(entry),          // FIFO/named pipe
+                        0b000 => ADBListItemType::Fifo(entry), // FIFO/named pipe
                         0b001 => ADBListItemType::CharacterDevice(entry), // Character device
-                        0b010 => ADBListItemType::Directory(entry),     // Directory
-                        0b011 => ADBListItemType::BlockDevice(entry),   // Block device
-                        0b100 => ADBListItemType::File(entry),          // Regular file
-                        0b101 => ADBListItemType::Symlink(entry),       // Symbolic link
-                        0b110 => ADBListItemType::Socket(entry),        // Socket
-                        _ => ADBListItemType::Other(entry),             // Other type
+                        0b010 => ADBListItemType::Directory(entry), // Directory
+                        0b011 => ADBListItemType::BlockDevice(entry), // Block device
+                        0b100 => ADBListItemType::File(entry), // Regular file
+                        0b101 => ADBListItemType::Symlink(entry), // Symbolic link
+                        0b110 => ADBListItemType::Socket(entry), // Socket
+                        _ => ADBListItemType::Other(entry),    // Other type
                     };
 
                     list_items.push(item_type);
