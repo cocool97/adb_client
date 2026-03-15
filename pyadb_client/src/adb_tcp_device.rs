@@ -48,7 +48,7 @@ impl PyADBTcpDevice {
         Ok(self.0.pull(&input.to_string_lossy(), &mut writer)?)
     }
 
-    /// Install a package installed on the device
+    /// Install a package (APK) onto the device from the given local path
     #[expect(clippy::needless_pass_by_value)]
     #[pyo3(signature = (apk_path, user=None))]
     pub fn install(&mut self, apk_path: PathBuf, user: Option<&str>) -> Result<()> {
