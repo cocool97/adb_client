@@ -1,49 +1,30 @@
 use std::{fs::File, path::PathBuf};
 
-use adb_client::{ADBDeviceExt, usb::ADBUSBDevice};
+use adb_client::{ADBDeviceExt, tcp::ADBTcpDevice};
 use anyhow::Result;
 use pyo3::{pyclass, pymethods};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 #[gen_stub_pyclass]
 #[pyclass]
-/// Represent a device directly reachable over USB.
-pub struct PyADBUSBDevice(ADBUSBDevice);
+/// Represent a device directly reachable over TCP.
+pub struct PyADBTcpDevice(ADBTcpDevice);
 
 #[gen_stub_pymethods]
 #[pymethods]
-impl PyADBUSBDevice {
+impl PyADBTcpDevice {
     #[staticmethod]
-    /// Autodetect a device reachable over USB.
-    /// This method raises an error if multiple devices or none are connected.
-    pub fn autodetect() -> Result<Self> {
-        Ok(ADBUSBDevice::autodetect()?.into())
+    /// Create a new TCP device connection with the given address (e.g. "192.168.1.100:5555").
+    pub fn new(address: &str) -> Result<Self> {
+        let addr: std::net::SocketAddr = address.parse()?;
+        Ok(ADBTcpDevice::new(addr)?.into())
     }
 
     #[staticmethod]
-    /// Autodetect a device reachable over USB using a custom private key.
-    /// This method raises an error if multiple devices or none are connected.
-    pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
-        Ok(ADBUSBDevice::autodetect_with_custom_private_key(private_key_path)?.into())
-    }
-
-    #[staticmethod]
-    /// Create a new USB device connection with the given vendor and product IDs.
-    pub fn new_device(vendor_id: u16, product_id: u16) -> Result<Self> {
-        Ok(ADBUSBDevice::new(vendor_id, product_id)?.into())
-    }
-
-    #[staticmethod]
-    /// Create a new USB device connection with the given vendor and product IDs, using a custom private key.
-    pub fn new_with_custom_private_key(
-        vendor_id: u16,
-        product_id: u16,
-        private_key_path: PathBuf,
-    ) -> Result<Self> {
-        Ok(
-            ADBUSBDevice::new_with_custom_private_key(vendor_id, product_id, private_key_path)?
-                .into(),
-        )
+    /// Create a new TCP device connection with the given address, using a custom private key.
+    pub fn new_with_custom_private_key(address: &str, private_key_path: PathBuf) -> Result<Self> {
+        let addr: std::net::SocketAddr = address.parse()?;
+        Ok(ADBTcpDevice::new_with_custom_private_key(addr, private_key_path)?.into())
     }
 
     /// Run shell commands on device and return the output (stdout + stderr merged)
@@ -67,7 +48,7 @@ impl PyADBUSBDevice {
         Ok(self.0.pull(&input.to_string_lossy(), &mut writer)?)
     }
 
-    /// Install a package installed on the device
+    /// Install a package (APK) onto the device from the given local path
     #[expect(clippy::needless_pass_by_value)]
     #[pyo3(signature = (apk_path, user=None))]
     pub fn install(&mut self, apk_path: PathBuf, user: Option<&str>) -> Result<()> {
@@ -86,8 +67,8 @@ impl PyADBUSBDevice {
     }
 }
 
-impl From<ADBUSBDevice> for PyADBUSBDevice {
-    fn from(value: ADBUSBDevice) -> Self {
+impl From<ADBTcpDevice> for PyADBTcpDevice {
+    fn from(value: ADBTcpDevice) -> Self {
         Self(value)
     }
 }
