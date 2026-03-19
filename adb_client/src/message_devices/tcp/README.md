@@ -1,5 +1,7 @@
 # Examples
 
+> TCP-connected devices related examples
+
 ## Get a shell from device
 
 ```rust no_run

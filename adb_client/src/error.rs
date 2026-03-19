@@ -138,6 +138,9 @@ pub enum RustADBError {
     /// An unknown file mode was encountered in list
     #[error("Unknown file mode {0}")]
     UnknownFileMode(u32),
+    /// Timeout while waiting for response
+    #[error("timeout while waiting for response")]
+    Timeout,
 }
 
 impl<T> From<std::sync::PoisonError<T>> for RustADBError {

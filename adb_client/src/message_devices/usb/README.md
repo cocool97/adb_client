@@ -1,5 +1,7 @@
 # Examples
 
+> USB-connected devices related examples
+
 ## Launch a command on device
 
 ```rust no_run

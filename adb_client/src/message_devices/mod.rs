@@ -9,6 +9,7 @@ pub mod tcp;
 mod adb_message_device;
 mod adb_message_device_commands;
 mod adb_message_transport;
+mod adb_multiplexer;
 mod adb_session;
 mod adb_transport_message;
 mod commands;
