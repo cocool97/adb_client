@@ -13,7 +13,7 @@ pub struct ShellMessageWriter<T: ADBMessageTransport> {
 }
 
 impl<T: ADBMessageTransport> ShellMessageWriter<T> {
-    pub fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
+    pub const fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
         Self {
             transport,
             local_id,

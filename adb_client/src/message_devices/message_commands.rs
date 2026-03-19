@@ -59,7 +59,7 @@ pub struct SubcommandWithArg {
 }
 
 impl MessageSubcommand {
-    pub fn with_arg(self, arg: u32) -> SubcommandWithArg {
+    pub const fn with_arg(self, arg: u32) -> SubcommandWithArg {
         SubcommandWithArg {
             subcommand: self,
             arg,

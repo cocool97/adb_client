@@ -13,7 +13,7 @@ pub struct MessageWriter<'session, T: ADBMessageTransport> {
 }
 
 impl<'session, T: ADBMessageTransport> MessageWriter<'session, T> {
-    pub fn new(session: &'session mut ADBSession<T>) -> Self {
+    pub const fn new(session: &'session mut ADBSession<T>) -> Self {
         Self { session }
     }
 }
