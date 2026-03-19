@@ -79,7 +79,8 @@ impl From<adb_client::RustADBError> for ADBCliError {
             | RustADBError::USBDeviceNotFound(_, _)
             | RustADBError::WrongFileExtension(_)
             | RustADBError::AddrParseError(_)
-            | RustADBError::DeviceBusy => Self::Standard(value),
+            | RustADBError::DeviceBusy
+            | RustADBError::Timeout => Self::Standard(value),
         }
     }
 }

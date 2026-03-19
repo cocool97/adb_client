@@ -5,11 +5,11 @@ use std::{
         atomic::{AtomicBool, Ordering},
     },
     thread::JoinHandle,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crate::{
-    Result,
+    Result, RustADBError,
     adb_transport::ADBTransport,
     message_devices::{
         adb_message_transport::ADBMessageTransport, adb_transport_message::ADBTransportMessage,
@@ -63,8 +63,9 @@ impl<T: ADBMessageTransport> ADBMessageMultiplexer<T> {
     pub fn read_message_with_timeout(
         &mut self,
         local_id: Option<u32>,
-        read_timeout: std::time::Duration,
+        read_timeout: Duration,
     ) -> Result<ADBTransportMessage> {
+        let now = Instant::now();
         loop {
             if let Some(local_id) = local_id {
                 let mut rw_data = self.authenticated_data.write()?;
@@ -81,7 +82,11 @@ impl<T: ADBMessageTransport> ADBMessageMultiplexer<T> {
                 }
             }
 
-            std::thread::sleep(Duration::from_millis(100));
+            if now.elapsed() >= read_timeout {
+                return Err(RustADBError::Timeout);
+            }
+
+            std::thread::sleep(Duration::from_millis(50));
         }
     }
 
