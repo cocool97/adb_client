@@ -29,7 +29,7 @@ impl PyADBUSBDevice {
 
     #[staticmethod]
     /// Create a new USB device connection with the given vendor and product IDs.
-    pub fn new_device(vendor_id: u16, product_id: u16) -> Result<Self> {
+    pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
         Ok(ADBUSBDevice::new(vendor_id, product_id)?.into())
     }
 

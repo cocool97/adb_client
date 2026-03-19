@@ -114,9 +114,7 @@ impl ADBRsaKey {
     }
 }
 
-pub(crate) fn read_adb_private_key<P: AsRef<Path>>(
-    private_key_path: P,
-) -> Result<Option<ADBRsaKey>> {
+pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     // Try to read the private key file from given path
     // If the file is not found, return None
     // If there is another error while reading the file, return this error

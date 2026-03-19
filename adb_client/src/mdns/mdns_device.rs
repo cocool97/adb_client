@@ -29,7 +29,7 @@ impl MDNSDevice {
 
     /// Return the port of this device
     #[must_use]
-    pub fn port(&self) -> NonZeroU16 {
+    pub const fn port(&self) -> NonZeroU16 {
         self.port
     }
 
@@ -69,8 +69,7 @@ impl TryFrom<Box<ResolvedService>> for MDNSDevice {
             fullname: value.fullname,
             port: NonZeroU16::new(value.port).ok_or(RustADBError::UnknownDeviceState(format!(
                 "device {} has a non-u16 port: {}",
-                fullname.clone(),
-                value.port
+                fullname, value.port
             )))?,
             addresses: value.addresses.iter().map(ScopedIp::to_ip_addr).collect(),
         })

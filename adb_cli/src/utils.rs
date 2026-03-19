@@ -8,6 +8,6 @@ pub fn setup_logger(debug: bool) {
         .init();
 }
 
-pub fn long_version() -> &'static str {
+pub const fn long_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
