@@ -191,8 +191,8 @@ mod tests {
             ),
         ];
         for (input, expected_device) in inputs {
-            let device =
-                DeviceLong::try_from(input.as_bytes()).expect("cannot parse input: '{input}'");
+            let device = DeviceLong::try_from(input.as_bytes())
+                .unwrap_or_else(|_| panic!("cannot parse input: '{input}'"));
             assert_eq!(
                 device, expected_device,
                 "parsed device does not match expected"

@@ -31,7 +31,7 @@ pub struct TCPEmulatorTransport {
 impl TCPEmulatorTransport {
     /// Instantiates a new instance of [`TCPEmulatorTransport`]
     #[must_use]
-    pub fn new(socket_addr: SocketAddrV4) -> Self {
+    pub const fn new(socket_addr: SocketAddrV4) -> Self {
         Self {
             socket_addr,
             tcp_stream: None,
