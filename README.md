@@ -47,6 +47,7 @@ Improved documentation available [here](./adb_client/README.md).
 Some examples showing of to use this library are available in the `examples` directory:
 
 - `examples/mdns`: mDNS device discovery
+- `examples/python_api`: demonstrates the use of Python API
 
 ## adb_cli
 

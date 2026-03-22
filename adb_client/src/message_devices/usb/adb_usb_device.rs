@@ -17,6 +17,8 @@ use crate::utils::get_default_adb_key_path;
 #[derive(Debug)]
 pub struct ADBUSBDevice {
     inner: ADBMessageDevice<USBTransport>,
+    vendor_id: u16,
+    product_id: u16,
 }
 
 impl ADBUSBDevice {
@@ -51,9 +53,26 @@ impl ADBUSBDevice {
         transport: USBTransport,
         private_key_path: P,
     ) -> Result<Self> {
+        let vendor_id = transport.vendor_id()?;
+        let product_id = transport.product_id()?;
+
         Ok(Self {
             inner: ADBMessageDevice::new(transport, private_key_path)?,
+            vendor_id,
+            product_id,
         })
+    }
+
+    /// Returns the vendor ID of the device
+    #[must_use]
+    pub const fn vendor_id(&self) -> u16 {
+        self.vendor_id
+    }
+
+    /// Returns the product ID of the device
+    #[must_use]
+    pub const fn product_id(&self) -> u16 {
+        self.product_id
     }
 
     /// autodetect connected ADB devices and establish a connection with the first device found

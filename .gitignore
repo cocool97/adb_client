@@ -4,3 +4,4 @@ target
 venv
 /.mypy_cache
 pyadb_client/pyadb_client.pyi
+__pycache__

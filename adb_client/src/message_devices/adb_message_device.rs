@@ -19,7 +19,7 @@ use crate::{
 /// Generic structure representing an ADB device reachable over an [`ADBMessageTransport`].
 /// Structure is totally agnostic over which transport is truly used.
 #[derive(Debug)]
-pub(crate) struct ADBMessageDevice<T: ADBMessageTransport> {
+pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
 }
 
