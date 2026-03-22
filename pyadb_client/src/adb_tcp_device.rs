@@ -2,7 +2,7 @@ use std::{fs::File, path::PathBuf};
 
 use adb_client::{ADBDeviceExt, tcp::ADBTcpDevice};
 use anyhow::Result;
-use pyo3::{pyclass, pymethods};
+use pyo3::{Bound, Python, pyclass, pymethods, types::PyBytes};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 #[gen_stub_pyclass]
@@ -28,10 +28,14 @@ impl PyADBTcpDevice {
     }
 
     /// Run shell commands on device and return the output (stdout + stderr merged)
-    pub fn shell_command(&mut self, command: &str) -> Result<Vec<u8>> {
+    pub fn shell_command<'py>(
+        &mut self,
+        py: Python<'py>,
+        command: &str,
+    ) -> Result<Bound<'py, PyBytes>> {
         let mut output = Vec::new();
         self.0.shell_command(&command, Some(&mut output), None)?;
-        Ok(output)
+        Ok(PyBytes::new(py, &output))
     }
 
     /// Push a local file from input to dest
