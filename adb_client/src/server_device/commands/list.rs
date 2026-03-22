@@ -1,5 +1,5 @@
 use crate::{
-    Result, RustADBError,
+    Result,
     models::{ADBCommand, ADBListItem, ADBListItemType, ADBLocalCommand, SyncCommand},
     server_device::ADBServerDevice,
 };
@@ -69,15 +69,7 @@ impl ADBServerDevice {
                         size,
                     };
 
-                    // Bits 14 to 16 are the file type
-                    let item_type = match (mode >> 13) & 0b111 {
-                        0b010 => ADBListItemType::Directory(entry),
-                        0b100 => ADBListItemType::File(entry),
-                        0b101 => ADBListItemType::Symlink(entry),
-                        type_code => return Err(RustADBError::UnknownFileMode(type_code)),
-                    };
-
-                    list_items.push(item_type);
+                    list_items.push(ADBListItemType::from_mode_and_entry(mode, entry));
                 }
                 "DONE" => {
                     return Ok(list_items);

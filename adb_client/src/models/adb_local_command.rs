@@ -30,12 +30,14 @@ impl Display for ADBLocalCommand {
         match self {
             Self::Sync => write!(f, "sync:"),
             Self::ShellCommand(command, shell_args) => {
-                let args_s = shell_args.join(",");
-                write!(
-                    f,
-                    "shell{}{args_s},raw:{command}",
-                    if shell_args.is_empty() { "" } else { "," }
-                )
+                if shell_args.is_empty() {
+                    // Shell v1: simple format for older ADB versions
+                    write!(f, "shell:{command}")
+                } else {
+                    // Shell v2: with arguments
+                    let args_s = shell_args.join(",");
+                    write!(f, "shell,{args_s},raw:{command}")
+                }
             }
             Self::Shell => match std::env::var("TERM") {
                 Ok(term) => write!(f, "shell,TERM={term},raw:"),
