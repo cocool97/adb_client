@@ -46,6 +46,16 @@ impl PyADBUSBDevice {
         )
     }
 
+    /// Returns the vendor ID of the USB device.
+    pub fn vendor_id(&self) -> u16 {
+        self.0.vendor_id()
+    }
+
+    /// Returns the product ID of the USB device.
+    pub fn product_id(&self) -> u16 {
+        self.0.product_id()
+    }
+
     /// Run shell commands on device and return the output (stdout + stderr merged)
     pub fn shell_command(&mut self, command: &str) -> Result<Vec<u8>> {
         let mut output = Vec::new();

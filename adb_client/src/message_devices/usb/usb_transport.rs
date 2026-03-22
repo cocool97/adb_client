@@ -62,6 +62,14 @@ impl USBTransport {
         }
     }
 
+    pub(crate) fn vendor_id(&self) -> Result<u16> {
+        Ok(self.device.device_descriptor().map(|d| d.vendor_id())?)
+    }
+
+    pub(crate) fn product_id(&self) -> Result<u16> {
+        Ok(self.device.device_descriptor().map(|d| d.product_id())?)
+    }
+
     pub(crate) fn get_raw_connection(&self) -> Result<Arc<DeviceHandle<GlobalContext>>> {
         self.handle
             .as_ref()
