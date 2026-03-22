@@ -23,16 +23,16 @@ pub enum ADBListItemType {
 
 impl ADBListItemType {
     /// Returns the ADB item type based on the raw mode and given entry.
-    pub(crate) fn from_mode_and_entry(mode: u32, entry: ADBListItem) -> Self {
+    pub(crate) const fn from_mode_and_entry(mode: u32, entry: ADBListItem) -> Self {
         match ((mode >> 13) & 0b111) as u8 {
-            0b000 => ADBListItemType::Fifo(entry), // FIFO/named pipe
-            0b001 => ADBListItemType::CharacterDevice(entry), // Character device
-            0b010 => ADBListItemType::Directory(entry), // Directory
-            0b011 => ADBListItemType::BlockDevice(entry), // Block device
-            0b100 => ADBListItemType::File(entry), // Regular file
-            0b101 => ADBListItemType::Symlink(entry), // Symbolic link
-            0b110 => ADBListItemType::Socket(entry), // Socket
-            _ => ADBListItemType::Other(entry),    // Other type
+            0b000 => Self::Fifo(entry),            // FIFO/named pipe
+            0b001 => Self::CharacterDevice(entry), // Character device
+            0b010 => Self::Directory(entry),       // Directory
+            0b011 => Self::BlockDevice(entry),     // Block device
+            0b100 => Self::File(entry),            // Regular file
+            0b101 => Self::Symlink(entry),         // Symbolic link
+            0b110 => Self::Socket(entry),          // Socket
+            _ => Self::Other(entry),               // Other type
         }
     }
 }

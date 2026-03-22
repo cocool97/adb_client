@@ -45,12 +45,9 @@ impl ADBDeviceExt for ADBServerDevice {
         stderr: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
         let supported_features = self.host_features();
-        let use_shell_v2 = match &supported_features {
-            Ok(features) => {
-                features.contains(&HostFeatures::ShellV2) || features.contains(&HostFeatures::Cmd)
-            }
-            Err(_) => false,
-        };
+        let use_shell_v2 = supported_features.is_ok_and(|features| {
+            features.contains(&HostFeatures::ShellV2) || features.contains(&HostFeatures::Cmd)
+        });
 
         self.set_serial_transport()?;
 
@@ -131,7 +128,7 @@ impl ADBDeviceExt for ADBServerDevice {
 impl ADBServerDevice {
     /// Shell v1: simple shell without protocol (for older ADB versions)
     fn shell_command_v1(
-        &mut self,
+        &self,
         command: &dyn AsRef<str>,
         mut stdout: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
@@ -164,7 +161,7 @@ impl ADBServerDevice {
 
     /// Shell v2: with protocol packets (for newer ADB versions)
     fn shell_command_v2(
-        &mut self,
+        &self,
         command: &dyn AsRef<str>,
         mut stdout: Option<&mut dyn Write>,
         mut stderr: Option<&mut dyn Write>,
