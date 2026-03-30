@@ -9,3 +9,5 @@ on:
 jobs:
   quality:
     uses: cocool97/action_templates/.github/workflows/rust-quality.yml@main
+    with:
+      msrv_package_name: adb_client
