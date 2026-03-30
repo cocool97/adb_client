@@ -1,4 +1,4 @@
-use rusb::{Device, DeviceDescriptor, UsbContext, constants::LIBUSB_CLASS_VENDOR_SPEC};
+use rusb::{Context, Device, DeviceDescriptor, UsbContext, constants::LIBUSB_CLASS_VENDOR_SPEC};
 
 use crate::{Result, RustADBError};
 
@@ -17,7 +17,8 @@ pub struct ADBDeviceInfo {
 pub fn find_all_connected_adb_devices() -> Result<Vec<ADBDeviceInfo>> {
     let mut found_devices = vec![];
 
-    for device in rusb::devices()?.iter() {
+    let context = Context::new()?;
+    for device in context.devices()?.iter() {
         let Ok(des) = device.device_descriptor() else {
             continue;
         };
