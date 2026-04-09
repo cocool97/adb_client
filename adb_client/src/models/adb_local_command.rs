@@ -100,3 +100,10 @@ fn test_reverse_remove_command() {
 
     assert_eq!(command.to_string(), "reverse:killforward:tcp:7100");
 }
+
+#[test]
+fn test_forward_remove_command() {
+    let command = ADBLocalCommand::ForwardRemove("tcp:7100".to_string());
+
+    assert_eq!(command.to_string(), "host:killforward:tcp:7100");
+}
