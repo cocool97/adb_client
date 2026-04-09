@@ -17,6 +17,18 @@ impl ADBServerDevice {
             .map(|_| ())
     }
 
+    /// Remove a previously applied forward rule by its local endpoint.
+    pub fn forward_remove(&mut self, local: String) -> Result<()> {
+        self.set_serial_transport()?;
+
+        self.transport
+            .proxy_connection(
+                &ADBCommand::Local(ADBLocalCommand::ForwardRemove(local)),
+                false,
+            )
+            .map(|_| ())
+    }
+
     /// Remove all previously applied forward rules
     pub fn forward_remove_all(&mut self) -> Result<()> {
         self.set_serial_transport()?;
