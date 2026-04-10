@@ -67,8 +67,13 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     }
 
     #[inline]
-    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
-        self.install(apk_path, user)
+    fn install_with_progress(
+        &mut self,
+        apk_path: &dyn AsRef<Path>,
+        user: Option<&str>,
+        on_progress: Option<&mut dyn FnMut(u64, u64)>,
+    ) -> Result<()> {
+        self.install_with_progress(apk_path, user, on_progress)
     }
 
     #[inline]
