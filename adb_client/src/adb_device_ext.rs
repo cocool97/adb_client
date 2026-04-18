@@ -4,7 +4,7 @@ use std::path::Path;
 use image::{ImageBuffer, ImageFormat, Rgba};
 
 use crate::models::{ADBListItemType, AdbStatResponse, RemountInfo};
-use crate::{RebootType, Result};
+use crate::{ADBStatExtendedResponse, RebootType, Result};
 
 /// Trait representing all features available on ADB devices.
 pub trait ADBDeviceExt {
@@ -29,8 +29,26 @@ pub trait ADBDeviceExt {
         writer: Box<dyn Write + Send>,
     ) -> Result<()>;
 
-    /// Display the stat information for a remote file
+    /// Display the stat information for a remote file using STAT protocol command.
     fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse>;
+
+    /// Display the stat information for a remote file using `stat` shell command.
+    /// This is an extended version of `stat` that returns more detailed information.
+    /// Returns `Ok(None)` if the file does not exist on the device.
+    fn stat_extended(
+        &mut self,
+        remote_path: &dyn AsRef<str>,
+    ) -> Result<Option<ADBStatExtendedResponse>> {
+        let mut stdout = Vec::new();
+        self.shell_command(
+            &format!("stat {}", remote_path.as_ref()),
+            Some(&mut stdout),
+            None,
+        )?;
+
+        // all parsing magic happens here...
+        ADBStatExtendedResponse::try_from(&stdout)
+    }
 
     /// Pull the remote file pointed to by `source` and write its contents into `output`
     fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()>;

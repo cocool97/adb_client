@@ -59,7 +59,7 @@ fn benchmark_adb_push(c: &mut Criterion) {
         (500 * 1024 * 1024, 50),  // 500MB -> 50 iterations
         (1000 * 1024 * 1024, 20), // 1GB -> 20 iterations
     ] {
-        eprintln!("Benchmarking file_size={file_size} and sample_size={sample_size}",);
+        eprintln!("Benchmarking file_size={file_size} and sample_size={sample_size}");
 
         generate_test_file(file_size).expect("Cannot generate test file");
 

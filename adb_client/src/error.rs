@@ -138,6 +138,12 @@ pub enum RustADBError {
     /// An unknown file mode was encountered in list
     #[error("Unknown file mode {0}")]
     UnknownFileMode(u32),
+    /// An error occured while parsing a date
+    #[error(transparent)]
+    ParseDateError(#[from] chrono::ParseError),
+    /// An error occurred while parsing a stat extended response
+    #[error("stat response error: {0}")]
+    StatResponseError(String),
 }
 
 impl<T> From<std::sync::PoisonError<T>> for RustADBError {
