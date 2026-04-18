@@ -166,7 +166,7 @@ impl USBTransport {
             let write_amount = handle.write_bulk(endpoint.address, &data[offset..end], timeout)?;
             offset += write_amount;
 
-            log::trace!("wrote chunk of size {write_amount} - {offset}/{data_len}",);
+            log::trace!("wrote chunk of size {write_amount} - {offset}/{data_len}");
         }
 
         if offset % max_packet_size == 0 {

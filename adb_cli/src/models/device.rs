@@ -17,6 +17,8 @@ pub enum DeviceCommands {
     Push { filename: String, path: String },
     /// Stat a file on device
     Stat { path: String },
+    /// Stat a file on device with extended information
+    StatExtended { path: String },
     /// Run an activity on device specified by the intent
     Run {
         /// The package whose activity is to be invoked

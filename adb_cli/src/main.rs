@@ -63,6 +63,14 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
             let stat_response = device.stat(&path)?;
             println!("{stat_response}");
         }
+        DeviceCommands::StatExtended { path } => {
+            let stat_response = device.stat_extended(&path)?;
+            if let Some(stat_response) = stat_response {
+                println!("{stat_response}");
+            } else {
+                println!("No such file or directory");
+            }
+        }
         DeviceCommands::Reboot { reboot_type } => {
             log::info!("Reboots device in mode {reboot_type:?}");
             device.reboot(reboot_type.into())?;
