@@ -17,6 +17,18 @@ impl ADBServerDevice {
             .map(|_| ())
     }
 
+    /// Remove a previously applied reverse rule by its remote endpoint.
+    pub fn reverse_remove(&mut self, remote: String) -> Result<()> {
+        self.set_serial_transport()?;
+
+        self.transport
+            .proxy_connection(
+                &ADBCommand::Local(ADBLocalCommand::ReverseRemove(remote)),
+                false,
+            )
+            .map(|_| ())
+    }
+
     /// Remove all reverse rules
     pub fn reverse_remove_all(&mut self) -> Result<()> {
         self.set_serial_transport()?;

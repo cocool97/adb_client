@@ -14,6 +14,7 @@ pub enum ADBLocalCommand {
     ForwardRemove(String),
     ForwardRemoveAll,
     Reverse(String, String),
+    ReverseRemove(String),
     ReverseRemoveAll,
     Reconnect,
     Remount,
@@ -71,6 +72,7 @@ impl Display for ADBLocalCommand {
             Self::Reverse(remote, local) => {
                 write!(f, "reverse:forward:{remote};{local}")
             }
+            Self::ReverseRemove(remote) => write!(f, "reverse:killforward:{remote}"),
             Self::ReverseRemoveAll => write!(f, "reverse:killforward-all"),
             Self::Reconnect => write!(f, "reconnect"),
             Self::Remount => write!(f, "remount:"),
@@ -90,4 +92,11 @@ fn test_forward_remove_command() {
     let command = ADBLocalCommand::ForwardRemove("tcp:7100".to_string());
 
     assert_eq!(command.to_string(), "host:killforward:tcp:7100");
+}
+
+#[test]
+fn test_reverse_remove_command() {
+    let command = ADBLocalCommand::ReverseRemove("tcp:7100".to_string());
+
+    assert_eq!(command.to_string(), "reverse:killforward:tcp:7100");
 }
