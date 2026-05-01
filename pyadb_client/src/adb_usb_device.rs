@@ -48,13 +48,13 @@ impl PyADBUSBDevice {
 
     /// Returns the vendor ID of the USB device.
     #[must_use]
-    pub fn vendor_id(&self) -> u16 {
+    pub const fn vendor_id(&self) -> u16 {
         self.0.vendor_id()
     }
 
     /// Returns the product ID of the USB device.
     #[must_use]
-    pub fn product_id(&self) -> u16 {
+    pub const fn product_id(&self) -> u16 {
         self.0.product_id()
     }
 

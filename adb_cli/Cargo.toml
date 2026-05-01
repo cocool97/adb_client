@@ -14,9 +14,9 @@ version.workspace = true
 workspace = true
 
 [dependencies]
-adb_client = { version = "^3.1.1", features = ["mdns", "usb"] }
-clap = { version = "4.6.0", features = ["derive"] }
-env_logger = { version = "0.11.9" }
+adb_client = { version = "^3.2.0", features = ["mdns", "usb"] }
+clap = { version = "4.6.1", features = ["derive"] }
+env_logger = { version = "0.11.10" }
 log = { version = "0.4.29" }
 tabwriter = { version = "1.4.1" }
 
