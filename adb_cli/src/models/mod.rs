@@ -12,7 +12,7 @@ pub use adb_cli_error::{ADBCliError, ADBCliResult};
 pub use device::DeviceCommands;
 pub use emu::{EmuCommand, EmulatorCommand};
 pub use host::{HostCommand, MdnsCommand};
-pub use local::{LocalCommand, LocalDeviceCommand};
+pub use local::{ForwardCommand, LocalCommand, LocalDeviceCommand, ReverseCommand};
 pub use opts::{MainCommand, Opts, ServerCommand};
 pub use reboot_type::RebootTypeCommand;
 pub use tcp::TcpCommand;
