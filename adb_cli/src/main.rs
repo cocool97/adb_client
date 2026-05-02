@@ -12,7 +12,7 @@ use adb_client::mdns::MDNSDiscoveryService;
 use adb_client::server::ADBServer;
 use adb_client::server_device::ADBServerDevice;
 use adb_client::tcp::ADBTcpDevice;
-use adb_client::usb::{ADBDeviceInfo, ADBUSBDevice, find_all_connected_adb_devices};
+use adb_client::usb::{ADBDeviceInfo, ADBUSBDevice, USBTransport, WiredUSBTransport};
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use adb_termios::ADBTermios;
@@ -153,7 +153,7 @@ fn inner_main() -> ADBCliResult<()> {
         }
         MainCommand::Usb(usb_command) => {
             if usb_command.list_devices {
-                let devices = find_all_connected_adb_devices()?;
+                let devices = WiredUSBTransport::find_all_connected_adb_devices()?;
 
                 let mut writer = TabWriter::new(stdout()).alignment(tabwriter::Alignment::Center);
                 writeln!(writer, "Index\tVendor ID\tProduct ID\tDevice Description")?;

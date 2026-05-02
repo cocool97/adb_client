@@ -1,6 +1,9 @@
 use std::{fs::File, path::PathBuf};
 
-use adb_client::{ADBDeviceExt, usb::ADBUSBDevice};
+use adb_client::{
+    ADBDeviceExt,
+    usb::{ADBUSBDevice, WiredUSBTransport},
+};
 use anyhow::Result;
 use pyo3::{Bound, Python, pyclass, pymethods, types::PyBytes};
 use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
@@ -8,7 +11,7 @@ use pyo3_stub_gen_derive::{gen_stub_pyclass, gen_stub_pymethods};
 #[gen_stub_pyclass]
 #[pyclass]
 /// Represent a device directly reachable over USB.
-pub struct PyADBUSBDevice(ADBUSBDevice);
+pub struct PyADBUSBDevice(ADBUSBDevice<WiredUSBTransport>);
 
 #[gen_stub_pymethods]
 #[pymethods]
@@ -102,8 +105,8 @@ impl PyADBUSBDevice {
     }
 }
 
-impl From<ADBUSBDevice> for PyADBUSBDevice {
-    fn from(value: ADBUSBDevice) -> Self {
+impl From<ADBUSBDevice<WiredUSBTransport>> for PyADBUSBDevice {
+    fn from(value: ADBUSBDevice<WiredUSBTransport>) -> Self {
         Self(value)
     }
 }
