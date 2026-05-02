@@ -10,8 +10,14 @@ use crate::RustADBError;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::models::RemountInfo;
 use crate::usb::ADBDeviceInfo;
+
+#[cfg(feature = "usb")]
+use crate::usb::wired::WiredUSBTransport;
+
+#[cfg(feature = "webusb")]
+use crate::usb::webusb::WebUSBTransport;
+
 use crate::usb::usb_transport::USBTransport;
-use crate::usb::wired_usb_transport::WiredUSBTransport;
 use crate::utils::get_default_adb_key_path;
 
 /// Represent a device reached and available over a USB transport.
@@ -87,6 +93,7 @@ impl<TRANSPORT: USBTransport> ADBUSBDevice<TRANSPORT> {
     }
 }
 
+#[cfg(feature = "usb")]
 impl ADBUSBDevice<WiredUSBTransport> {
     /// Instantiate a new [`ADBUSBDevice`]
     pub fn new(vendor_id: u16, product_id: u16) -> Result<Self> {
@@ -124,6 +131,9 @@ impl ADBUSBDevice<WiredUSBTransport> {
         }
     }
 }
+
+#[cfg(feature = "webusb")]
+impl ADBUSBDevice<WebUSBTransport> {}
 
 impl<TRANSPORT: USBTransport> ADBDeviceExt for ADBUSBDevice<TRANSPORT> {
     #[inline]

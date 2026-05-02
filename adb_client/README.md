@@ -18,10 +18,11 @@ adb_client = "*"
 
 ## Crate features
 
-| Feature |                   Description                   | Default? |
-| :-----: | :---------------------------------------------: | :------: |
-| `mdns`  | Enables mDNS device discovery on local network. |    No    |
-|  `usb`  |     Enables interactions with USB devices.      |    No    |
+| Feature  |                   Description                   | Default? |
+| :------: | :---------------------------------------------: | :------: |
+|  `mdns`  | Enables mDNS device discovery on local network. |    No    |
+|  `usb`   |     Enables interactions with USB devices.      |    No    |
+| `webusb` |             Enables webusb support              |    No    |
 
 To deactivate some default features you can use the `default-features = false` option in your `Cargo.toml` file and manually specify the features you want to activate:
 
@@ -29,6 +30,10 @@ To deactivate some default features you can use the `default-features = false` o
 [dependencies]
 adb_client = { version = "*", default-features = false, features = ["mdns", "usb"] }
 ```
+
+## WASM support
+
+TODO: RUSTFLAGS="--cfg=web_sys_unstable_apis"
 
 ## Examples
 

@@ -21,7 +21,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = []
 mdns = ["dep:mdns-sd"]
 usb = ["dep:rusb"]
-# webusb = ["dep:webusb-web"]
+webusb = ["dep:webusb-web"]
 
 [dependencies]
 base64 = { version = "0.22.1" }
@@ -50,13 +50,23 @@ mdns-sd = { version = "0.19.1", default-features = false, features = [
     "logging",
 ], optional = true }
 #########
+
 #########
 # USB-only dependencies
 rusb = { version = "0.9.4", features = ["vendored"], optional = true }
 num_enum = { version = "0.7.6" }
 #########
+
+#########
 # `webusb` feature-specific dependencies
-# webusb-web = { version = "0.5.1", optional = true }
+# we need to enable wasm-specific dependency features
+# getrandom is quite problematic here as we are internally depending on two different versions
+[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
+getrandom_02 = { package = "getrandom", version = "0.2.17", features = ["js"] }
+getrandom_03 = { package = "getrandom", version = "0.4.2", features = ["wasm_js"] }
+ring = { version = "0.17.14", features = ["wasm32_unknown_unknown_js"] }
+rustls-pki-types = { version = "1.14.1", features = ["web"] }
+webusb-web = { version = "0.5.1", optional = true }
 #########
 
 [dev-dependencies]
