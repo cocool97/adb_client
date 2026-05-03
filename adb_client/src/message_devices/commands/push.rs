@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::{io::Read, path::Path};
 
 use crate::{
     Result,
@@ -12,10 +12,11 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
+    pub(crate) fn push<R: Read, P: AsRef<Path>>(&mut self, stream: &mut R, path: P) -> Result<()> {
         let mut session = self.open_synchronization_session()?;
+        let path = path.as_ref();
 
-        let path_header = format!("{},0777", path.as_ref());
+        let path_header = format!("{},0777", path.display());
 
         let send_buffer = MessageSubcommand::Send.with_arg(u32::try_from(path_header.len())?);
         let mut send_buffer = send_buffer.encode();

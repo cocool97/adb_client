@@ -4,7 +4,10 @@ use crate::{
     server_device::ADBServerDevice,
 };
 use byteorder::{LittleEndian, ReadBytesExt};
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::{
+    io::{BufReader, BufWriter, Read, Write},
+    path::Path,
+};
 
 /// Internal structure wrapping a [`std::io::Read`] and hiding underlying protocol logic.
 struct ADBRecvCommandReader<R: Read> {
@@ -70,7 +73,7 @@ const BUFFER_SIZE: usize = 65535;
 
 impl ADBServerDevice {
     /// Receives path to stream from the device.
-    pub fn pull(&mut self, path: &dyn AsRef<str>, stream: &mut dyn Write) -> Result<()> {
+    pub fn pull<P: AsRef<Path>, W: Write>(&mut self, path: P, stream: &mut W) -> Result<()> {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
@@ -80,7 +83,7 @@ impl ADBServerDevice {
         // Send a recv command
         self.transport.send_sync_request(&SyncCommand::Recv)?;
 
-        self.handle_recv_command(path, stream)
+        self.handle_recv_command(path.as_ref().to_string_lossy(), stream)
     }
 
     fn handle_recv_command<S: AsRef<str>>(&self, from: S, output: &mut dyn Write) -> Result<()> {

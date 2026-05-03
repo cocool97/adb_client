@@ -7,13 +7,9 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn uninstall(
-        &mut self,
-        package_name: &dyn AsRef<str>,
-        user: Option<&str>,
-    ) -> Result<()> {
+    pub(crate) fn uninstall(&mut self, package_name: &str, user: Option<&str>) -> Result<()> {
         self.open_session(&ADBLocalCommand::Uninstall(
-            package_name.as_ref().to_string(),
+            package_name.to_string(),
             user.map(ToString::to_string),
         ))?;
 
@@ -21,7 +17,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         match final_status.into_payload().as_slice() {
             b"Success\n" => {
-                log::info!("Package {} successfully uninstalled", package_name.as_ref());
+                log::info!("Package {package_name} successfully uninstalled");
                 Ok(())
             }
             d => Err(crate::RustADBError::ADBRequestFailed(String::from_utf8(

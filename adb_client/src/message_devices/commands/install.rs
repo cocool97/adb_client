@@ -11,10 +11,14 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
-        let mut apk_file = File::open(apk_path)?;
+    pub(crate) fn install<P: AsRef<Path>>(
+        &mut self,
+        apk_path: P,
+        user: Option<&str>,
+    ) -> Result<()> {
+        let mut apk_file = File::open(&apk_path)?;
 
-        check_extension_is_apk(apk_path)?;
+        check_extension_is_apk(&apk_path)?;
 
         let file_size = apk_file.metadata()?.len();
 

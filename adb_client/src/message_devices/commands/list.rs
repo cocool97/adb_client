@@ -1,5 +1,6 @@
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
+use std::path::Path;
 use std::str;
 
 use crate::Result;
@@ -15,7 +16,7 @@ use crate::models::{ADBListItem, ADBListItemType};
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// List the entries in the given directory on the device.
     /// note: path uses internal file paths, so Documents is at /storage/emulated/0/Documents
-    pub(crate) fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {
+    pub(crate) fn list<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<ADBListItemType>> {
         let mut session = self.open_synchronization_session()?;
 
         let output = self.handle_list(&mut session, path);
@@ -80,14 +81,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
     }
 
-    fn handle_list<A: AsRef<str>>(
+    fn handle_list<P: AsRef<Path>>(
         &mut self,
         session: &mut ADBSession<T>,
-        path: A,
+        path: P,
     ) -> Result<Vec<ADBListItemType>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
         {
+            let path = path.as_ref().to_string_lossy();
             let mut len_buf = Vec::from([0_u8; 4]);
             LittleEndian::write_u32(&mut len_buf, u32::try_from(path.as_ref().len())?);
 
