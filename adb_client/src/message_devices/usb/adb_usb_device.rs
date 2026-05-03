@@ -97,32 +97,32 @@ impl ADBUSBDevice {
 
 impl ADBDeviceExt for ADBUSBDevice {
     #[inline]
-    fn shell_command(
+    fn shell_command<W: Write>(
         &mut self,
-        command: &dyn AsRef<str>,
-        stdout: Option<&mut dyn Write>,
-        stderr: Option<&mut dyn Write>,
+        command: &str,
+        stdout: Option<&mut W>,
+        stderr: Option<&mut W>,
     ) -> Result<Option<u8>> {
         self.inner.shell_command(command, stdout, stderr)
     }
 
     #[inline]
-    fn shell<'a>(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
+    fn shell<R: Read, W: Write + Send>(&mut self, reader: &mut R, writer: W) -> Result<()> {
         self.inner.shell(reader, writer)
     }
 
     #[inline]
-    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<crate::AdbStatResponse> {
+    fn stat<P: AsRef<Path>>(&mut self, remote_path: P) -> Result<crate::AdbStatResponse> {
         self.inner.stat(remote_path)
     }
 
     #[inline]
-    fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
+    fn pull<P: AsRef<Path>, W: Write>(&mut self, source: P, output: &mut W) -> Result<()> {
         self.inner.pull(source, output)
     }
 
     #[inline]
-    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
+    fn push<R: Read, P: AsRef<Path>>(&mut self, stream: &mut R, path: P) -> Result<()> {
         self.inner.push(stream, path)
     }
 
@@ -142,12 +142,12 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
-    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
+    fn install<P: AsRef<Path>>(&mut self, apk_path: P, user: Option<&str>) -> Result<()> {
         self.inner.install(apk_path, user)
     }
 
     #[inline]
-    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
+    fn uninstall(&mut self, package: &str, user: Option<&str>) -> Result<()> {
         self.inner.uninstall(package, user)
     }
 
@@ -167,16 +167,16 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
+    fn list<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<ADBListItemType>> {
         self.inner.list(path)
     }
 
     #[inline]
-    fn exec(
+    fn exec<R: Read, W: Write + Send>(
         &mut self,
         command: &str,
-        reader: &mut dyn Read,
-        writer: Box<dyn Write + Send>,
+        reader: &mut R,
+        writer: W,
     ) -> Result<()> {
         self.inner.exec(command, reader, writer)
     }

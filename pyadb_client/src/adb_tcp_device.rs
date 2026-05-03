@@ -34,7 +34,7 @@ impl PyADBTcpDevice {
         command: &str,
     ) -> Result<Bound<'py, PyBytes>> {
         let mut output = Vec::new();
-        self.0.shell_command(&command, Some(&mut output), None)?;
+        self.0.shell_command(command, Some(&mut output), None)?;
         Ok(PyBytes::new(py, &output))
     }
 
@@ -42,14 +42,14 @@ impl PyADBTcpDevice {
     #[expect(clippy::needless_pass_by_value)]
     pub fn push(&mut self, input: PathBuf, dest: PathBuf) -> Result<()> {
         let mut reader = File::open(input)?;
-        Ok(self.0.push(&mut reader, &dest.to_string_lossy())?)
+        Ok(self.0.push(&mut reader, &dest)?)
     }
 
     /// Pull a file from device located at input, and drop it to dest
     #[expect(clippy::needless_pass_by_value)]
     pub fn pull(&mut self, input: PathBuf, dest: PathBuf) -> Result<()> {
         let mut writer = File::create(dest)?;
-        Ok(self.0.pull(&input.to_string_lossy(), &mut writer)?)
+        Ok(self.0.pull(&input, &mut writer)?)
     }
 
     /// Install a package (APK) onto the device from the given local path
@@ -62,7 +62,7 @@ impl PyADBTcpDevice {
     /// Uninstall a package installed on the device
     #[pyo3(signature = (package, user=None))]
     pub fn uninstall(&mut self, package: &str, user: Option<&str>) -> Result<()> {
-        Ok(self.0.uninstall(&package, user)?)
+        Ok(self.0.uninstall(package, user)?)
     }
 
     /// Restart adb daemon with root permissions

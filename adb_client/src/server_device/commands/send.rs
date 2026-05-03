@@ -6,6 +6,7 @@ use crate::{
 use std::{
     convert::TryInto,
     io::{self, BufReader, BufWriter, Read, Write},
+    path::Path,
     str::{self, FromStr},
     time::SystemTime,
 };
@@ -45,8 +46,9 @@ const BUFFER_SIZE: usize = 65535;
 
 impl ADBServerDevice {
     /// Send stream to path on the device.
-    pub fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
-        log::info!("Sending data to {}", path.as_ref());
+    pub fn push<R: Read, P: AsRef<Path>>(&mut self, stream: R, path: P) -> Result<()> {
+        let path = path.as_ref();
+        log::info!("Sending data to {}", path.display());
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
@@ -56,7 +58,7 @@ impl ADBServerDevice {
         // Send a send command
         self.transport.send_sync_request(&SyncCommand::Send)?;
 
-        self.handle_send_command(stream, path)
+        self.handle_send_command(stream, path.to_string_lossy())
     }
 
     fn handle_send_command<R: Read, S: AsRef<str>>(&self, input: R, to: S) -> Result<()> {

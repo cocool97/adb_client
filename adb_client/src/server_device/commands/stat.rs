@@ -1,4 +1,7 @@
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    path::Path,
+};
 
 use byteorder::{ByteOrder, LittleEndian};
 
@@ -9,15 +12,16 @@ use crate::{
 };
 
 impl ADBServerDevice {
-    fn handle_stat_command<S: AsRef<str>>(&self, path: S) -> Result<AdbStatResponse> {
+    fn handle_stat_command<P: AsRef<Path>>(&self, path: P) -> Result<AdbStatResponse> {
+        let path = path.as_ref().to_string_lossy();
         let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, u32::try_from(path.as_ref().len())?);
+        LittleEndian::write_u32(&mut len_buf, u32::try_from(path.len())?);
 
         // 4 bytes of command name is already sent by send_sync_request
         self.transport.get_raw_connection()?.write_all(&len_buf)?;
         self.transport
             .get_raw_connection()?
-            .write_all(path.as_ref().to_string().as_bytes())?;
+            .write_all(path.as_bytes())?;
 
         // Reads returned status code from ADB server
         let mut response = [0_u8; 4];
@@ -38,7 +42,7 @@ impl ADBServerDevice {
     }
 
     /// Stat file given as path on the device.
-    pub fn stat<A: AsRef<str>>(&mut self, path: A) -> Result<AdbStatResponse> {
+    pub fn stat<P: AsRef<Path>>(&mut self, path: P) -> Result<AdbStatResponse> {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode

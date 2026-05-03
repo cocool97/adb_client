@@ -28,9 +28,9 @@ use std::process::ExitCode;
 use tabwriter::TabWriter;
 use utils::setup_logger;
 
-use crate::models::{ADBCliError, ADBCliResult};
+use crate::models::{ADBCliError, ADBCliResult, ADBDevice};
 
-fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> ADBCliResult<()> {
+fn run_command(mut device: ADBDevice, command: DeviceCommands) -> ADBCliResult<()> {
     match command {
         DeviceCommands::Shell { commands } => {
             if commands.is_empty() {
@@ -145,7 +145,9 @@ fn inner_main() -> ADBCliResult<()> {
             };
 
             match server_command.command {
-                LocalCommand::DeviceCommands(device_commands) => (device.boxed(), device_commands),
+                LocalCommand::DeviceCommands(device_commands) => {
+                    (ADBDevice::Server(device), device_commands)
+                }
                 LocalCommand::LocalDeviceCommand(local_device_command) => {
                     return handle_local_commands(device, local_device_command);
                 }
@@ -197,7 +199,7 @@ fn inner_main() -> ADBCliResult<()> {
             };
 
             if let Some(command) = usb_command.commands {
-                (device.boxed(), command)
+                (ADBDevice::Usb(device), command)
             } else {
                 return Err(ADBCliError::Standard("no command specified".into()));
             }
@@ -207,7 +209,7 @@ fn inner_main() -> ADBCliResult<()> {
                 Some(pk) => ADBTcpDevice::new_with_custom_private_key(tcp_command.address, pk)?,
                 None => ADBTcpDevice::new(tcp_command.address)?,
             };
-            (device.boxed(), tcp_command.commands)
+            (ADBDevice::Tcp(device), tcp_command.commands)
         }
         MainCommand::Mdns => {
             let mut service = MDNSDiscoveryService::new()?;
