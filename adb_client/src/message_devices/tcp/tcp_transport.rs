@@ -177,6 +177,8 @@ impl ADBMessageTransport for TcpTransport {
                     break;
                 }
             }
+            // raw_connection is not used anymore, let's drop it
+            drop(raw_connection);
 
             let message = ADBTransportMessage::from_header_and_payload(header, msg_data);
 
@@ -202,7 +204,6 @@ impl ADBMessageTransport for TcpTransport {
         let message_bytes = message.header().as_bytes();
         let raw_connection_lock = self.get_current_connection()?;
         let mut raw_connection = raw_connection_lock.lock()?;
-
         raw_connection.set_write_timeout(write_timeout)?;
 
         let mut total_written = 0;
