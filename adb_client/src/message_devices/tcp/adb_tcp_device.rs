@@ -26,7 +26,13 @@ impl ADBTcpDevice {
         private_key_path: P,
     ) -> Result<Self> {
         Ok(Self {
-            inner: ADBMessageDevice::new(TcpTransport::new(address)?, private_key_path)?,
+            inner: ADBMessageDevice::new(
+                TcpTransport::new_with_custom_private_key(
+                    address,
+                    private_key_path.as_ref().to_path_buf(),
+                ),
+                private_key_path,
+            )?,
         })
     }
 }
