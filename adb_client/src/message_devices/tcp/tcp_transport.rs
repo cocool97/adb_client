@@ -13,13 +13,12 @@ use crate::{
         adb_transport_message::{ADBTransportMessage, ADBTransportMessageHeader},
         message_commands::MessageCommand,
     },
-    utils::get_default_adb_key_path,
 };
 use std::{
     fs::read_to_string,
     io::{Read, Write},
     net::{Shutdown, SocketAddr, TcpStream},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -90,23 +89,12 @@ fn certificate_from_pk(key_pair: &KeyPair) -> Result<Vec<CertificateDer<'static>
 }
 
 impl TcpTransport {
-    /// Instantiate a new [`TcpTransport`]
-    pub fn new<A: Into<SocketAddr>>(address: A) -> Result<Self> {
-        Ok(Self::new_with_custom_private_key(
-            address,
-            get_default_adb_key_path()?,
-        ))
-    }
-
     /// Instantiate a new [`TcpTransport`] using a given private key
-    pub fn new_with_custom_private_key<A: Into<SocketAddr>>(
-        address: A,
-        private_key_path: PathBuf,
-    ) -> Self {
+    pub fn new<A: Into<SocketAddr>, P: AsRef<Path>>(address: A, private_key_path: P) -> Self {
         Self {
             address: address.into(),
             current_connection: None,
-            private_key_path,
+            private_key_path: private_key_path.as_ref().to_path_buf(),
         }
     }
 
