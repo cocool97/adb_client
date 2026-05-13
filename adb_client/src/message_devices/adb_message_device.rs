@@ -171,14 +171,14 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         if response.header().command() != MessageCommand::Okay {
             return Err(RustADBError::ADBRequestFailed(format!(
-                "Open session failed: got {} in respone instead of OKAY",
+                "Open session failed: got {} in response instead of OKAY",
                 response.header().command()
             )));
         }
 
         if response.header().arg1() != local_id {
             return Err(RustADBError::ADBRequestFailed(format!(
-                "Open session failed: respones used {} for our local_id instead of {local_id}",
+                "Open session failed: responses used {} for our local_id instead of {local_id}",
                 response.header().arg1()
             )));
         }
