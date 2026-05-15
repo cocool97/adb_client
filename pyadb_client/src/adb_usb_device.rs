@@ -16,6 +16,10 @@ impl PyADBUSBDevice {
     #[staticmethod]
     /// Autodetect a device reachable over USB.
     /// This method raises an error if multiple devices or none are connected.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if multiple devices or none are connected.
     pub fn autodetect() -> Result<Self> {
         Ok(ADBUSBDevice::autodetect()?.into())
     }

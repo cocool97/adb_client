@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 #![forbid(missing_debug_implementations)]
 #![forbid(missing_docs)]
+#![allow(clippy::missing_errors_doc)]
 #![doc = include_str!("../README.md")]
 // Feature `doc_cfg` is currently only available on nightly builds.
 // It is activated when cfg `docsrs` is enabled.

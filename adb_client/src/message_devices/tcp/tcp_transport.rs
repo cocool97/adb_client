@@ -210,6 +210,7 @@ impl ADBMessageTransport for TcpTransport {
                 total_written += raw_connection.write(&payload[total_written..])?;
                 if total_written == payload.len() {
                     raw_connection.flush()?;
+                    drop(raw_connection);
                     break;
                 }
             }
@@ -230,7 +231,6 @@ impl ADBMessageTransport for TcpTransport {
             match &*current_conn_locked {
                 CurrentConnection::Tcp(tcp_stream) => {
                     // TODO: Check if we cannot be more precise
-
                     let pk_content = read_to_string(&self.private_key_path)?;
 
                     let key_pair =
@@ -254,6 +254,7 @@ impl ADBMessageTransport for TcpTransport {
 
                     // Update current connection state to now use TLS protocol
                     *current_conn_locked = CurrentConnection::Tls(Box::new(client));
+                    drop(current_conn_locked);
                 }
                 CurrentConnection::Tls(_) => {
                     return Err(RustADBError::UpgradeError(

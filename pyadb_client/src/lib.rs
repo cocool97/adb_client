@@ -1,4 +1,5 @@
 #![forbid(missing_docs)]
+#![allow(clippy::missing_errors_doc)]
 #![doc = include_str!("../README.md")]
 
 mod adb_server;

@@ -75,12 +75,20 @@ impl ADBUSBDevice {
         self.product_id
     }
 
-    /// autodetect connected ADB devices and establish a connection with the first device found
+    /// Autodetect connected ADB devices and establish a connection with the first device found
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if multiple devices or none are connected.
     pub fn autodetect() -> Result<Self> {
         Self::autodetect_with_custom_private_key(get_default_adb_key_path()?)
     }
 
-    /// autodetect connected ADB devices and establish a connection with the first device found using a custom private key path
+    /// Autodetect connected ADB devices and establish a connection with the first device found using a custom private key path
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if multiple devices are connected or if none can be detected.
     pub fn autodetect_with_custom_private_key(private_key_path: PathBuf) -> Result<Self> {
         match utils::get_single_connected_adb_device()? {
             Some(device_info) => Self::new_with_custom_private_key(
