@@ -1,5 +1,6 @@
 import logging
 import random
+from importlib.metadata import version
 from tempfile import NamedTemporaryFile
 
 from pyadb_client import PyADBUSBDevice
@@ -14,6 +15,7 @@ RANDOM_DATA_SIZE = 1 * 1024 * 1024  # 1 MB
 
 
 def main():
+    logger.info(f"running pyadb_client version: {version('pyadb_client')}")
     # Detect the device automatically
     # Only one device must be connected using this method.
     device = PyADBUSBDevice.autodetect()
