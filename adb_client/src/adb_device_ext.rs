@@ -90,7 +90,20 @@ pub trait ADBDeviceExt {
     }
 
     /// Install an APK pointed to by `apk_path` on device.
-    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()>;
+    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
+        self.install_with_progress(apk_path, user, None)
+    }
+
+    /// Install an APK pointed to by `apk_path` on device and report upload progress.
+    ///
+    /// The callback receives `(uploaded_bytes, total_bytes)` while the APK payload is being
+    /// transferred to the device. It does not attempt to model package-manager-side progress.
+    fn install_with_progress(
+        &mut self,
+        apk_path: &dyn AsRef<Path>,
+        user: Option<&str>,
+        on_progress: Option<&mut dyn FnMut(u64, u64)>,
+    ) -> Result<()>;
 
     /// Uninstall the package `package` from device.
     fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()>;

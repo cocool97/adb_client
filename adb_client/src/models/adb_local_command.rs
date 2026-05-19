@@ -21,7 +21,6 @@ pub enum ADBLocalCommand {
     DisableVerity,
     EnableVerity,
     Uninstall(String, Option<String>),
-    Install(u64, Option<String>),
     TcpIp(u16),
     Usb,
     Root,
@@ -57,13 +56,6 @@ impl Display for ADBLocalCommand {
                 write!(f, " {package}")
             }
             Self::FrameBuffer => write!(f, "framebuffer:"),
-            Self::Install(size, user) => {
-                write!(f, "exec:cmd package 'install'")?;
-                if let Some(user) = user {
-                    write!(f, " --user {user}")?;
-                }
-                write!(f, " -S {size}")
-            }
             Self::Forward(remote, local) => {
                 write!(f, "host:forward:{local};{remote}")
             }

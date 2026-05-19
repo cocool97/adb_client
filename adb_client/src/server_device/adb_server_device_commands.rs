@@ -96,8 +96,13 @@ impl ADBDeviceExt for ADBServerDevice {
         self.push(stream, path)
     }
 
-    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
-        self.install(apk_path, user)
+    fn install_with_progress(
+        &mut self,
+        apk_path: &dyn AsRef<Path>,
+        user: Option<&str>,
+        on_progress: Option<&mut dyn FnMut(u64, u64)>,
+    ) -> Result<()> {
+        self.install_with_progress(apk_path, user, on_progress)
     }
 
     fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
