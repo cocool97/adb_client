@@ -139,9 +139,12 @@ fn inner_main() -> ADBCliResult<()> {
                 ADBServer::start(&HashMap::default(), &None);
             }
 
-            let device = match server_command.serial {
-                Some(serial) => ADBServerDevice::new(serial, Some(server_command.address)),
-                None => ADBServerDevice::autodetect(Some(server_command.address)),
+            let device = if let Some(id) = server_command.transport_id {
+                ADBServerDevice::new_with_transport_id(id, Some(server_command.address))
+            } else if let Some(serial) = server_command.serial {
+                ADBServerDevice::new(serial, Some(server_command.address))
+            } else {
+                ADBServerDevice::autodetect(Some(server_command.address))
             };
 
             match server_command.command {
