@@ -40,6 +40,10 @@ pub struct ServerCommand<T: Subcommand> {
     /// Serial id of a specific device. Every request will be sent to this device.
     #[clap(short = 's', long = "serial")]
     pub serial: Option<String>,
+    /// Transport id of a specific device (as shown by `adb devices -l`). Use this to
+    /// disambiguate devices that share the same serial number.
+    #[clap(short = 't', long = "transport-id", conflicts_with = "serial")]
+    pub transport_id: Option<u32>,
     #[clap(subcommand)]
     pub command: T,
 }
