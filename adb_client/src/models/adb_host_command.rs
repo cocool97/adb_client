@@ -15,6 +15,7 @@ pub enum ADBHostCommand {
     Pair(SocketAddrV4, String),
     TransportAny,
     TransportSerial(String),
+    TransportId(u32),
     MDNSCheck,
     MDNSServices,
     ServerStatus,
@@ -32,6 +33,7 @@ impl Display for ADBHostCommand {
             Self::TrackDevices => write!(f, "host:track-devices"),
             Self::TransportAny => write!(f, "host:transport-any"),
             Self::TransportSerial(serial) => write!(f, "host:transport:{serial}"),
+            Self::TransportId(id) => write!(f, "host:transport-id:{id}"),
             Self::Connect(addr) => write!(f, "host:connect:{addr}"),
             Self::Disconnect(addr) => write!(f, "host:disconnect:{addr}"),
             Self::Pair(addr, code) => {
