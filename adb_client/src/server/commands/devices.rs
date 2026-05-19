@@ -80,6 +80,29 @@ impl ADBServer {
         }
     }
 
+    /// Get a device matching the given transport id (as returned by `adb devices -l`).
+    ///
+    /// Transport ids are unique within a running ADB server and disambiguate devices that
+    /// share the same serial number. They are reassigned on device reconnect or server
+    /// restart, so callers should re-query rather than caching the id.
+    pub fn get_device_by_transport_id(&mut self, transport_id: u32) -> Result<ADBServerDevice> {
+        let nb_devices = self
+            .devices_long()?
+            .into_iter()
+            .filter(|d| d.transport_id == transport_id)
+            .count();
+        if nb_devices == 1 {
+            Ok(ADBServerDevice::new_with_transport_id(
+                transport_id,
+                self.socket_addr,
+            ))
+        } else {
+            Err(RustADBError::DeviceNotFound(format!(
+                "could not find device with transport id {transport_id}"
+            )))
+        }
+    }
+
     /// Tracks new devices showing up.
     pub fn track_devices(&mut self, callback: impl Fn(DeviceShort) -> Result<()>) -> Result<()> {
         self.connect()?
