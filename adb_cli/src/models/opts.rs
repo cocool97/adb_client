@@ -41,7 +41,8 @@ pub struct ServerCommand<T: Subcommand> {
     #[clap(short = 's', long = "serial")]
     pub serial: Option<String>,
     /// Transport id of a specific device (as shown by `adb devices -l`). Use this to
-    /// disambiguate devices that share the same serial number.
+    /// disambiguate devices that share the same serial number. Transport ids are
+    /// reassigned on device reconnect or adb-server restart and should not be cached.
     #[clap(short = 't', long = "transport-id", conflicts_with = "serial")]
     pub transport_id: Option<u32>,
     #[clap(subcommand)]
