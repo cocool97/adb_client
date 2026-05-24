@@ -26,22 +26,20 @@ impl PyADBServerDevice {
         command: &str,
     ) -> Result<Bound<'py, PyBytes>> {
         let mut output = Vec::new();
-        self.0.shell_command(&command, Some(&mut output), None)?;
+        self.0.shell_command(command, Some(&mut output), None)?;
         Ok(PyBytes::new(py, &output))
     }
 
     /// Push a local file from input to dest
-    #[expect(clippy::needless_pass_by_value)]
     pub fn push(&mut self, input: PathBuf, dest: PathBuf) -> Result<()> {
         let mut reader = File::open(input)?;
-        Ok(self.0.push(&mut reader, dest.to_string_lossy())?)
+        Ok(self.0.push(&mut reader, dest)?)
     }
 
     /// Pull a file from device located at input, and drop it to dest
-    #[expect(clippy::needless_pass_by_value)]
     pub fn pull(&mut self, input: PathBuf, dest: PathBuf) -> Result<()> {
         let mut writer = File::create(dest)?;
-        Ok(self.0.pull(&input.to_string_lossy(), &mut writer)?)
+        Ok(self.0.pull(input, &mut writer)?)
     }
 
     /// Install a package installed on the device

@@ -12,14 +12,14 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Runs 'command' in a shell on the device, and write its output and error streams into output.
-    pub(crate) fn shell_command(
+    pub(crate) fn shell_command<W: Write>(
         &mut self,
-        command: &dyn AsRef<str>,
-        mut stdout: Option<&mut dyn Write>,
-        _stderr: Option<&mut dyn Write>,
+        command: &str,
+        mut stdout: Option<&mut W>,
+        _stderr: Option<&mut W>,
     ) -> Result<Option<u8>> {
         let mut session = self.open_session(&ADBLocalCommand::ShellCommand(
-            command.as_ref().to_string(),
+            command.to_string(),
             Vec::new(),
         ))?;
 
@@ -39,31 +39,27 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     /// Starts an interactive shell session on the device.
     /// Input data is read from [reader] and write to [writer].
-    pub(crate) fn shell(
-        &mut self,
-        reader: &mut dyn Read,
-        writer: Box<dyn Write + Send>,
-    ) -> Result<()> {
+    pub(crate) fn shell<R: Read, W: Write + Send>(&mut self, reader: R, writer: W) -> Result<()> {
         self.bidirectional_session(&ADBLocalCommand::Shell, reader, writer)
     }
 
     /// Runs `command` on the device.
     /// Input data is read from [reader] and write to [writer].
-    pub(crate) fn exec(
+    pub(crate) fn exec<R: Read, W: Write + Send>(
         &mut self,
         command: &str,
-        reader: &mut dyn Read,
-        writer: Box<dyn Write + Send>,
+        reader: &mut R,
+        writer: W,
     ) -> Result<()> {
         self.bidirectional_session(&ADBLocalCommand::Exec(command.to_string()), reader, writer)
     }
 
     /// Starts an bidirectional(interactive) session. This can be a shell or an exec session.
-    fn bidirectional_session(
+    fn bidirectional_session<R: Read, W: Write + Send>(
         &mut self,
         local_command: &ADBLocalCommand,
-        mut reader: &mut dyn Read,
-        mut writer: Box<dyn Write + Send>,
+        mut reader: R,
+        mut writer: W,
     ) -> Result<()> {
         let session = self.open_session(local_command)?;
 
@@ -72,38 +68,44 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let mut transport = self.get_transport_mut().clone();
 
-        // Reading thread, reads response from adbd
-        std::thread::spawn(move || -> Result<()> {
-            loop {
-                let message = transport.read_message()?;
+        std::thread::scope(|scope| {
+            // Reading thread, reads response from adbd
+            scope.spawn(move || -> Result<()> {
+                loop {
+                    let message = transport.read_message()?;
 
-                // Acknowledge for more data
-                let response =
-                    ADBTransportMessage::try_new(MessageCommand::Okay, local_id, remote_id, &[])?;
-                transport.write_message(response)?;
+                    // Acknowledge for more data
+                    let response = ADBTransportMessage::try_new(
+                        MessageCommand::Okay,
+                        local_id,
+                        remote_id,
+                        &[],
+                    )?;
+                    transport.write_message(response)?;
 
-                match message.header().command() {
-                    MessageCommand::Write => {
-                        writer.write_all(&message.into_payload())?;
-                        writer.flush()?;
+                    match message.header().command() {
+                        MessageCommand::Write => {
+                            writer.write_all(&message.into_payload())?;
+                            writer.flush()?;
+                        }
+                        MessageCommand::Okay => {}
+                        _ => return Err(RustADBError::ADBShellNotSupported),
                     }
-                    MessageCommand::Okay => {}
-                    _ => return Err(RustADBError::ADBShellNotSupported),
+                }
+            });
+
+            let transport = self.get_transport_mut().clone();
+            let mut shell_writer = ShellMessageWriter::new(transport, local_id, remote_id);
+
+            // Read from given reader (that could be stdin e.g), and write content to device adbd
+            if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {
+                match e.kind() {
+                    ErrorKind::BrokenPipe => return Ok(()),
+                    _ => return Err(RustADBError::IOError(e)),
                 }
             }
-        });
 
-        let transport = self.get_transport_mut().clone();
-        let mut shell_writer = ShellMessageWriter::new(transport, local_id, remote_id);
-
-        // Read from given reader (that could be stdin e.g), and write content to device adbd
-        if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {
-            match e.kind() {
-                ErrorKind::BrokenPipe => return Ok(()),
-                _ => return Err(RustADBError::IOError(e)),
-            }
-        }
-
-        Ok(())
+            Ok(())
+        })
     }
 }

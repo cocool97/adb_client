@@ -9,39 +9,39 @@ use crate::{ADBStatExtendedResponse, RebootType, Result};
 /// Trait representing all features available on ADB devices.
 pub trait ADBDeviceExt {
     /// Runs command in a shell on the device, and write its output and error streams into output.
-    fn shell_command(
+    fn shell_command<W: Write>(
         &mut self,
-        command: &dyn AsRef<str>,
-        stdout: Option<&mut dyn Write>,
-        stderr: Option<&mut dyn Write>,
+        command: &str,
+        stdout: Option<&mut W>,
+        stderr: Option<&mut W>,
     ) -> Result<Option<u8>>;
 
     /// Starts an interactive shell session on the device.
     /// Input data is read from reader and write to writer.
-    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()>;
+    fn shell<R: Read, W: Write + Send>(&mut self, reader: &mut R, writer: W) -> Result<()>;
 
     /// Runs command on the device.
     /// Input data is read from reader and write to writer.
-    fn exec(
+    fn exec<R: Read, W: Write + Send>(
         &mut self,
         command: &str,
-        reader: &mut dyn Read,
-        writer: Box<dyn Write + Send>,
+        reader: &mut R,
+        writer: W,
     ) -> Result<()>;
 
     /// Display the stat information for a remote file using STAT protocol command.
-    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse>;
+    fn stat<P: AsRef<Path>>(&mut self, remote_path: P) -> Result<AdbStatResponse>;
 
     /// Display the stat information for a remote file using `stat` shell command.
     /// This is an extended version of `stat` that returns more detailed information.
     /// Returns `Ok(None)` if the file does not exist on the device.
-    fn stat_extended(
+    fn stat_extended<P: AsRef<Path>>(
         &mut self,
-        remote_path: &dyn AsRef<str>,
+        remote_path: P,
     ) -> Result<Option<ADBStatExtendedResponse>> {
         let mut stdout = Vec::new();
         self.shell_command(
-            &format!("stat {}", remote_path.as_ref()),
+            &format!("stat {}", remote_path.as_ref().display()),
             Some(&mut stdout),
             None,
         )?;
@@ -51,13 +51,13 @@ pub trait ADBDeviceExt {
     }
 
     /// Pull the remote file pointed to by `source` and write its contents into `output`
-    fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()>;
+    fn pull<P: AsRef<Path>, W: Write>(&mut self, source: P, output: &mut W) -> Result<()>;
 
     /// Push `stream` to `path` on the device.
-    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()>;
+    fn push<R: Read, P: AsRef<Path>>(&mut self, stream: &mut R, path: P) -> Result<()>;
 
     /// List the items in a directory on the device
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>>;
+    fn list<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<ADBListItemType>>;
 
     /// Reboot the device using given reboot type
     fn reboot(&mut self, reboot_type: RebootType) -> Result<()>;
@@ -69,19 +69,10 @@ pub trait ADBDeviceExt {
     fn root(&mut self) -> Result<()>;
 
     /// Run `activity` from `package` on device. Return the command output.
-    fn run_activity(
-        &mut self,
-        package: &dyn AsRef<str>,
-        activity: &dyn AsRef<str>,
-    ) -> Result<Vec<u8>> {
+    fn run_activity(&mut self, package: &str, activity: &str) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         let _status = self.shell_command(
-            &format!(
-                "am start {}/{}.{}",
-                package.as_ref(),
-                package.as_ref(),
-                activity.as_ref()
-            ),
+            &format!("am start {package}/{package}.{activity}"),
             Some(&mut output),
             None,
         )?;
@@ -90,10 +81,10 @@ pub trait ADBDeviceExt {
     }
 
     /// Install an APK pointed to by `apk_path` on device.
-    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()>;
+    fn install<P: AsRef<Path>>(&mut self, apk_path: P, user: Option<&str>) -> Result<()>;
 
     /// Uninstall the package `package` from device.
-    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()>;
+    fn uninstall(&mut self, package: &str, user: Option<&str>) -> Result<()>;
 
     /// Enable dm-verity on the device
     fn enable_verity(&mut self) -> Result<()>;
@@ -107,7 +98,7 @@ pub trait ADBDeviceExt {
     /// Dump framebuffer of this device into given path.
     ///
     /// Output data format is currently only `PNG`.
-    fn framebuffer(&mut self, path: &dyn AsRef<Path>) -> Result<()> {
+    fn framebuffer<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         // Big help from AOSP source code (<https://android.googlesource.com/platform/system/adb/+/refs/heads/main/framebuffer_service.cpp>)
         let img = self.framebuffer_inner()?;
         Ok(img.save(path.as_ref())?)
@@ -122,13 +113,5 @@ pub trait ADBDeviceExt {
         img.write_to(&mut vec, ImageFormat::Png)?;
 
         Ok(vec.into_inner())
-    }
-
-    /// Return a boxed instance representing this trait
-    fn boxed(self) -> Box<dyn ADBDeviceExt>
-    where
-        Self: Sized + 'static,
-    {
-        Box::new(self)
     }
 }

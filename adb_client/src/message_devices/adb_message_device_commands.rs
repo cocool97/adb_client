@@ -12,42 +12,42 @@ use std::{
 
 impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     #[inline]
-    fn shell_command(
+    fn shell_command<W: Write>(
         &mut self,
-        command: &dyn AsRef<str>,
-        stdout: Option<&mut dyn Write>,
-        stderr: Option<&mut dyn Write>,
+        command: &str,
+        stdout: Option<&mut W>,
+        stderr: Option<&mut W>,
     ) -> Result<Option<u8>> {
         self.shell_command(command, stdout, stderr)
     }
 
     #[inline]
-    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
+    fn shell<R: Read, W: Write + Send>(&mut self, reader: &mut R, writer: W) -> Result<()> {
         self.shell(reader, writer)
     }
 
     #[inline]
-    fn exec(
+    fn exec<R: Read, W: Write + Send>(
         &mut self,
         command: &str,
-        reader: &mut dyn Read,
-        writer: Box<dyn Write + Send>,
+        reader: &mut R,
+        writer: W,
     ) -> Result<()> {
         self.exec(command, reader, writer)
     }
 
     #[inline]
-    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
+    fn stat<P: AsRef<Path>>(&mut self, remote_path: P) -> Result<AdbStatResponse> {
         self.stat(remote_path)
     }
 
     #[inline]
-    fn pull(&mut self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()> {
+    fn pull<P: AsRef<Path>, W: Write>(&mut self, source: P, output: &mut W) -> Result<()> {
         self.pull(source, output)
     }
 
     #[inline]
-    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
+    fn push<R: Read, P: AsRef<Path>>(&mut self, stream: &mut R, path: P) -> Result<()> {
         self.push(stream, path)
     }
 
@@ -67,12 +67,12 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     }
 
     #[inline]
-    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
+    fn install<P: AsRef<Path>>(&mut self, apk_path: P, user: Option<&str>) -> Result<()> {
         self.install(apk_path, user)
     }
 
     #[inline]
-    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
+    fn uninstall(&mut self, package: &str, user: Option<&str>) -> Result<()> {
         self.uninstall(package, user)
     }
 
@@ -92,7 +92,7 @@ impl<T: ADBMessageTransport> ADBDeviceExt for ADBMessageDevice<T> {
     }
 
     #[inline]
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
+    fn list<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<ADBListItemType>> {
         self.list(path)
     }
 }

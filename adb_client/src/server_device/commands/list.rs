@@ -6,13 +6,14 @@ use crate::{
 use byteorder::{ByteOrder, LittleEndian, ReadBytesExt};
 use std::{
     io::{Read, Write},
+    path::Path,
     str,
 };
 
 impl ADBServerDevice {
     /// Lists files in path on the device.
     /// note: path uses internal file paths, so Documents is at /storage/emulated/0/Documents
-    pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {
+    pub fn list<P: AsRef<Path>>(&mut self, path: P) -> Result<Vec<ADBListItemType>> {
         self.set_serial_transport()?;
 
         // Set device in SYNC mode
@@ -25,11 +26,12 @@ impl ADBServerDevice {
         self.handle_list_command(path)
     }
 
-    fn handle_list_command<A: AsRef<str>>(&self, path: A) -> Result<Vec<ADBListItemType>> {
+    fn handle_list_command<P: AsRef<Path>>(&self, path: P) -> Result<Vec<ADBListItemType>> {
         // TODO: use LIS2 to support files over 2.14 GB in size.
         // SEE: https://github.com/cstyan/adbDocumentation?tab=readme-ov-file#adb-list
+        let path = path.as_ref().to_string_lossy();
         let mut len_buf = [0_u8; 4];
-        LittleEndian::write_u32(&mut len_buf, u32::try_from(path.as_ref().len())?);
+        LittleEndian::write_u32(&mut len_buf, u32::try_from(path.len())?);
 
         // 4 bytes of command name is already sent by send_sync_request
         self.transport.get_raw_connection()?.write_all(&len_buf)?;

@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{io::Write, path::Path};
 
 use crate::{
     Result, RustADBError,
@@ -12,11 +12,11 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
+    pub(crate) fn pull<P: AsRef<Path>, W: Write>(&mut self, source: P, output: W) -> Result<()> {
         let mut session = self.open_synchronization_session()?;
-        let source = source.as_ref();
+        let source = source.as_ref().display().to_string();
 
-        let adb_stat_response = session.stat_with_explicit_ids(source)?;
+        let adb_stat_response = session.stat_with_explicit_ids(&source)?;
 
         if adb_stat_response.file_perm == 0 {
             return Err(RustADBError::UnknownResponseType(
