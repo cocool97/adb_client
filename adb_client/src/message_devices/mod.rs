@@ -9,6 +9,7 @@ pub mod tcp;
 pub(crate) mod adb_message_device;
 mod adb_message_device_commands;
 pub(crate) mod adb_message_transport;
+/// ADB session management for open transport streams.
 pub mod adb_session;
 pub(crate) mod adb_transport_message;
 mod commands;

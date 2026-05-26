@@ -8,29 +8,30 @@
 //!   cargo run -p tcp_forward
 //!
 //! Make sure a service is listening on port 8080 on the device before running.
+//! For example, run `nc -l -p 8080` on the device via `adb shell`.
 
-use std::io::{Read, Write};
-
-use adb_client::{ADBLocalCommand, ADBUSBDevice};
+use adb_client::{ADBLocalCommand, usb::ADBUSBDevice};
 
 fn main() -> adb_client::Result<()> {
     let mut device = ADBUSBDevice::autodetect()?;
 
-    // Open a TCP session to port 8080 on the device
-    let mut session = device
+    // Open a TCP session to port 8080 on the device.
+    // This is equivalent to the service string "tcp:8080" in the ADB protocol.
+    let session = device
         .inner_mut()
         .open_session(&ADBLocalCommand::TcpConnect(8080))?;
 
-    // Example: send an HTTP GET request
-    let request = b"GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n";
-    session.get_transport_mut().write_all(request)?;
+    println!("Session opened successfully!");
+    println!("  local_id:  {}", session.local_id());
+    println!("  remote_id: {}", session.remote_id());
 
-    // Read the response
-    let mut response = Vec::new();
-    session.get_transport_mut().read_to_end(&mut response)?;
+    // At this point you have a live ADB session connected to tcp:8080 on the device.
+    // Use `session.get_transport_mut()` to read/write ADB protocol messages
+    // via `read_message()` and `write_message()`.
 
-    println!("Response ({} bytes):", response.len());
-    println!("{}", String::from_utf8_lossy(&response));
+    // The session is automatically closed (CLSE) when dropped.
+    drop(session);
 
+    println!("Session closed.");
     Ok(())
 }
