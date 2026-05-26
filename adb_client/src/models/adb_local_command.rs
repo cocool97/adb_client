@@ -24,9 +24,10 @@ pub enum ADBLocalCommand {
     TcpIp(u16),
     Usb,
     Root,
-
     #[cfg(feature = "framebuffer")]
     FrameBuffer,
+    /// Open a TCP connection to a port on the device (formats to "tcp:<port>")
+    TcpConnect(u16),
 }
 
 impl Display for ADBLocalCommand {
@@ -84,9 +85,9 @@ impl Display for ADBLocalCommand {
             }
             Self::Usb => write!(f, "usb:"),
             Self::Root => write!(f, "root:"),
-
             #[cfg(feature = "framebuffer")]
             Self::FrameBuffer => write!(f, "framebuffer:"),
+            Self::TcpConnect(port) => write!(f, "tcp:{port}"),
         }
     }
 }

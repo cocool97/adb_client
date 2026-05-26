@@ -26,6 +26,7 @@ pub struct ADBSession<T: ADBMessageTransport> {
 }
 
 impl<T: ADBMessageTransport> ADBSession<T> {
+    /// Create a new session with the given transport and IDs.
     pub const fn new(transport: T, local_id: u32, remote_id: u32) -> Self {
         Self {
             transport,
@@ -34,14 +35,17 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         }
     }
 
+    /// Get a mutable reference to the underlying transport.
     pub const fn get_transport_mut(&mut self) -> &mut T {
         &mut self.transport
     }
 
+    /// Get the local session ID.
     pub const fn local_id(&self) -> u32 {
         self.local_id
     }
 
+    /// Get the remote session ID.
     pub const fn remote_id(&self) -> u32 {
         self.remote_id
     }
