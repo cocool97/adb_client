@@ -1,4 +1,3 @@
-mod framebuffer;
 mod install;
 mod list;
 mod pull;
@@ -11,3 +10,6 @@ mod stat;
 mod uninstall;
 mod utils;
 mod verity;
+
+#[cfg(feature = "framebuffer")]
+mod framebuffer;

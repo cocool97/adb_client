@@ -104,6 +104,7 @@ impl ADBDeviceExt for ADBServerDevice {
         self.uninstall(package.as_ref(), user)
     }
 
+    #[cfg(feature = "framebuffer")]
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.framebuffer_inner()
     }

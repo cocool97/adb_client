@@ -7,7 +7,6 @@ pub enum ADBLocalCommand {
     ShellCommand(String, Vec<String>),
     Shell,
     Exec(String),
-    FrameBuffer,
     Sync,
     Reboot(RebootType),
     Forward(String, String),
@@ -25,6 +24,9 @@ pub enum ADBLocalCommand {
     TcpIp(u16),
     Usb,
     Root,
+
+    #[cfg(feature = "framebuffer")]
+    FrameBuffer,
 }
 
 impl Display for ADBLocalCommand {
@@ -56,7 +58,6 @@ impl Display for ADBLocalCommand {
                 }
                 write!(f, " {package}")
             }
-            Self::FrameBuffer => write!(f, "framebuffer:"),
             Self::Install(size, user) => {
                 write!(f, "exec:cmd package 'install'")?;
                 if let Some(user) = user {
@@ -83,6 +84,9 @@ impl Display for ADBLocalCommand {
             }
             Self::Usb => write!(f, "usb:"),
             Self::Root => write!(f, "root:"),
+
+            #[cfg(feature = "framebuffer")]
+            Self::FrameBuffer => write!(f, "framebuffer:"),
         }
     }
 }
