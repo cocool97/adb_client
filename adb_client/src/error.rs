@@ -61,9 +61,11 @@ pub enum RustADBError {
     #[error("Cannot remount filesystem: {0}")]
     RemountError(String),
     /// An error occurred when getting device's framebuffer image
+    #[cfg(feature = "framebuffer")]
     #[error(transparent)]
     FramebufferImageError(#[from] image::error::ImageError),
     /// An error occurred when converting framebuffer content
+    #[cfg(feature = "framebuffer")]
     #[error("Cannot convert framebuffer into image")]
     FramebufferConversionError,
     /// Unimplemented framebuffer image version

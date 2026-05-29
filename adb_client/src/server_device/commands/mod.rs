@@ -1,5 +1,4 @@
 mod forward;
-mod framebuffer;
 mod host_features;
 mod install;
 mod list;
@@ -17,3 +16,6 @@ mod transport;
 mod uninstall;
 mod usb;
 mod verity;
+
+#[cfg(feature = "framebuffer")]
+mod framebuffer;

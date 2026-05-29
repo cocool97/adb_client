@@ -170,6 +170,7 @@ impl ADBDeviceExt for ADBUSBDevice {
     }
 
     #[inline]
+    #[cfg(feature = "framebuffer")]
     fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
         self.inner.framebuffer_inner()
     }

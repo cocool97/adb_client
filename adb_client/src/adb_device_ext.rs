@@ -1,7 +1,11 @@
-use std::io::{Cursor, Read, Write};
+use std::io::{Read, Write};
 use std::path::Path;
 
-use image::{ImageBuffer, ImageFormat, Rgba};
+#[cfg(feature = "framebuffer")]
+use {
+    image::{ImageBuffer, ImageFormat, Rgba},
+    std::io::Cursor,
+};
 
 use crate::models::{ADBListItemType, AdbStatResponse, RemountInfo};
 use crate::{ADBStatExtendedResponse, RebootType, Result};
@@ -101,12 +105,14 @@ pub trait ADBDeviceExt {
     /// Disable dm-verity on the device
     fn disable_verity(&mut self) -> Result<()>;
 
+    #[cfg(feature = "framebuffer")]
     /// Inner method requesting framebuffer from an Android device
     fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;
 
     /// Dump framebuffer of this device into given path.
     ///
     /// Output data format is currently only `PNG`.
+    #[cfg(feature = "framebuffer")]
     fn framebuffer(&mut self, path: &dyn AsRef<Path>) -> Result<()> {
         // Big help from AOSP source code (<https://android.googlesource.com/platform/system/adb/+/refs/heads/main/framebuffer_service.cpp>)
         let img = self.framebuffer_inner()?;
@@ -116,6 +122,7 @@ pub trait ADBDeviceExt {
     /// Dump framebuffer of this device and return corresponding bytes.
     ///
     /// Output data format is currently only `PNG`.
+    #[cfg(feature = "framebuffer")]
     fn framebuffer_bytes(&mut self) -> Result<Vec<u8>> {
         let img = self.framebuffer_inner()?;
         let mut vec = Cursor::new(Vec::new());
