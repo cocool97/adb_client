@@ -20,7 +20,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let output = self.handle_list(&mut session, path);
 
-        self.end_transaction(&mut session)?;
+        session.close_synchronization_session()?;
         output
     }
 

@@ -9,9 +9,8 @@ use crate::{
         adb_transport_message::{
             ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN,
         },
-        message_commands::{MessageCommand, MessageSubcommand},
+        message_commands::MessageCommand,
         models::{ADBRsaKey, read_adb_private_key},
-        utils::BinaryEncodable,
     },
     models::ADBLocalCommand,
 };
@@ -188,19 +187,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             local_id,
             response.header().arg0(),
         ))
-    }
-
-    pub(crate) fn end_transaction(&mut self, session: &mut ADBSession<T>) -> Result<()> {
-        let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
-        session.send_and_expect_okay(ADBTransportMessage::try_new(
-            MessageCommand::Write,
-            session.local_id(),
-            session.remote_id(),
-            &quit_buffer.encode(),
-        )?)?;
-
-        let _discard_close = self.transport.read_message()?;
-        Ok(())
     }
 }
 

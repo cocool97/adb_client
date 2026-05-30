@@ -46,6 +46,19 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         self.remote_id
     }
 
+    pub(crate) fn close_synchronization_session(&mut self) -> Result<()> {
+        let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
+        self.send_and_expect_okay(ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            self.local_id(),
+            self.remote_id(),
+            &quit_buffer.encode(),
+        )?)?;
+
+        let _discard_close = self.transport.read_message()?;
+        Ok(())
+    }
+
     /// Receive a message and acknowledge it by replying with an `OKAY` command
     pub(crate) fn recv_and_reply_okay(&mut self) -> Result<ADBTransportMessage> {
         let message = self.transport.read_message()?;

@@ -37,7 +37,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     "APK file {} successfully installed",
                     apk_path.as_ref().display()
                 );
-                self.get_transport_mut()
+                session
+                    .get_transport_mut()
                     .read_message()?
                     .assert_command(MessageCommand::Clse)?;
                 Ok(())

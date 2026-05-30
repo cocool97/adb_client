@@ -49,7 +49,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         )?)?;
 
         session.recv_file(output)?;
-        self.end_transaction(&mut session)?;
+        session.close_synchronization_session()?;
         Ok(())
     }
 }
