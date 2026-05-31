@@ -22,15 +22,48 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             command.as_ref().to_string(),
             Vec::new(),
         ))?;
+        let local_id = session.local_id();
+        let remote_id = session.remote_id();
 
         loop {
-            let message = session.recv_and_reply_okay()?;
-            if message.header().command() == MessageCommand::Clse {
-                break;
-            }
-            // should this just write for ::Write messages?
-            if let Some(ref mut stdout) = stdout {
-                stdout.write_all(&message.into_payload())?;
+            let message = session.get_transport_mut().read_message()?;
+            let message_remote_id = message.header().arg0();
+            let message_local_id = message.header().arg1();
+            let is_current_stream = message_remote_id == remote_id && message_local_id == local_id;
+
+            match message.header().command() {
+                MessageCommand::Write => {
+                    let response = ADBTransportMessage::try_new(
+                        MessageCommand::Okay,
+                        message_local_id,
+                        message_remote_id,
+                        &[],
+                    )?;
+                    session.get_transport_mut().write_message(response)?;
+
+                    if is_current_stream && let Some(ref mut stdout) = stdout {
+                        stdout.write_all(&message.into_payload())?;
+                    } else if !is_current_stream {
+                        log::debug!(
+                            "Acknowledging and discarding stale shell WRTE for local_id {message_local_id}"
+                        );
+                    }
+                }
+                MessageCommand::Okay => {}
+                MessageCommand::Clse => {
+                    if is_current_stream {
+                        break;
+                    }
+
+                    log::debug!(
+                        "Ignoring stale shell CLSE for local_id {message_local_id} while reading local_id {local_id}"
+                    );
+                }
+                command => {
+                    return Err(RustADBError::ADBRequestFailed(format!(
+                        "Unexpected shell response: {command}"
+                    )));
+                }
             }
         }
 
@@ -76,18 +109,39 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         std::thread::spawn(move || -> Result<()> {
             loop {
                 let message = transport.read_message()?;
-
-                // Acknowledge for more data
-                let response =
-                    ADBTransportMessage::try_new(MessageCommand::Okay, local_id, remote_id, &[])?;
-                transport.write_message(response)?;
+                let message_remote_id = message.header().arg0();
+                let message_local_id = message.header().arg1();
+                let is_current_stream =
+                    message_remote_id == remote_id && message_local_id == local_id;
 
                 match message.header().command() {
                     MessageCommand::Write => {
-                        writer.write_all(&message.into_payload())?;
-                        writer.flush()?;
+                        let response = ADBTransportMessage::try_new(
+                            MessageCommand::Okay,
+                            message_local_id,
+                            message_remote_id,
+                            &[],
+                        )?;
+                        transport.write_message(response)?;
+                        if is_current_stream {
+                            writer.write_all(&message.into_payload())?;
+                            writer.flush()?;
+                        } else {
+                            log::debug!(
+                                "Acknowledging and discarding stale interactive shell WRTE for local_id {message_local_id}"
+                            );
+                        }
                     }
                     MessageCommand::Okay => {}
+                    MessageCommand::Clse => {
+                        if is_current_stream {
+                            return Ok(());
+                        }
+
+                        log::debug!(
+                            "Ignoring stale interactive shell CLSE for local_id {message_local_id} while reading local_id {local_id}"
+                        );
+                    }
                     _ => return Err(RustADBError::ADBShellNotSupported),
                 }
             }
