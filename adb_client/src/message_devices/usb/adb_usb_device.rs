@@ -75,6 +75,11 @@ impl ADBUSBDevice {
         self.product_id
     }
 
+    /// Returns a mutable reference to the inner message device for advanced operations.
+    pub fn inner_mut(&mut self) -> &mut ADBMessageDevice<USBTransport> {
+        &mut self.inner
+    }
+
     /// Autodetect connected ADB devices and establish a connection with the first device found
     ///
     /// # Errors
