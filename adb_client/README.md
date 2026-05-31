@@ -18,10 +18,11 @@ adb_client = "*"
 
 ## Crate features
 
-| Feature |                   Description                   | Default? |
-| :-----: | :---------------------------------------------: | :------: |
-| `mdns`  | Enables mDNS device discovery on local network. |    No    |
-|  `usb`  |     Enables interactions with USB devices.      |    No    |
+|    Feature    |                   Description                   | Default? |
+| :-----------: | :---------------------------------------------: | :------: |
+| `framebuffer` |      Enables _framebuffer_-related methods      |   Yes    |
+|    `mdns`     | Enables mDNS device discovery on local network. |    No    |
+|     `usb`     |     Enables interactions with USB devices.      |    No    |
 
 To deactivate some default features you can use the `default-features = false` option in your `Cargo.toml` file and manually specify the features you want to activate:
 
