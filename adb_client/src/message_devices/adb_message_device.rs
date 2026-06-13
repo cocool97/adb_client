@@ -155,7 +155,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         self.open_session(&ADBLocalCommand::Sync)
     }
 
-    pub(crate) fn open_session(&mut self, cmd: &ADBLocalCommand) -> Result<ADBSession<T>> {
+    /// Open a new ADB session with the given local command.
+    pub fn open_session(&mut self, cmd: &ADBLocalCommand) -> Result<ADBSession<T>> {
         let mut rng = rand::rng();
         let local_id: u32 = rng.random();
 
