@@ -13,7 +13,7 @@ pub trait ADBMessageTransport: ADBTransport + Clone + Send + 'static {
     /// An upgrade of the connection has been asked by the device.
     /// Some transports may not need this feature, a blanket implementation is provided as default implementation.
     fn upgrade_connection(&mut self) -> Result<()> {
-        log::trace!("not upgrade needed fot this transport");
+        log::trace!("not upgrade needed for this transport");
         Ok(())
     }
 

@@ -24,7 +24,7 @@ pub struct ADBMessageDevice<T: ADBMessageTransport> {
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    /// Instantiate a new [`ADBMessageTransport`]
+    /// Instantiate a new [`ADBMessageDevice`]
     pub fn new<P: AsRef<Path>>(transport: T, adb_private_key_path: P) -> Result<Self> {
         let private_key = if let Some(private_key) = read_adb_private_key(&adb_private_key_path)? {
             private_key

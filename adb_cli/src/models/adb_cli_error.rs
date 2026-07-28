@@ -47,7 +47,7 @@ impl From<adb_client::RustADBError> for ADBCliError {
             | RustADBError::ADBRequestFailed(_)
             | RustADBError::UnknownDeviceState(_)
             | RustADBError::Utf8StrError(_)
-            | RustADBError::Utf8StringError(_)
+            | RustADBError::Utf8FromBytesError(_)
             | RustADBError::RegexError(_)
             | RustADBError::ParseIntError(_)
             | RustADBError::ConversionError

@@ -18,8 +18,8 @@ pub enum RustADBError {
     /// Indicates that ADB server responded an unknown response type.
     #[error("Unknown response type {0}")]
     UnknownResponseType(String),
-    /// Indicated that an unexpected command has been received
-    #[error("Wrong response command received: {0}. Expected {1}")]
+    /// Indicates that a command different from the expected one was received
+    #[error("wrong response: received {1}, expected {0}")]
     WrongResponseReceived(String, String),
     /// Indicates that ADB server responses an unknown device state.
     #[error("Unknown device state {0}")]
@@ -27,9 +27,9 @@ pub enum RustADBError {
     /// Indicates that an error occurred during UTF-8 parsing.
     #[error(transparent)]
     Utf8StrError(#[from] std::str::Utf8Error),
-    /// Indicates that an error occurred during UTF-8 parsing.
+    /// Indicates that an error occurred during UTF-8 conversion from bytes.
     #[error(transparent)]
-    Utf8StringError(#[from] std::string::FromUtf8Error),
+    Utf8FromBytesError(#[from] std::string::FromUtf8Error),
     /// Indicates that the provided address is not a correct IP address.
     #[error(transparent)]
     AddrParseError(#[from] std::net::AddrParseError),
@@ -120,8 +120,8 @@ pub enum RustADBError {
     /// PEM certificate error
     #[error(transparent)]
     PemCertError(#[from] rustls_pki_types::pem::Error),
-    /// Error while locking mutex
-    #[error("error while locking data")]
+    /// Error while locking a mutex (the mutex was poisoned)
+    #[error("mutex was poisoned")]
     PoisonError,
     /// Cannot upgrade connection from TCP to TLS
     #[error("upgrade error: {0}")]

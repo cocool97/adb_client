@@ -6,7 +6,6 @@ use num_traits::cast::ToPrimitive;
 use rsa::pkcs8::DecodePrivateKey;
 use rsa::traits::PublicKeyParts;
 use rsa::{Pkcs1v15Sign, RsaPrivateKey};
-use std::fmt::Write;
 use std::fs::read_to_string;
 use std::path::Path;
 
@@ -95,16 +94,12 @@ impl ADBRsaKey {
             .to_u32()
             .ok_or(RustADBError::ConversionError)?;
 
-        Self::encode_public_key(adb_rsa_pubkey.into_bytes())
+        Ok(Self::encode_public_key(adb_rsa_pubkey.into_bytes()))
     }
 
-    fn encode_public_key(pub_key: Vec<u8>) -> Result<String> {
-        let mut encoded = STANDARD.encode(pub_key);
-        encoded.push(' ');
-        write!(encoded, "adb_client@{}", env!("CARGO_PKG_VERSION"))
-            .map_err(|_| RustADBError::ConversionError)?;
-
-        Ok(encoded)
+    fn encode_public_key(pub_key: Vec<u8>) -> String {
+        let encoded = STANDARD.encode(pub_key);
+        format!("{encoded} adb_client@{}", env!("CARGO_PKG_VERSION"))
     }
 
     pub fn sign(&self, msg: impl AsRef<[u8]>) -> Result<Vec<u8>> {
@@ -132,20 +127,17 @@ pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Optio
 }
 
 fn set_bit(n: usize) -> Result<BigUint> {
-    BigUint::parse_bytes(
-        &{
-            let mut bits = vec![b'1'];
-            bits.append(&mut vec![b'0'; n]);
-            bits
-        }[..],
-        2,
-    )
-    .ok_or(RustADBError::ConversionError)
+    // Compute 2^n: '1' followed by n '0's in binary
+    let mut bits = vec![b'1'; 1 + n];
+    bits[1..].fill(b'0');
+    BigUint::parse_bytes(&bits, 2).ok_or(RustADBError::ConversionError)
 }
 
 #[cfg(test)]
 mod tests {
+    use super::set_bit;
     use crate::message_devices::models::ADBRsaKey;
+    use rsa::BigUint;
 
     #[test]
     fn test_pubkey_gen() {
@@ -198,5 +190,33 @@ ile69MHFENUePSpuRSiF3Z02
     Awu6BlgK37TUn0JdK0Z6Z4RaEIaNiEI0d5CoP6zQKV2QQnlscYpdsaUW5t9/F\
     LioVXPwrz0tx35JyIUZPPYwEAAQA= ";
         assert_eq!(&pub_key[..pub_key_adb.len()], pub_key_adb);
+    }
+
+    #[test]
+    fn test_set_bit() {
+        // n = 0 → 2^0 = 1
+        let r0 = set_bit(0).expect("set_bit(0) failed");
+        assert_eq!(r0, BigUint::new(vec![1]));
+
+        // n = 1 → 2^1 = 2
+        let r1 = set_bit(1).expect("set_bit(1) failed");
+        assert_eq!(r1.to_bytes_le(), vec![2u8]);
+
+        // n = 32 → 2^32 = r32 (used for n0inv computation)
+        let r32 = set_bit(32).expect("set_bit(32) failed");
+        assert_eq!(
+            r32.to_bytes_le(),
+            vec![0u8, 0, 0, 0, 1] // 32 zero bits + 1 at position 4
+        );
+        // Verify it equals 1 << 32
+        let expected_r32 = BigUint::from(1u32) << 32;
+        assert_eq!(r32, expected_r32);
+
+        // n = 2048 → 2^2048 (used for RSA key size)
+        let r2048 = set_bit(2048).expect("set_bit(2048) failed");
+        let expected_r2048 = BigUint::from(1u32) << 2048;
+        assert_eq!(r2048, expected_r2048);
+        // Verify bit length: 2^2048 has exactly 2049 bits
+        assert_eq!(r2048.bits(), 2049);
     }
 }

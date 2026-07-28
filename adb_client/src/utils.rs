@@ -1,13 +1,10 @@
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use crate::{Result, RustADBError};
 
 pub fn check_extension_is_apk<P: AsRef<Path>>(path: P) -> Result<()> {
     if let Some(extension) = path.as_ref().extension()
-        && ![OsStr::new("apk")].contains(&extension)
+        && extension != "apk"
     {
         return Err(RustADBError::WrongFileExtension(format!(
             "{} is not an APK file",

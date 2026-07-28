@@ -74,7 +74,7 @@ impl Write for CurrentConnection {
     }
 }
 
-/// Transport running on USB
+/// Transport running on TCP
 #[derive(Clone, Debug)]
 pub struct TcpTransport {
     address: SocketAddr,
@@ -161,12 +161,10 @@ impl ADBMessageTransport for TcpTransport {
             let mut total_read = 0;
             loop {
                 total_read += raw_connection.read(&mut msg_data[total_read..])?;
-                if total_read == msg_data.capacity() {
+                if total_read == msg_data.len() {
                     break;
                 }
             }
-            // raw_connection is not used anymore, let's drop it
-            drop(raw_connection);
 
             let message = ADBTransportMessage::from_header_and_payload(header, msg_data);
 

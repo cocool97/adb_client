@@ -16,7 +16,6 @@ pub struct ADBTransportMessage {
 }
 
 #[derive(Debug)]
-#[repr(C)]
 pub struct ADBTransportMessageHeader {
     command: MessageCommand, /* command identifier constant      */
     arg0: u32,               /* first argument                   */
@@ -142,7 +141,7 @@ impl ADBTransportMessage {
         &self.header
     }
 
-    pub const fn payload(&self) -> &Vec<u8> {
+    pub fn payload(&self) -> &[u8] {
         &self.payload
     }
 
