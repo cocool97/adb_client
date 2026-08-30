@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crate::RebootType;
 
 /// ADB commands that relates to an actual device.
+#[derive(Debug)]
 pub enum ADBLocalCommand {
     /// Run a shell command with arguments
     ShellCommand(String, Vec<String>),
@@ -12,6 +13,12 @@ pub enum ADBLocalCommand {
     Exec(String),
     /// Start a sync session for file operations
     Sync,
+    /// Open an arbitrary ADB service on the device, by its raw destination
+    /// string (e.g. `localabstract:scrcpy`, `tcp:8080`, `jdwp:1234`).
+    ///
+    /// The string is sent verbatim as the destination of the `OPEN` message,
+    /// which lets callers reach services this enum does not model explicitly.
+    Custom(String),
     /// Reboot the device
     Reboot(RebootType),
     /// Set up port forwarding (remote, local)
@@ -53,6 +60,7 @@ impl Display for ADBLocalCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Sync => write!(f, "sync:"),
+            Self::Custom(destination) => write!(f, "{destination}"),
             Self::ShellCommand(command, shell_args) => {
                 if shell_args.is_empty() {
                     // Shell v1: simple format for older ADB versions
