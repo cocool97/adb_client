@@ -7,7 +7,9 @@ use crate::ADBDeviceExt;
 use crate::ADBListItemType;
 use crate::Result;
 use crate::RustADBError;
+use crate::message_devices::ADBSession;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
+use crate::models::ADBLocalCommand;
 use crate::models::RemountInfo;
 use crate::usb::usb_transport::USBTransport;
 use crate::usb::utils;
@@ -61,6 +63,22 @@ impl ADBUSBDevice {
             vendor_id,
             product_id,
         })
+    }
+
+    /// Open a raw stream to an arbitrary ADB service on the device.
+    ///
+    /// `destination` is sent verbatim, so any service `adbd` exposes can be
+    /// reached — most notably abstract unix sockets opened by an app pushed to
+    /// the device (`localabstract:my_service`).
+    ///
+    /// Read the stream with [`ADBSession::recv_payload`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the service cannot be opened.
+    pub fn open_stream(&mut self, destination: &str) -> Result<ADBSession<USBTransport>> {
+        self.inner
+            .open_session(&ADBLocalCommand::Custom(destination.to_owned()))
     }
 
     /// Returns the vendor ID of the device
