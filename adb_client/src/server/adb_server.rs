@@ -100,11 +100,17 @@ impl ADBServer {
             TCPServerTransport::default()
         };
 
-        if is_local_ip {
-            Self::start(&self.envs, &self.adb_path);
+        match transport.connect() {
+            Ok(()) => {}
+            Err(first_err) => {
+                if !is_local_ip {
+                    return Err(first_err);
+                }
+                Self::start(&self.envs, &self.adb_path);
+                transport.connect()?;
+            }
         }
 
-        transport.connect()?;
         self.transport = Some(transport);
 
         self.get_transport()
