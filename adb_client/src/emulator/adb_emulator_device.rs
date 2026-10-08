@@ -25,8 +25,6 @@ pub struct ADBEmulatorDevice {
 impl ADBEmulatorDevice {
     /// Instantiates a new [`ADBEmulatorDevice`]
     pub fn new(identifier: String, ip_address: Option<Ipv4Addr>) -> Result<Self> {
-        let ip_address = ip_address.map_or(Ipv4Addr::LOCALHOST, |ip_address| ip_address);
-
         let groups = EMULATOR_REGEX
             .captures(&identifier)
             .ok_or(RustADBError::DeviceNotFound(format!(
@@ -39,7 +37,7 @@ impl ADBEmulatorDevice {
             .as_str()
             .parse::<u16>()?;
 
-        let socket_addr = SocketAddrV4::new(ip_address, port);
+        let socket_addr = SocketAddrV4::new(ip_address.unwrap_or(Ipv4Addr::LOCALHOST), port);
 
         let transport = TCPEmulatorTransport::new(socket_addr);
         Ok(Self {
