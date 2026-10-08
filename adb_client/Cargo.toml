@@ -24,7 +24,7 @@ usb = ["dep:rusb"]
 framebuffer = ["dep:image"]
 
 [dependencies]
-base64 = { version = "0.22.1" }
+base64 = { version = "0.23.1" }
 byteorder = { version = "1.5.0" }
 chrono = { version = "0.4.45", default-features = false, features = ["std"] }
 image = { version = "0.25.10", default-features = false, features = ["png"], optional = true }
@@ -46,7 +46,7 @@ thiserror = { version = "2.0.18" }
 
 #########
 # `mdns` feature-specific dependencies
-mdns-sd = { version = "0.19.2", default-features = false, features = [
+mdns-sd = { version = "0.21.5", default-features = false, features = [
     "logging",
 ], optional = true }
 #########
