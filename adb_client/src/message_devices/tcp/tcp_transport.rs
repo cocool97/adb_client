@@ -162,6 +162,7 @@ impl ADBMessageTransport for TcpTransport {
             loop {
                 total_read += raw_connection.read(&mut msg_data[total_read..])?;
                 if total_read == msg_data.len() {
+                    drop(raw_connection);
                     break;
                 }
             }
