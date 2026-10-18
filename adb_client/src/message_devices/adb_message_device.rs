@@ -59,7 +59,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         self.get_transport_mut().write_message(message)?;
 
-        let message = self.get_transport_mut().read_message()?;
+        let message = self.read_handshake_message(None)?;
 
         // Check if a client is requesting a secure connection and upgrade it if necessary
         match message.header().command() {
@@ -87,6 +87,29 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 "Expected CNXN, STLS or AUTH command".to_string(),
                 message.header().command().to_string(),
             )),
+        }
+    }
+
+    /// Read the next handshake message (`CNXN`, `AUTH` or `STLS`).
+    ///
+    /// Stream messages (`OKAY`, `WRTE`, `CLSE`) can still be in flight from a previous connection that was not
+    /// properly closed.
+    fn read_handshake_message(&mut self, timeout: Option<Duration>) -> Result<ADBTransportMessage> {
+        loop {
+            let message = match timeout {
+                Some(timeout) => self.transport.read_message_with_timeout(timeout)?,
+                None => self.transport.read_message()?,
+            };
+
+            match message.header().command() {
+                MessageCommand::Okay | MessageCommand::Write | MessageCommand::Clse => {
+                    log::debug!(
+                        "discarding stale {} message received during handshake",
+                        message.header().command()
+                    );
+                }
+                _ => return Ok(message),
+            }
         }
     }
 
@@ -118,7 +141,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         self.transport.write_message(message)?;
 
-        let received_response = self.transport.read_message()?;
+        let received_response = self.read_handshake_message(None)?;
 
         if received_response.header().command() == MessageCommand::Cnxn {
             log::info!(
@@ -137,8 +160,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         self.transport.write_message(message)?;
 
         let response = self
-            .transport
-            .read_message_with_timeout(Duration::from_secs(10))
+            .read_handshake_message(Some(Duration::from_secs(10)))
             .and_then(|message| {
                 message.assert_command(MessageCommand::Cnxn)?;
                 Ok(message)
