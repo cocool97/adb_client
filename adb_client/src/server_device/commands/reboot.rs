@@ -7,6 +7,8 @@ use crate::{
 impl ADBServerDevice {
     /// Reboots the device
     pub fn reboot(&mut self, reboot_type: RebootType) -> Result<()> {
+        // adbd restarts, and may then advertise different features
+        self.invalidate_features();
         self.set_serial_transport()?;
 
         self.transport

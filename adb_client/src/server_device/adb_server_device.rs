@@ -1,6 +1,6 @@
 use crate::{
     ADBTransport, Result,
-    models::{ADBCommand, ADBHostCommand},
+    models::{ADBCommand, ADBHostCommand, HostFeatures},
     server::TCPServerTransport,
 };
 use std::net::SocketAddrV4;
@@ -21,6 +21,16 @@ pub struct ADBServerDevice {
     pub transport_id: Option<u32>,
     /// Internal [`TCPServerTransport`]
     pub(crate) transport: TCPServerTransport,
+    /// Device features, fetched once
+    pub(crate) cached_features: Option<CachedFeatures>,
+}
+
+/// Available features of a device
+#[derive(Debug)]
+pub(crate) struct CachedFeatures {
+    pub(crate) identifier: Option<String>,
+    pub(crate) transport_id: Option<u32>,
+    pub(crate) features: Vec<HostFeatures>,
 }
 
 impl ADBServerDevice {
@@ -33,6 +43,7 @@ impl ADBServerDevice {
             identifier: Some(identifier),
             transport_id: None,
             transport,
+            cached_features: None,
         }
     }
 
@@ -49,6 +60,7 @@ impl ADBServerDevice {
             identifier: None,
             transport_id: Some(transport_id),
             transport,
+            cached_features: None,
         }
     }
 
@@ -61,6 +73,7 @@ impl ADBServerDevice {
             identifier: None,
             transport_id: None,
             transport,
+            cached_features: None,
         }
     }
 
@@ -69,6 +82,13 @@ impl ADBServerDevice {
         self.transport.connect()?;
 
         Ok(&mut self.transport)
+    }
+
+    /// Forget cached device features, they will be fetched again when needed.
+    ///
+    /// Must be called after commands restarting adbd, as it may then advertise different features.
+    pub(crate) fn invalidate_features(&mut self) {
+        self.cached_features = None;
     }
 
     /// Set device connection to use the configured transport.
