@@ -3,7 +3,7 @@ use crate::Result;
 use crate::RustADBError;
 use crate::server::tcp_server_transport::TCPServerTransport;
 use std::collections::HashMap;
-use std::net::SocketAddrV4;
+use std::net::{SocketAddrV4, TcpStream};
 use std::process::Command;
 
 /// Represents an ADB Server
@@ -49,10 +49,14 @@ impl ADBServer {
         self.socket_addr
     }
 
-    /// Start an instance of `adb-server`
-    pub fn start(envs: &HashMap<String, String>, adb_path: &Option<String>) {
+    /// Start an instance of `adb-server` by running `adb start-server`.
+    ///
+    /// `adb_path` is the `adb` binary to use, defaulting to the one found in `PATH`.
+    /// Returns an error if the binary cannot be executed, or if it exits unsuccessfully.
+    pub fn start(envs: &HashMap<String, String>, adb_path: Option<&str>) -> Result<()> {
         // ADB Server is local, we start it if not already running
-        let mut command = Command::new(adb_path.as_deref().unwrap_or("adb"));
+        let adb_path = adb_path.unwrap_or("adb");
+        let mut command = Command::new(adb_path);
         command.arg("start-server");
         for (env_k, env_v) in envs {
             command.env(env_k, env_v);
@@ -65,15 +69,40 @@ impl ADBServer {
             command.creation_flags(0x08000000);
         }
 
-        let child = command.spawn();
-        match child {
-            Ok(mut child) => {
-                if let Err(e) = child.wait() {
-                    log::error!("error while starting adb server: {e}");
-                }
-            }
-            Err(e) => log::error!("error while starting adb server: {e}"),
+        let adb_server_status =
+            command
+                .status()
+                .map_err(|source| RustADBError::CannotStartServer {
+                    path: adb_path.to_string(),
+                    source,
+                })?;
+
+        if !adb_server_status.success() {
+            return Err(RustADBError::CannotStartServer {
+                path: adb_path.to_string(),
+                source: std::io::Error::other(format!("`start-server` {adb_server_status}")),
+            });
         }
+
+        Ok(())
+    }
+
+    /// Returns `true` if a server must be started before using this one: its address is local, and no
+    /// server is currently listening on it.
+    #[must_use]
+    pub fn should_start_server(&self) -> bool {
+        self.is_local_server() && TcpStream::connect(self.server_address()).is_err()
+    }
+
+    /// Server address, or default one if not set
+    fn server_address(&self) -> SocketAddrV4 {
+        TCPServerTransport::new_or_default(self.socket_addr).get_socketaddr()
+    }
+
+    /// Return whether the server address is a local one
+    fn is_local_server(&self) -> bool {
+        let ip = *self.server_address().ip();
+        ip.is_loopback() || ip.is_unspecified()
     }
 
     /// Returns the current selected transport
@@ -88,27 +117,15 @@ impl ADBServer {
 
     /// Connect to underlying transport
     pub(crate) fn connect(&mut self) -> Result<&mut TCPServerTransport> {
-        let mut is_local_ip = false;
-        let mut transport = if let Some(addr) = &self.socket_addr {
-            let ip = addr.ip();
-            if ip.is_loopback() || ip.is_unspecified() {
-                is_local_ip = true;
-            }
-            TCPServerTransport::new(*addr)
-        } else {
-            is_local_ip = true;
-            TCPServerTransport::default()
-        };
+        let mut transport = TCPServerTransport::new(self.server_address());
 
-        match transport.connect() {
-            Ok(()) => {}
-            Err(first_err) => {
-                if !is_local_ip {
-                    return Err(first_err);
-                }
-                Self::start(&self.envs, &self.adb_path);
-                transport.connect()?;
+        // Only start server if none is running, and if it is a local one
+        if let Err(first_err) = transport.connect() {
+            if !self.is_local_server() {
+                return Err(first_err);
             }
+            Self::start(&self.envs, self.adb_path.as_deref())?;
+            transport.connect()?;
         }
 
         self.transport = Some(transport);

@@ -133,10 +133,9 @@ fn inner_main() -> ADBCliResult<()> {
         MainCommand::Host(server_command) => return Ok(handle_host_commands(server_command)?),
         MainCommand::Emu(emulator_command) => return handle_emulator_commands(emulator_command),
         MainCommand::Local(server_command) => {
-            // Must start server to communicate with device, but only if this is a local one.
-            let server_address_ip = server_command.address.ip();
-            if server_address_ip.is_loopback() || server_address_ip.is_unspecified() {
-                ADBServer::start(&HashMap::default(), &None);
+            // Must start server to communicate with device, but only if this is a local one not already running.
+            if ADBServer::new(server_command.address).should_start_server() {
+                ADBServer::start(&HashMap::default(), None)?;
             }
 
             let device = if let Some(id) = server_command.transport_id {

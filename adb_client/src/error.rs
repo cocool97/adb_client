@@ -9,6 +9,15 @@ pub enum RustADBError {
     /// Indicates that an error occurred with I/O.
     #[error(transparent)]
     IOError(#[from] std::io::Error),
+    /// Indicates that ADB server cannot be started
+    #[error("cannot start adb server using `{path}`: {source}")]
+    CannotStartServer {
+        /// Path of the `adb` binary used to start the server
+        path: String,
+        /// Underlying error
+        #[source]
+        source: std::io::Error,
+    },
     /// Indicates that an error occurred during ADB shell v2 parsing.
     #[error("ADB shell v2 parsing error: {0}")]
     ADBShellV2ParseError(String),
