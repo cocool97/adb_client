@@ -40,12 +40,12 @@ fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> AD
                 {
                     let adb_termios = ADBTermios::new(&std::io::stdin())?;
                     adb_termios.set_adb_termios()?;
-                    device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
+                    device.shell(Box::new(std::io::stdin()), Box::new(std::io::stdout()))?;
                 }
 
                 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
                 {
-                    device.shell(&mut std::io::stdin(), Box::new(std::io::stdout()))?;
+                    device.shell(Box::new(std::io::stdin()), Box::new(std::io::stdout()))?;
                 }
             } else {
                 device.shell_command(&commands.join(" "), Some(&mut std::io::stdout()), None)?;

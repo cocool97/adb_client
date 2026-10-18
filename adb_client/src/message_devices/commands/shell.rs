@@ -1,4 +1,11 @@
-use std::io::{ErrorKind, Read, Write};
+use std::{
+    io::{ErrorKind, Read, Write},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+    },
+};
 
 use crate::models::ADBLocalCommand;
 use crate::{
@@ -41,7 +48,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Input data is read from [reader] and write to [writer].
     pub(crate) fn shell(
         &mut self,
-        reader: &mut dyn Read,
+        reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         self.bidirectional_session(&ADBLocalCommand::Shell, reader, writer)
@@ -52,58 +59,129 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn exec(
         &mut self,
         command: &str,
-        reader: &mut dyn Read,
+        reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         self.bidirectional_session(&ADBLocalCommand::Exec(command.to_string()), reader, writer)
     }
 
-    /// Starts an bidirectional(interactive) session. This can be a shell or an exec session.
+    /// Starts a bidirectional (interactive) session. This can be a shell or an exec session.
+    ///
+    /// Data read from `reader` is forwarded to the device from a background thread, while device output
+    /// is written to `writer` from the current thread. The session ends once the stream is closed by the device
+    /// or when `reader` reaches EOF or fails.
     fn bidirectional_session(
         &mut self,
         local_command: &ADBLocalCommand,
-        mut reader: &mut dyn Read,
+        mut reader: Box<dyn Read + Send>,
         mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         let session = self.open_session(local_command)?;
 
         let local_id = session.local_id();
         let remote_id = session.remote_id();
+        let stream_closed = Arc::new(AtomicBool::new(false));
 
-        let mut transport = self.get_transport_mut().clone();
+        // Forward `reader` (that could be stdin e.g) to device adbd.
+        // This thread may stay blocked on `reader` forever, so it is never joined.
+        let (local_result_tx, local_result_rx) = mpsc::channel();
+        let mut shell_writer = ShellMessageWriter::new(
+            self.get_transport_mut().clone(),
+            local_id,
+            remote_id,
+            stream_closed.clone(),
+        );
+        std::thread::spawn(move || {
+            let result = match std::io::copy(&mut reader, &mut shell_writer) {
+                Ok(_) => Ok(()),
+                // Stream has been closed by remote, nothing more to do
+                Err(e) if e.kind() == ErrorKind::BrokenPipe => Ok(()),
+                Err(e) => Err(RustADBError::IOError(e)),
+            };
 
-        // Reading thread, reads response from adbd
-        std::thread::spawn(move || -> Result<()> {
-            loop {
-                let message = transport.read_message()?;
-
-                // Acknowledge for more data
-                let response =
-                    ADBTransportMessage::try_new(MessageCommand::Okay, local_id, remote_id, &[])?;
-                transport.write_message(response)?;
-
-                match message.header().command() {
-                    MessageCommand::Write => {
-                        writer.write_all(&message.into_payload())?;
-                        writer.flush()?;
-                    }
-                    MessageCommand::Okay => {}
-                    _ => return Err(RustADBError::ADBShellNotSupported),
+            // best-effort error shell closing & error reporting
+            match result {
+                Ok(()) => {
+                    let _ = shell_writer.close();
+                }
+                Err(err) => {
+                    let _ = local_result_tx.send(err);
                 }
             }
         });
 
-        let transport = self.get_transport_mut().clone();
-        let mut shell_writer = ShellMessageWriter::new(transport, local_id, remote_id);
+        let mut transport = self.get_transport_mut().clone();
+        let remote_result = Self::forward_data_from_remote_adbd(
+            &mut transport,
+            local_id,
+            remote_id,
+            &stream_closed,
+            &mut writer,
+        );
 
-        // Read from given reader (that could be stdin e.g), and write content to device adbd
-        if let Err(e) = std::io::copy(&mut reader, &mut shell_writer) {
-            match e.kind() {
-                ErrorKind::BrokenPipe => return Ok(()),
-                _ => return Err(RustADBError::IOError(e)),
-            }
+        if remote_result.is_err() && !stream_closed.swap(true, Ordering::SeqCst) {
+            // Best effort, tell adbd we are not listening anymore
+            let _ = transport.write_message(ADBTransportMessage::try_new(
+                MessageCommand::Clse,
+                local_id,
+                remote_id,
+                &[],
+            )?);
         }
 
-        Ok(())
+        remote_result?;
+
+        // Input thread may still be blocked on `reader`, only report an already known error
+        match local_result_rx.try_recv() {
+            Ok(e) => Err(e),
+            _ => Ok(()),
+        }
+    }
+
+    /// Write data received from adbd into the given `writer` until the stream gets closed.
+    fn forward_data_from_remote_adbd(
+        transport: &mut T,
+        local_id: u32,
+        remote_id: u32,
+        closed: &AtomicBool,
+        writer: &mut dyn Write,
+    ) -> Result<()> {
+        loop {
+            let message = transport.read_message()?;
+
+            match message.header().command() {
+                MessageCommand::Write => {
+                    writer.write_all(message.payload())?;
+                    writer.flush()?;
+
+                    // Acknowledge for more data
+                    transport.write_message(ADBTransportMessage::try_new(
+                        MessageCommand::Okay,
+                        local_id,
+                        remote_id,
+                        &[],
+                    )?)?;
+                }
+                // Acknowledgement of data we sent
+                MessageCommand::Okay => {}
+                MessageCommand::Clse => {
+                    // Acknowledge the close if it was initiated by adbd
+                    if !closed.swap(true, Ordering::SeqCst) {
+                        transport.write_message(ADBTransportMessage::try_new(
+                            MessageCommand::Clse,
+                            local_id,
+                            remote_id,
+                            &[],
+                        )?)?;
+                    }
+                    return Ok(());
+                }
+                c => {
+                    return Err(RustADBError::ADBRequestFailed(format!(
+                        "unexpected {c} message received during session"
+                    )));
+                }
+            }
+        }
     }
 }

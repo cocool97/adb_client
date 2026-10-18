@@ -66,7 +66,7 @@ impl ADBDeviceExt for ADBServerDevice {
     fn exec(
         &mut self,
         command: &str,
-        reader: &mut dyn Read,
+        reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         self.bidirectional_session(
@@ -76,7 +76,7 @@ impl ADBDeviceExt for ADBServerDevice {
         )
     }
 
-    fn shell(&mut self, reader: &mut dyn Read, writer: Box<dyn Write + Send>) -> Result<()> {
+    fn shell(&mut self, reader: Box<dyn Read + Send>, writer: Box<dyn Write + Send>) -> Result<()> {
         self.bidirectional_session(&ADBCommand::Local(ADBLocalCommand::Shell), reader, writer)
     }
 
@@ -265,10 +265,15 @@ impl ADBServerDevice {
         }
     }
 
+    /// Starts a bidirectional (interactive) session. This can be a shell or an exec session.
+    ///
+    /// Data read from `reader` is forwarded to the server from a background thread, while server output
+    /// is written to `writer` from the current thread. The session ends once the server closes the stream:
+    /// either because the remote command exited, or because we half-closed it after `reader` reached EOF.
     fn bidirectional_session(
         &mut self,
         server_cmd: &ADBCommand,
-        mut reader: &mut dyn Read,
+        mut reader: Box<dyn Read + Send>,
         mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         // For bidirectional session, we still need shell features
@@ -277,38 +282,52 @@ impl ADBServerDevice {
         self.transport.send_adb_request(server_cmd)?;
 
         let mut read_stream = self.transport.get_raw_connection()?.try_clone()?;
-
         let mut write_stream = read_stream.try_clone()?;
 
-        // Reading thread, reads response from adb-server
-        std::thread::spawn(move || -> Result<()> {
-            let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
+        // Forward `reader` (that could be stdin e.g) to server socket.
+        // This thread may stay blocked on `reader` forever, so it is never joined.
+        let (local_result_tx, local_result_rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let result = match std::io::copy(&mut reader, &mut write_stream) {
+                Ok(_) => Ok(()),
+                // Stream has been closed by remote, nothing more to do
+                Err(e) if e.kind() == ErrorKind::BrokenPipe => Ok(()),
+                Err(e) => Err(RustADBError::IOError(e)),
+            };
 
-            loop {
-                match read_stream.read(&mut buffer) {
-                    Ok(0) => {
-                        read_stream.shutdown(std::net::Shutdown::Both)?;
-                        return Ok(());
-                    }
-                    Ok(size) => {
-                        writer.write_all(&buffer[..size])?;
-                        writer.flush()?;
-                    }
-                    Err(e) => {
-                        return Err(RustADBError::IOError(e));
-                    }
-                }
+            // Input is exhausted: half-close the socket so that the server ends the session.
+            let _ = write_stream.shutdown(std::net::Shutdown::Write);
+            if let Err(err) = result {
+                let _ = local_result_tx.send(err);
             }
         });
 
-        // Read from given reader (that could be stdin e.g), and write content to server socket
-        if let Err(e) = std::io::copy(&mut reader, &mut write_stream) {
-            match e.kind() {
-                ErrorKind::BrokenPipe => return Ok(()),
-                _ => return Err(RustADBError::IOError(e)),
+        let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
+        let remote_result = loop {
+            match read_stream.read(&mut buffer) {
+                Ok(0) => break Ok(()),
+                Ok(size) => {
+                    if let Err(e) = writer
+                        .write_all(&buffer[..size])
+                        .and_then(|()| writer.flush())
+                    {
+                        break Err(RustADBError::IOError(e));
+                    }
+                }
+                Err(e) if e.kind() == ErrorKind::Interrupted => {}
+                Err(e) => break Err(RustADBError::IOError(e)),
             }
-        }
+        };
 
-        Ok(())
+        // Make any later write from the input thread fail instead of reaching a closed session
+        let _ = read_stream.shutdown(std::net::Shutdown::Both);
+
+        remote_result?;
+
+        // Input thread may still be blocked on `reader`, only report an already known error
+        match local_result_rx.try_recv() {
+            Ok(e) => Err(e),
+            _ => Ok(()),
+        }
     }
 }
