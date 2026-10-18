@@ -27,7 +27,7 @@ pub struct ADBServerDevice {
 
 /// Available features of a device
 #[derive(Debug)]
-pub(crate) struct CachedFeatures {
+pub struct CachedFeatures {
     pub(crate) identifier: Option<String>,
     pub(crate) transport_id: Option<u32>,
     pub(crate) features: Vec<HostFeatures>,

@@ -2,10 +2,8 @@ use std::io::{Error, ErrorKind, Read, Write};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpStream};
 use std::str::FromStr;
 
-use byteorder::{ByteOrder, LittleEndian};
-
 use crate::ADBTransport;
-use crate::models::{ADBCommand, AdbRequestStatus, SyncCommand};
+use crate::models::{ADBCommand, AdbRequestStatus};
 use crate::{Result, RustADBError};
 
 const DEFAULT_SERVER_IP: Ipv4Addr = Ipv4Addr::LOCALHOST;
@@ -87,21 +85,6 @@ impl TCPServerTransport {
             std::str::from_utf8(&length_buffer)?,
             16,
         )?)
-    }
-
-    /// Send the given [`SyncCommand`] to ADB server, and checks that the request has been taken in consideration.
-    pub(crate) fn send_sync_request(&self, command: &SyncCommand) -> Result<()> {
-        // First 4 bytes are the name of the command we want to send
-        // (e.g. "SEND", "RECV", "STAT", "LIST")
-        Ok(self
-            .get_raw_connection()?
-            .write_all(command.to_string().as_bytes())?)
-    }
-
-    /// Gets the body length from a `LittleEndian` value
-    pub(crate) fn get_body_length(&self) -> Result<u32> {
-        let length_buffer = self.read_body_length()?;
-        Ok(LittleEndian::read_u32(&length_buffer))
     }
 
     /// Read 4 bytes representing body length
