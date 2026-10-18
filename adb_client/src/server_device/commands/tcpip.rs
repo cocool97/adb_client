@@ -7,6 +7,8 @@ use crate::{
 impl ADBServerDevice {
     /// Set adb daemon to tcp/ip mode
     pub fn tcpip(&mut self, port: u16) -> Result<()> {
+        // adbd restarts, and may then advertise different features
+        self.invalidate_features();
         self.set_serial_transport()?;
 
         self.transport

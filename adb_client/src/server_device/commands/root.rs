@@ -7,6 +7,8 @@ use crate::{
 impl ADBServerDevice {
     /// Restart adb daemon with root permissions
     pub fn root(&mut self) -> Result<()> {
+        // adbd restarts, and may then advertise different features
+        self.invalidate_features();
         self.set_serial_transport()?;
 
         self.transport
