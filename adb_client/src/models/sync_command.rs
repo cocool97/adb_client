@@ -7,8 +7,10 @@ pub enum SyncCommand {
     Recv,
     /// Send a file to the device
     Send,
-    // Stat a file
+    /// Stat a file
     Stat,
+    /// End the sync session
+    Quit,
 }
 
 impl Display for SyncCommand {
@@ -18,6 +20,7 @@ impl Display for SyncCommand {
             Self::Recv => write!(f, "RECV"),
             Self::Send => write!(f, "SEND"),
             Self::Stat => write!(f, "STAT"),
+            Self::Quit => write!(f, "QUIT"),
         }
     }
 }

@@ -11,11 +11,14 @@ mod reverse;
 mod root;
 mod send;
 mod stat;
+mod sync;
 mod tcpip;
 mod transport;
 mod uninstall;
 mod usb;
 mod verity;
+
+pub use sync::ADBSyncSession;
 
 #[cfg(feature = "framebuffer")]
 mod framebuffer;
