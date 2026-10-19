@@ -14,10 +14,10 @@ version.workspace = true
 workspace = true
 
 [dependencies]
-adb_client = { version = "^3.2.2", features = ["mdns", "usb"] }
-clap = { version = "4.6.1", features = ["derive"] }
-env_logger = { version = "0.11.10" }
-log = { version = "0.4.32" }
+adb_client = { version = "^3.2.3", features = ["mdns", "usb"] }
+clap = { version = "4.6.7", features = ["derive"] }
+env_logger = { version = "0.11.11" }
+log = { version = "0.4.34" }
 tabwriter = { version = "1.4.1" }
 
 [target.'cfg(unix)'.dependencies]

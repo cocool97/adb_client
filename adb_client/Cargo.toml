@@ -28,25 +28,25 @@ base64 = { version = "0.23.1" }
 byteorder = { version = "1.5.0" }
 chrono = { version = "0.4.45", default-features = false, features = ["std"] }
 image = { version = "0.25.10", default-features = false, features = ["png"], optional = true }
-log = { version = "0.4.32" }
+log = { version = "0.4.34" }
 num-bigint = { version = "0.8.6", package = "num-bigint-dig" }
 num-traits = { version = "0.2.19" }
 quick-protobuf = { version = "0.8.1" }
-rand = { version = "0.10.1" }
-rcgen = { version = "0.14.8", default-features = false, features = [
+rand = { version = "0.10.3" }
+rcgen = { version = "0.14.10", default-features = false, features = [
     "ring",
     "pem",
 ] }
-regex = { version = "1.12.4", features = ["perf", "std", "unicode"] }
+regex = { version = "1.13.1", features = ["perf", "std", "unicode"] }
 rsa = { version = "0.9.10" }
-rustls = { version = "0.23.40", default-features = false, features = ["ring", "std", "tls12", "logging"] }
-rustls-pki-types = { version = "1.14.1" }
-sha1 = { version = "0.10.6", features = ["oid"] }
-thiserror = { version = "2.0.18" }
+rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+rustls-pki-types = { version = "1.15.1" }
+sha1 = { version = "0.10.7", features = ["oid"] }
+thiserror = { version = "2.0.21" }
 
 #########
 # `mdns` feature-specific dependencies
-mdns-sd = { version = "0.21.5", default-features = false, features = [
+mdns-sd = { version = "0.21.6", default-features = false, features = [
     "logging",
 ], optional = true }
 #########
@@ -57,7 +57,7 @@ num_enum = { version = "0.7.6" }
 #########
 
 [dev-dependencies]
-anyhow = { version = "1.0.102" }
+anyhow = { version = "1.0.104" }
 criterion = { version = "0.8.2" } # Used for benchmarks
 
 [[bench]]
