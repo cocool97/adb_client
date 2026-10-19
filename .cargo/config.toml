@@ -1,2 +1,7 @@
 [target.'cfg(all())']
 rustflags = ["-Wclippy::pedantic"]
+
+# Pin the interpreter used by pyo3's build script: otherwise it tracks `PATH`,
+# which differs between the terminal and the IDE and forces a full pyo3 rebuild.
+[env]
+PYO3_PYTHON = "python3"
