@@ -35,16 +35,34 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         }
     }
 
+    /// Returns a mutable reference to the underlying transport.
     pub const fn get_transport_mut(&mut self) -> &mut T {
         &mut self.transport
     }
 
+    /// Returns the identifier this client assigned to the session.
     pub const fn local_id(&self) -> u32 {
         self.local_id
     }
 
+    /// Returns the identifier `adbd` assigned to the session.
     pub const fn remote_id(&self) -> u32 {
         self.remote_id
+    }
+
+    /// Receive the next chunk of data sent by the remote service, acknowledging
+    /// it with an `OKAY` command.
+    ///
+    /// This is the raw read primitive behind streaming services opened with
+    /// [`ADBLocalCommand::Custom`](crate::ADBLocalCommand::Custom): call it in a
+    /// loop to consume a continuous stream. Returns an empty payload when the
+    /// remote side sends one; the stream ends when the session is closed.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying transport fails.
+    pub fn recv_payload(&mut self) -> Result<Vec<u8>> {
+        Ok(self.recv_and_reply_okay()?.into_payload())
     }
 
     /// Receive a message and acknowledge it by replying with an `OKAY` command

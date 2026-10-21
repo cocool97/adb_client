@@ -35,6 +35,6 @@ use adb_transport::ADBTransport;
 pub use error::{Result, RustADBError};
 pub use message_devices::*;
 pub use models::{
-    ADBListItem, ADBListItemType, ADBStatExtendedResponse, ADBStatMapping, AdbStatResponse,
-    HostFeatures, RebootType, RemountInfo,
+    ADBListItem, ADBListItemType, ADBLocalCommand, ADBStatExtendedResponse, ADBStatMapping,
+    AdbStatResponse, HostFeatures, RebootType, RemountInfo,
 };

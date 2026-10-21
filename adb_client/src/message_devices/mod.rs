@@ -16,4 +16,6 @@ mod message_commands;
 mod models;
 mod utils;
 
+pub use adb_message_transport::ADBMessageTransport;
+pub use adb_session::ADBSession;
 pub use utils::BinaryDecodable;
