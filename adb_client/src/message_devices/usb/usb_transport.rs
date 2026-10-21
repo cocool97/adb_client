@@ -162,8 +162,7 @@ impl USBTransport {
         let mut offset = 0;
         let data_len = data.len();
         while offset < data_len {
-            let end = (offset + max_packet_size).min(data_len);
-            let write_amount = handle.write_bulk(endpoint.address, &data[offset..end], timeout)?;
+            let write_amount = handle.write_bulk(endpoint.address, &data[offset..], timeout)?;
             offset += write_amount;
 
             log::trace!("wrote chunk of size {write_amount} - {offset}/{data_len}");
@@ -262,9 +261,7 @@ impl ADBMessageTransport for USBTransport {
             let mut msg_data = vec![0_u8; header.data_length() as usize];
             let mut offset = 0;
             while offset < msg_data.len() {
-                let end = (offset + max_packet_size).min(msg_data.len());
-                let chunk = &mut msg_data[offset..end];
-                offset += handle.read_bulk(endpoint.address, chunk, timeout)?;
+                offset += handle.read_bulk(endpoint.address, &mut msg_data[offset..], timeout)?;
             }
 
             let message = ADBTransportMessage::from_header_and_payload(header, msg_data);

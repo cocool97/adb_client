@@ -7,7 +7,7 @@ use crate::{
         adb_message_transport::ADBMessageTransport,
         adb_session::ADBSession,
         adb_transport_message::{
-            ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN,
+            ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN, MAX_PAYLOAD_SIZE,
         },
         message_commands::{MessageCommand, MessageSubcommand},
         models::{ADBRsaKey, read_adb_private_key},
@@ -21,11 +21,13 @@ use crate::{
 #[derive(Debug)]
 pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
+    /// Maximum message payload size, negotiated with the device during the connection.
+    max_payload_size: usize,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Instantiate a new [`ADBMessageDevice`]
-    pub fn new<P: AsRef<Path>>(transport: T, adb_private_key_path: P) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(mut transport: T, adb_private_key_path: P) -> Result<Self> {
         let private_key = if let Some(private_key) = read_adb_private_key(&adb_private_key_path)? {
             private_key
         } else {
@@ -36,52 +38,62 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             ADBRsaKey::new_random()?
         };
 
-        let mut message_device = Self { transport };
-        message_device.connect(&private_key)?;
+        let max_payload_size = match Self::connect(&mut transport, &private_key) {
+            Ok(max_payload_size) => max_payload_size,
+            Err(e) => {
+                // Best effort here
+                let _ = transport.disconnect();
+                return Err(e);
+            }
+        };
 
-        Ok(message_device)
+        Ok(Self {
+            transport,
+            max_payload_size,
+        })
     }
 
     pub(crate) const fn get_transport_mut(&mut self) -> &mut T {
         &mut self.transport
     }
 
-    /// Send initial connect
-    fn connect(&mut self, private_key: &ADBRsaKey) -> Result<()> {
-        self.get_transport_mut().connect()?;
+    /// Send initial connect, and return the negotiated maximum payload size
+    fn connect(transport: &mut T, private_key: &ADBRsaKey) -> Result<usize> {
+        transport.connect()?;
 
         let message = ADBTransportMessage::try_new(
             MessageCommand::Cnxn,
             0x0100_0000,
-            1_048_576,
+            MAX_PAYLOAD_SIZE,
             format!("host::{}\0", env!("CARGO_PKG_NAME")).as_bytes(),
         )?;
 
-        self.get_transport_mut().write_message(message)?;
+        transport.write_message(message)?;
 
-        let message = self.read_handshake_message(None)?;
+        let message = Self::read_handshake_message(transport, None)?;
 
         // Check if a client is requesting a secure connection and upgrade it if necessary
         match message.header().command() {
             MessageCommand::Stls => {
-                self.get_transport_mut()
-                    .write_message(ADBTransportMessage::try_new(
-                        MessageCommand::Stls,
-                        1,
-                        0,
-                        &[],
-                    )?)?;
-                self.get_transport_mut().upgrade_connection()?;
+                transport.write_message(ADBTransportMessage::try_new(
+                    MessageCommand::Stls,
+                    1,
+                    0,
+                    &[],
+                )?)?;
+                transport.upgrade_connection()?;
                 log::debug!("Connection successfully upgraded from TCP to TLS");
-                Ok(())
+
+                let message = Self::read_handshake_message(transport, None)?;
+                Self::handle_connection(&message)
             }
             MessageCommand::Cnxn => {
                 log::debug!("Unencrypted connection established");
-                Ok(())
+                Self::handle_connection(&message)
             }
             MessageCommand::Auth => {
                 log::debug!("Authentication required");
-                self.auth_handshake(message, private_key)
+                Self::auth_handshake(transport, message, private_key)
             }
             _ => Err(crate::RustADBError::WrongResponseReceived(
                 "Expected CNXN, STLS or AUTH command".to_string(),
@@ -94,11 +106,14 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     ///
     /// Stream messages (`OKAY`, `WRTE`, `CLSE`) can still be in flight from a previous connection that was not
     /// properly closed.
-    fn read_handshake_message(&mut self, timeout: Option<Duration>) -> Result<ADBTransportMessage> {
+    fn read_handshake_message(
+        transport: &mut T,
+        timeout: Option<Duration>,
+    ) -> Result<ADBTransportMessage> {
         loop {
             let message = match timeout {
-                Some(timeout) => self.transport.read_message_with_timeout(timeout)?,
-                None => self.transport.read_message()?,
+                Some(timeout) => transport.read_message_with_timeout(timeout)?,
+                None => transport.read_message()?,
             };
 
             match message.header().command() {
@@ -113,18 +128,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
     }
 
+    /// Authenticate with `private_key`, and return the negotiated maximum payload size
     fn auth_handshake(
-        &mut self,
+        transport: &mut T,
         message: ADBTransportMessage,
         private_key: &ADBRsaKey,
-    ) -> Result<()> {
-        match message.header().command() {
-            MessageCommand::Auth => {
-                log::debug!("Authentication required");
-            }
-            _ => return Ok(()),
-        }
-
+    ) -> Result<usize> {
         // At this point, we should have received an AUTH message with arg0 == 1
         let auth_message = match message.header().arg0() {
             AUTH_TOKEN => message,
@@ -139,16 +148,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         let message = ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_SIGNATURE, 0, &sign)?;
 
-        self.transport.write_message(message)?;
+        transport.write_message(message)?;
 
-        let received_response = self.read_handshake_message(None)?;
+        let received_response = Self::read_handshake_message(transport, None)?;
 
         if received_response.header().command() == MessageCommand::Cnxn {
-            log::info!(
-                "Authentication OK, device info {}",
-                String::from_utf8(received_response.into_payload())?
-            );
-            return Ok(());
+            log::info!("Authentication OK");
+            return Self::handle_connection(&received_response);
         }
 
         let mut pubkey = private_key.android_pubkey_encode()?.into_bytes();
@@ -157,20 +163,26 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let message =
             ADBTransportMessage::try_new(MessageCommand::Auth, AUTH_RSAPUBLICKEY, 0, &pubkey)?;
 
-        self.transport.write_message(message)?;
+        transport.write_message(message)?;
 
-        let response = self
-            .read_handshake_message(Some(Duration::from_secs(10)))
-            .and_then(|message| {
-                message.assert_command(MessageCommand::Cnxn)?;
-                Ok(message)
-            })?;
+        let response = Self::read_handshake_message(transport, Some(Duration::from_secs(10)))?;
 
-        log::info!(
-            "Authentication OK, device info {}",
-            String::from_utf8(response.into_payload())?
+        log::info!("Authentication OK");
+        Self::handle_connection(&response)
+    }
+
+    /// Handle the `CNXN` message ending the connection handshake, and return the negotiated maximum payload size.
+    fn handle_connection(message: &ADBTransportMessage) -> Result<usize> {
+        message.assert_command(MessageCommand::Cnxn)?;
+
+        // The device answers with the minimum between our maximum payload size and its own
+        let max_payload = message.header().arg1().min(MAX_PAYLOAD_SIZE) as usize;
+        log::debug!(
+            "device info {}, maximum payload size {max_payload}",
+            String::from_utf8_lossy(message.payload()),
         );
-        Ok(())
+
+        Ok(max_payload)
     }
 
     pub(crate) fn open_synchronization_session(&mut self) -> Result<ADBSession<T>> {
@@ -218,6 +230,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             self.transport.clone(),
             local_id,
             response.header().arg0(),
+            self.max_payload_size,
         ))
     }
 

@@ -11,7 +11,6 @@ use crate::{
     message_devices::{
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::{ADBTransportMessage, ADBTransportMessageHeader},
-        message_commands::MessageCommand,
     },
 };
 use std::{
@@ -263,17 +262,7 @@ impl ADBMessageTransport for TcpTransport {
             }
         }
 
-        let message = self.read_message()?;
-        match message.header().command() {
-            MessageCommand::Cnxn => {
-                let device_infos = String::from_utf8(message.into_payload())?;
-                log::debug!("received device info: {device_infos}");
-                Ok(())
-            }
-            c => Err(RustADBError::ADBRequestFailed(format!(
-                "Wrong command received {c}"
-            ))),
-        }
+        Ok(())
     }
 }
 
