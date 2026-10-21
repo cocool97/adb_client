@@ -1,6 +1,6 @@
 use std::{
     io::{Cursor, Read, Seek},
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 use byteorder::ReadBytesExt;
@@ -184,8 +184,14 @@ impl<T: ADBMessageTransport> ADBSession<T> {
             }
         }
 
-        // Currently file mtime is not forwarded
-        let subcommand_data = MessageSubcommand::Done.with_arg(0);
+        // `DONE` carries the file modification time: a stream has none, the file is dated from now
+        let Ok(last_modified) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) else {
+            return Err(RustADBError::ADBRequestFailed(
+                "SystemTime before unix epoch".into(),
+            ));
+        };
+        let subcommand_data =
+            MessageSubcommand::Done.with_arg(u32::try_from(last_modified.as_secs())?);
 
         let message = ADBTransportMessage::try_new(
             MessageCommand::Write,
