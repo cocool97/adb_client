@@ -7,7 +7,8 @@ use crate::message_devices::{
 
 /// [`Write`] trait implementation to hide underlying ADB protocol write logic.
 ///
-/// Read received responses to check that message has been correctly received.
+/// Read received responses to check that message has been correctly received. Each write sends at most one
+/// message, of the session maximum payload size.
 pub struct MessageWriter<'session, T: ADBMessageTransport> {
     session: &'session mut ADBSession<T>,
 }
@@ -20,6 +21,7 @@ impl<'session, T: ADBMessageTransport> MessageWriter<'session, T> {
 
 impl<T: ADBMessageTransport> Write for MessageWriter<'_, T> {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        let buf = &buf[..buf.len().min(self.session.max_payload_size())];
         let message = ADBTransportMessage::try_new(
             MessageCommand::Write,
             self.session.local_id(),

@@ -1,10 +1,14 @@
-use std::{fs::File, path::Path};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::Path,
+};
 
 use crate::{
     Result,
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
-        commands::utils::MessageWriter, message_commands::MessageCommand,
+        commands::utils::MessageWriter,
     },
     models::ADBLocalCommand,
     utils::check_extension_is_apk,
@@ -24,22 +28,24 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         ))?;
 
         {
-            // Read data from apk_file and write it to the underlying session
+            // Read data from apk_file and write it to the underlying session, in messages as large as possible
+            let mut buffer = vec![0; session.max_payload_size()].into_boxed_slice();
             let mut writer = MessageWriter::new(&mut session);
-            std::io::copy(&mut apk_file, &mut writer)?;
+            loop {
+                let size = apk_file.read(&mut buffer)?;
+                if size == 0 {
+                    break;
+                }
+                writer.write_all(&buffer[..size])?;
+            }
         }
 
-        let final_status = session.get_transport_mut().read_message()?;
-
-        match final_status.into_payload().as_slice() {
+        match session.recv_until_close()?.as_slice() {
             b"Success\n" => {
                 log::info!(
                     "APK file {} successfully installed",
                     apk_path.as_ref().display()
                 );
-                self.get_transport_mut()
-                    .read_message()?
-                    .assert_command(MessageCommand::Clse)?;
                 Ok(())
             }
             d => Err(crate::RustADBError::ADBRequestFailed(String::from_utf8(

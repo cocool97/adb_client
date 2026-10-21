@@ -16,6 +16,7 @@ pub struct ShellMessageWriter<T: ADBMessageTransport> {
     transport: T,
     local_id: u32,
     remote_id: u32,
+    max_payload_size: usize,
     /// Set once the stream has been closed by either side.
     stream_closed: Arc<AtomicBool>,
 }
@@ -25,12 +26,14 @@ impl<T: ADBMessageTransport> ShellMessageWriter<T> {
         transport: T,
         local_id: u32,
         remote_id: u32,
+        max_payload_size: usize,
         stream_closed: Arc<AtomicBool>,
     ) -> Self {
         Self {
             transport,
             local_id,
             remote_id,
+            max_payload_size,
             stream_closed,
         }
     }
@@ -59,6 +62,7 @@ impl<T: ADBMessageTransport> Write for ShellMessageWriter<T> {
             ));
         }
 
+        let buf = &buf[..buf.len().min(self.max_payload_size)];
         let message =
             ADBTransportMessage::try_new(MessageCommand::Write, self.local_id, self.remote_id, buf)
                 .map_err(std::io::Error::other)?;

@@ -9,6 +9,10 @@ pub const AUTH_TOKEN: u32 = 1;
 pub const AUTH_SIGNATURE: u32 = 2;
 pub const AUTH_RSAPUBLICKEY: u32 = 3;
 
+/// Maximum message payload size we accept, announced in our `CNXN` message.
+/// Defaults to 1MB.
+pub const MAX_PAYLOAD_SIZE: u32 = 1024 * 1024;
+
 #[derive(Debug)]
 pub struct ADBTransportMessage {
     header: ADBTransportMessageHeader,
@@ -154,6 +158,16 @@ impl TryFrom<[u8; 24]> for ADBTransportMessageHeader {
     type Error = RustADBError;
 
     fn try_from(value: [u8; 24]) -> Result<Self> {
-        Self::decode(&value)
+        let header = Self::decode(&value)?;
+
+        // Received headers are trusted for the payload allocation, a size we never accepted must be refused
+        if header.data_length > MAX_PAYLOAD_SIZE {
+            return Err(RustADBError::ADBRequestFailed(format!(
+                "received message payload of {} bytes, more than the maximum of {MAX_PAYLOAD_SIZE}",
+                header.data_length
+            )));
+        }
+
+        Ok(header)
     }
 }

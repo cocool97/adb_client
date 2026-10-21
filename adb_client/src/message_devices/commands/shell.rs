@@ -89,6 +89,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             self.get_transport_mut().clone(),
             local_id,
             remote_id,
+            session.max_payload_size(),
             stream_closed.clone(),
         );
         std::thread::spawn(move || {
