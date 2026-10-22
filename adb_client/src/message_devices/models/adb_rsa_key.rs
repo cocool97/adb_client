@@ -6,7 +6,9 @@ use num_traits::cast::ToPrimitive;
 use rsa::pkcs8::DecodePrivateKey;
 use rsa::traits::PublicKeyParts;
 use rsa::{Pkcs1v15Sign, RsaPrivateKey};
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs::read_to_string;
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::Path;
 
 const ADB_PRIVATE_KEY_SIZE: usize = 2048;
@@ -37,7 +39,10 @@ impl ADBRsaInternalPublicKey {
         let mut bytes: Vec<u8> = Vec::new();
         bytes.append(&mut self.modulus_size_words.to_le_bytes().to_vec());
         bytes.append(&mut self.n0inv.to_le_bytes().to_vec());
-        bytes.append(&mut self.modulus.to_bytes_le());
+        let mut modulus = self.modulus.to_bytes_le();
+        modulus.resize(ADB_PRIVATE_KEY_SIZE / 8, 0);
+        self.rr.resize(ADB_PRIVATE_KEY_SIZE / 8, 0);
+        bytes.append(&mut modulus);
         bytes.append(&mut self.rr);
         bytes.append(&mut self.exponent.to_le_bytes().to_vec());
 
@@ -63,7 +68,21 @@ impl ADBRsaKey {
         })
     }
 
+    #[cfg(feature = "webusb")]
+    pub(crate) fn to_pkcs8_pem(&self) -> Result<String> {
+        use rsa::pkcs8::{EncodePrivateKey, LineEnding};
+        self.private_key
+            .to_pkcs8_pem(LineEnding::LF)
+            .map(|pem| pem.to_string())
+            .map_err(|e| RustADBError::ADBRequestFailed(e.to_string()))
+    }
+
     pub fn android_pubkey_encode(&self) -> Result<String> {
+        if self.private_key.n().bits() != ADB_PRIVATE_KEY_SIZE {
+            return Err(RustADBError::ADBRequestFailed(
+                "ADB requires a 2048-bit RSA key".into(),
+            ));
+        }
         // Helped from project: https://github.com/hajifkd/webadb
         // Source code: https://android.googlesource.com/platform/system/core/+/refs/heads/main/libcrypto_utils/android_pubkey.cpp
         // Useful function `android_pubkey_encode()`
@@ -109,6 +128,7 @@ impl ADBRsaKey {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Option<ADBRsaKey>> {
     // Try to read the private key file from given path
     // If the file is not found, return None
@@ -190,6 +210,24 @@ ile69MHFENUePSpuRSiF3Z02
     Awu6BlgK37TUn0JdK0Z6Z4RaEIaNiEI0d5CoP6zQKV2QQnlscYpdsaUW5t9/F\
     LioVXPwrz0tx35JyIUZPPYwEAAQA= ";
         assert_eq!(&pub_key[..pub_key_adb.len()], pub_key_adb);
+    }
+
+    #[test]
+    fn android_key_fields_keep_fixed_width_when_rr_has_leading_zeroes() {
+        let key = super::ADBRsaInternalPublicKey {
+            modulus_size_words: 64,
+            n0inv: 123,
+            modulus: BigUint::from(17u32),
+            rr: vec![42],
+            exponent: 65537,
+        };
+        let bytes = key.into_bytes();
+        assert_eq!(bytes.len(), 524);
+        assert_eq!(bytes[8], 17);
+        assert!(bytes[9..264].iter().all(|&b| b == 0));
+        assert_eq!(bytes[264], 42);
+        assert!(bytes[265..520].iter().all(|&b| b == 0));
+        assert_eq!(&bytes[520..], &65537u32.to_le_bytes());
     }
 
     #[test]

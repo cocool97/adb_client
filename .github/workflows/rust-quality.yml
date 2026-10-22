@@ -8,4 +8,4 @@ on:
 
 jobs:
   quality:
-    uses: cocool97/action_templates/.github/workflows/rust-quality.yml@main
+    uses: ./.github/workflows/rust-quality-checks.yml

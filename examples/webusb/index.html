@@ -1,0 +1,83 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>adb_client WebUSB example</title>
+<style>
+body { font: 16px system-ui; max-width: 52rem; margin: 2rem auto; padding: 0 1rem; }
+button, input { font: inherit; padding: .5rem; margin: .25rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #eee; padding: 1rem; }
+</style>
+<h1>adb_client over WebUSB</h1>
+<p>Connect an Android device with USB debugging enabled. Approve its debugging dialog.
+Use Chrome or Edge over HTTPS or localhost, and close other ADB clients first.</p>
+<button id="connect" disabled>Connect</button>
+<button id="disconnect" disabled>Disconnect / stop</button>
+<form id="shell"><label>Command <input id="command" value="id"></label><button id="run" disabled>Run</button></form>
+<p id="status" role="status">Loading WebAssembly…</p>
+<pre id="output" aria-live="polite"></pre>
+<script type="module">
+import init, { request, Client } from './pkg/webusb_example.js';
+const connect = document.querySelector('#connect'), disconnect = document.querySelector('#disconnect');
+const run = document.querySelector('#run'), status = document.querySelector('#status');
+const output = document.querySelector('#output');
+let client, usb, key;
+let busy = false, stopping = false;
+async function reset() {
+  await client?.disconnect().catch(() => {});
+  client?.free(); client = undefined; usb = undefined;
+  run.disabled = true; connect.disabled = false; disconnect.disabled = true;
+}
+async function hostKey() {
+  if (key) return key;
+  const pair = await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,
+    publicExponent:new Uint8Array([1,0,1]),hash:'SHA-1'},true,['sign','verify']);
+  const der = new Uint8Array(await crypto.subtle.exportKey('pkcs8', pair.privateKey));
+  const encoded = btoa(String.fromCharCode(...der)).match(/.{1,64}/g).join('\n');
+  key = `-----BEGIN PRIVATE KEY-----\n${encoded}\n-----END PRIVATE KEY-----\n`;
+  return key; // Memory only: reloading the page creates a new host identity.
+}
+connect.onclick = async () => {
+  connect.disabled = true; busy = true; stopping = false;
+  try {
+    const selection = request(); // Must happen before awaiting other work.
+    usb = await selection;
+    status.textContent = 'Connecting; approve the phone’s debugging dialog…';
+    disconnect.disabled = false;
+    const pem = await hostKey();
+    if (stopping) throw new Error('Connection cancelled');
+    client = await Client.connect(usb, pem);
+    if (stopping) throw new Error('Connection cancelled');
+    status.textContent = 'Connected'; run.disabled = false;
+  } catch (e) {
+    await usb?.close().catch(() => {});
+    await reset(); status.textContent = String(e);
+  } finally { busy = false; }
+};
+disconnect.onclick = async () => {
+  // Closing USB also aborts a pending read. Do not concurrently borrow the
+  // Rust client while shell() or connect() is holding its async borrow.
+  stopping = true; disconnect.disabled = true; run.disabled = true;
+  await usb?.close().catch(() => {});
+  if (!busy) { await reset(); status.textContent = 'Disconnected'; }
+};
+document.querySelector('#shell').onsubmit = async event => {
+  event.preventDefault();
+  if (busy || !client) return;
+  busy = true; run.disabled = true; output.textContent = '';
+  const decoder = new TextDecoder();
+  let failed = false;
+  try {
+    await client.shell(document.querySelector('#command').value, bytes => {
+      output.textContent += decoder.decode(bytes, {stream:true});
+    });
+    output.textContent += decoder.decode();
+    status.textContent = 'Command finished (legacy shell has no exit status)';
+  } catch (e) { failed = true; status.textContent = String(e); }
+  if (failed || !usb?.opened) {
+    await reset();
+  } else { run.disabled = false; }
+  busy = false;
+};
+try { await init(); connect.disabled = false; status.textContent = 'Ready'; }
+catch (e) { status.textContent = String(e); }
+</script>

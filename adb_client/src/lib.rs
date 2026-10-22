@@ -26,7 +26,7 @@ pub mod server_device;
 mod utils;
 
 /// MDNS-related definitions
-#[cfg(feature = "mdns")]
+#[cfg(all(feature = "mdns", not(target_arch = "wasm32")))]
 #[cfg_attr(docsrs, doc(cfg(feature = "mdns")))]
 pub mod mdns;
 

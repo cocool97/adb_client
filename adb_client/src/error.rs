@@ -84,12 +84,12 @@ pub enum RustADBError {
     #[error("Cannot get home directory")]
     NoHomeDirectory,
     /// Generic USB error
-    #[cfg(feature = "usb")]
+    #[cfg(all(feature = "usb", not(target_arch = "wasm32")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error("USB Error: {0}")]
     UsbError(#[from] rusb::Error),
     /// Selected device is busy.
-    #[cfg(feature = "usb")]
+    #[cfg(all(feature = "usb", not(target_arch = "wasm32")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "usb")))]
     #[error("Device is busy. Is ADB server running?")]
     DeviceBusy,
@@ -122,12 +122,15 @@ pub enum RustADBError {
     RsaPkcs8Error(#[from] rsa::pkcs8::Error),
     /// Error during certificate generation
     #[error(transparent)]
+    #[cfg(not(target_arch = "wasm32"))]
     CertificateGenerationError(#[from] rcgen::Error),
     /// TLS Error
     #[error(transparent)]
+    #[cfg(not(target_arch = "wasm32"))]
     TLSError(#[from] rustls::Error),
     /// PEM certificate error
     #[error(transparent)]
+    #[cfg(not(target_arch = "wasm32"))]
     PemCertError(#[from] rustls_pki_types::pem::Error),
     /// Error while locking a mutex (the mutex was poisoned)
     #[error("mutex was poisoned")]
@@ -136,7 +139,7 @@ pub enum RustADBError {
     #[error("upgrade error: {0}")]
     UpgradeError(String),
     /// An error occurred while getting mdns devices
-    #[cfg(feature = "mdns")]
+    #[cfg(all(feature = "mdns", not(target_arch = "wasm32")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "mdns")))]
     #[error(transparent)]
     MDNSError(#[from] mdns_sd::Error),

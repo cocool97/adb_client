@@ -21,6 +21,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = ["framebuffer"]
 mdns = ["dep:mdns-sd"]
 usb = ["dep:rusb"]
+webusb = ["dep:js-sys", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys"]
 framebuffer = ["dep:image"]
 
 [dependencies]
@@ -30,22 +31,23 @@ chrono = { version = "0.4.45", default-features = false, features = ["std"] }
 image = { version = "0.25.10", default-features = false, features = ["png"], optional = true }
 log = { version = "0.4.34" }
 num-bigint = { version = "0.8.6", package = "num-bigint-dig" }
+num_enum = { version = "0.7.6" }
 num-traits = { version = "0.2.19" }
 quick-protobuf = { version = "0.8.1" }
 rand = { version = "0.10.3" }
+regex = { version = "1.13.1", features = ["perf", "std", "unicode"] }
+rsa = { version = "0.9.10" }
+sha1 = { version = "0.10.7", features = ["oid"] }
+thiserror = { version = "2.0.21" }
+
+# Native-only TLS, discovery and USB backends.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rcgen = { version = "0.14.10", default-features = false, features = [
     "ring",
     "pem",
 ] }
-regex = { version = "1.13.1", features = ["perf", "std", "unicode"] }
-rsa = { version = "0.9.10" }
 rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 rustls-pki-types = { version = "1.15.1" }
-sha1 = { version = "0.10.7", features = ["oid"] }
-thiserror = { version = "2.0.21" }
-
-#########
-# `mdns` feature-specific dependencies
 mdns-sd = { version = "0.21.6", default-features = false, features = [
     "logging",
 ], optional = true }
@@ -53,14 +55,33 @@ mdns-sd = { version = "0.21.6", default-features = false, features = [
 #########
 # USB-only dependencies
 rusb = { version = "0.9.4", features = ["vendored"], optional = true }
-num_enum = { version = "0.7.6" }
 #########
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# RSA and rand currently use different getrandom versions.
+getrandom_02 = { package = "getrandom", version = "0.2", features = ["js"] }
+getrandom_04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
+js-sys = { version = "0.3.106", optional = true }
+wasm-bindgen = { version = "0.2.129", optional = true }
+wasm-bindgen-futures = { version = "0.4.79", optional = true }
+web-sys = { version = "0.3.106", optional = true, features = [
+    "Window", "Navigator", "Usb", "UsbDevice", "UsbConfiguration",
+    "UsbInterface", "UsbAlternateInterface", "UsbEndpoint", "UsbDirection",
+    "UsbEndpointType", "UsbTransferStatus", "UsbDeviceFilter",
+    "UsbDeviceRequestOptions", "UsbInTransferResult", "UsbOutTransferResult",
+] }
 
 [dev-dependencies]
 anyhow = { version = "1.0.104" }
-criterion = { version = "0.8.2" } # Used for benchmarks
 
 [[bench]]
 harness = false
 name = "benchmark_adb_push"
 path = "../benches/benchmark_adb_push.rs"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+criterion = { version = "0.8.2" } # Native benchmarks
+futures = { version = "0.3", features = ["executor"] }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3.79"

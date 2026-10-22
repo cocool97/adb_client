@@ -1,0 +1,34 @@
+name: Rust - WebUSB
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  webusb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: cargo fmt --all --check
+      - run: cargo test -p adb_client --lib --features webusb
+      - run: cargo clippy -p adb_client --lib --target wasm32-unknown-unknown --all-features -- -D warnings
+      - run: cargo install wasm-bindgen-cli --version 0.2.129 --locked
+      - name: Test WebUSB JavaScript boundary with mock devices
+        run: >-
+          cargo test -p adb_client --lib --target wasm32-unknown-unknown
+          --no-default-features --features webusb
+          --config 'target.wasm32-unknown-unknown.runner="wasm-bindgen-test-runner"'
+          webusb::browser::tests
+      - run: cargo build -p webusb-example --target wasm32-unknown-unknown --release
+      - run: wasm-bindgen --target web --out-dir examples/webusb/pkg target/wasm32-unknown-unknown/release/webusb_example.wasm

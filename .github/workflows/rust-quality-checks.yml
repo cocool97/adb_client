@@ -1,0 +1,92 @@
+# Preserve upstream quality jobs; only the dependency reporting tool differs.
+name: Rust - Quality checks
+
+on:
+  workflow_call:
+    inputs:
+      package_name:
+        description: "Optional package name to build"
+        required: false
+        type: string
+      features:
+        description: "Optional features to enable"
+        required: false
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cocool97/action_templates/.github/actions/rust-setup@main
+      - uses: actions/checkout@v4
+      - uses: cocool97/action_templates/.github/actions/rust-clippy@main
+        with:
+          package_name: ${{ inputs.package_name }}
+          features: ${{ inputs.features }}
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cocool97/action_templates/.github/actions/rust-setup@main
+      - uses: actions/checkout@v4
+      - uses: cocool97/action_templates/.github/actions/rust-fmt@main
+        with:
+          package_name: ${{ inputs.package_name }}
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cocool97/action_templates/.github/actions/rust-setup@main
+      - uses: actions/checkout@v4
+      - uses: cocool97/action_templates/.github/actions/rust-msrv@main
+        with:
+          package_name: ${{ inputs.package_name }}
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cocool97/action_templates/.github/actions/rust-setup@main
+      - uses: actions/checkout@v4
+      - uses: cocool97/action_templates/.github/actions/rust-doc@main
+        with:
+          package_name: ${{ inputs.package_name }}
+          features: ${{ inputs.features }}
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cocool97/action_templates/.github/actions/rust-setup@main
+      - uses: actions/checkout@v4
+      - uses: cocool97/action_templates/.github/actions/rust-test@main
+        with:
+          package_name: ${{ inputs.package_name }}
+          features: ${{ inputs.features }}
+
+  outdated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cocool97/action_templates/.github/actions/rust-setup@main
+      - uses: actions/checkout@v4
+      # cargo-outdated forces every direct dependency to its newest version in
+      # one temporary workspace. That fails for supported combinations such as
+      # PyO3 0.29 + pyo3-stub-gen, whose latest releases do not support PyO3 0.30.
+      # Keep reporting compatible lockfile updates and all available direct
+      # dependency upgrades, without trying to resolve incompatible ones together.
+      - name: Report compatible dependency updates
+        run: cargo update --dry-run
+      - name: Install direct dependency update reporter
+        run: cargo install cargo-edit --version 0.13.14 --locked --no-default-features --features upgrade
+      - name: Report direct dependency upgrades, including incompatible versions
+        run: cargo upgrade --dry-run --incompatible --pinned --ignore-rust-version
+      - name: Verify reports did not modify manifests or the lockfile
+        run: git diff --exit-code -- '**/Cargo.toml' Cargo.toml Cargo.lock
+
+  unused:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cocool97/action_templates/.github/actions/rust-setup@main
+      - uses: actions/checkout@v4
+      - uses: cocool97/action_templates/.github/actions/rust-unused@main
