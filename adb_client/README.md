@@ -22,7 +22,8 @@ adb_client = "*"
 | :-----------: | :---------------------------------------------: | :------: |
 | `framebuffer` |      Enables _framebuffer_-related methods      |   Yes    |
 |    `mdns`     | Enables mDNS device discovery on local network. |    No    |
-|     `usb`     |     Enables interactions with USB devices.      |    No    |
+|     `usb`     |     Enables native interactions with USB devices. |    No    |
+|   `webusb`    | Async browser USB API on `wasm32-unknown-unknown`. |    No    |
 
 To deactivate some default features you can use the `default-features = false` option in your `Cargo.toml` file and manually specify the features you want to activate:
 
@@ -30,6 +31,21 @@ To deactivate some default features you can use the `default-features = false` o
 [dependencies]
 adb_client = { version = "*", default-features = false, features = ["mdns", "usb"] }
 ```
+
+## Browser `WebUSB`
+
+Enable `webusb` with `default-features = false` and build for
+`wasm32-unknown-unknown`. Browser callers use the async
+`webusb::{ADBWebUSBDevice, ADBWebUSBStream, WebUSBKey, request_device}` API.
+The native blocking clients remain available on native targets.
+
+The current `web-sys` USB bindings require `--cfg=web_sys_unstable_apis` in
+Rust flags. This repository configures it in `.cargo/config.toml`; downstream
+applications must configure it too.
+
+See the [runnable browser example](../examples/webusb/README.md) for building,
+requesting device permission from a click handler, Android RSA authorization,
+key management, streaming shell output, and connection lifecycle limitations.
 
 ## Examples
 

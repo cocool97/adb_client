@@ -1,4 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::PathBuf;
 
 use crate::{Result, RustADBError};
 
@@ -19,6 +21,7 @@ pub fn check_extension_is_apk<P: AsRef<Path>>(path: P) -> Result<()> {
 
 /// Get the default path to the ADB key file.
 /// First checks for the presence of the environment variable `ANDROID_USER_HOME`, defaulting to the user's home directory.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn get_default_adb_key_path() -> Result<PathBuf> {
     let android_user_home = std::env::var("ANDROID_USER_HOME")
         .ok()

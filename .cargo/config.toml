@@ -5,3 +5,6 @@ rustflags = ["-Wclippy::pedantic"]
 # which differs between the terminal and the IDE and forces a full pyo3 rebuild.
 [env]
 PYO3_PYTHON = "python3"
+
+[target.wasm32-unknown-unknown]
+rustflags = ["-Wclippy::pedantic", "--cfg=web_sys_unstable_apis"]

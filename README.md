@@ -29,7 +29,7 @@ Main features of this library:
 - Supports
   - Using ADB server as a proxy (standard behavior when using `adb` CLI)
   - Connecting directly to end devices (without using adb-server)
-    - Over **USB**
+    - Over **USB** (native and opt-in async browser WebUSB)
     - Over **TCP/IP**
 - Implements hidden `adb` features, like `framebuffer`
 - Highly configurable
@@ -47,6 +47,7 @@ Improved documentation available [here](./adb_client/README.md).
 Some examples showing of to use this library are available in the `examples` directory:
 
 - `examples/mdns`: mDNS device discovery
+- [`examples/webusb`](examples/webusb/README.md): browser USB authorization and streaming shell
 - `examples/python_api`: demonstrates the use of Python API
 
 ## adb_cli
