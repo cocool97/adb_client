@@ -321,3 +321,92 @@ fn sessions_fail_once_connection_is_lost() {
     );
     assert!(device.open_session(&ADBLocalCommand::Sync).is_err());
 }
+
+/// Receive a file from a device sending `payloads` as `WRTE` messages once the session is opened, then closing it.
+fn recv_file(payloads: Vec<Vec<u8>>) -> (FakeTransport, Result<Vec<u8>>) {
+    let transport = FakeTransport::new(move |written, answers| {
+        if let Some(local_id) = opened_local_id(written) {
+            answers.push_back(message(MessageCommand::Okay, REMOTE_ID, local_id, &[]));
+            for payload in &payloads {
+                answers.push_back(message(MessageCommand::Write, REMOTE_ID, local_id, payload));
+            }
+            answers.push_back(message(MessageCommand::Clse, REMOTE_ID, local_id, &[]));
+        }
+    });
+    let device = device(&transport);
+
+    let mut session = device.open_session(&ADBLocalCommand::Sync).unwrap();
+    let mut output = Vec::new();
+    let result = session.recv_file(&mut output).map(|()| output);
+    (transport, result)
+}
+
+/// Encode a sync chunk header.
+fn sync_header(id: [u8; 4], length: u32) -> Vec<u8> {
+    [id.as_slice(), &length.to_le_bytes()].concat()
+}
+
+#[test]
+fn recv_file_handles_chunks_split_across_messages() {
+    let stream = [
+        sync_header(*b"DATA", 6),
+        b"hello ".to_vec(),
+        sync_header(*b"DATA", 5),
+        b"world".to_vec(),
+        sync_header(*b"DONE", 0),
+    ]
+    .concat();
+    // Split chunk contents and headers, one message per 3 bytes
+    let payloads = stream.chunks(3).map(<[u8]>::to_vec).collect();
+
+    let (transport, output) = recv_file(payloads);
+
+    assert_eq!(output.unwrap(), b"hello world");
+    // Every message is acknowledged
+    let okays = transport
+        .writes()
+        .iter()
+        .filter(|(command, ..)| *command == MessageCommand::Okay)
+        .count();
+    assert_eq!(okays, stream.len().div_ceil(3));
+}
+
+#[test]
+fn recv_file_keeps_content_looking_like_done() {
+    let content = sync_header(*b"DONE", 0);
+    let payloads = vec![
+        [sync_header(*b"DATA", 8), content.clone()].concat(),
+        sync_header(*b"DONE", 0),
+    ];
+
+    let (_, output) = recv_file(payloads);
+
+    assert_eq!(output.unwrap(), content);
+}
+
+#[test]
+fn recv_file_returns_fail_reason() {
+    let payloads = vec![
+        [
+            sync_header(*b"FAIL", 14),
+            b"No such file".to_vec(),
+            b"!!".to_vec(),
+        ]
+        .concat(),
+    ];
+
+    let (_, output) = recv_file(payloads);
+
+    let error = output.unwrap_err();
+    assert!(
+        matches!(&error, RustADBError::ADBRequestFailed(reason) if reason == "No such file!!"),
+        "{error}"
+    );
+}
+
+#[test]
+fn recv_file_fails_when_device_closes_the_session() {
+    let (_, output) = recv_file(vec![sync_header(*b"DATA", 10), b"short".to_vec()]);
+
+    assert!(output.is_err());
+}

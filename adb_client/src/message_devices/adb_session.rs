@@ -1,10 +1,6 @@
-use std::{
-    io::{Cursor, Read, Seek},
-    sync::mpsc::Sender,
-    time::SystemTime,
-};
+use std::{collections::VecDeque, io::Read, sync::mpsc::Sender, time::SystemTime};
 
-use byteorder::ReadBytesExt;
+use byteorder::{LittleEndian, ReadBytesExt};
 
 use crate::{
     AdbStatResponse, BinaryDecodable, Result, RustADBError,
@@ -177,38 +173,68 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         }
     }
 
-    pub(crate) fn recv_file<W: std::io::Write>(
-        &mut self,
-        mut output: W,
-    ) -> std::result::Result<(), RustADBError> {
-        let mut len: Option<u64> = None;
+    /// Receive a file sent by the device as sync chunks, and write its content to `output`.
+    ///
+    /// `DATA` chunks carry the content, `DONE` ends the transfer and `FAIL` carries an error. Chunks are not
+    /// aligned on messages: a message can hold several chunks, and a chunk (or its header) can span several messages.
+    pub(crate) fn recv_file<W: std::io::Write>(&mut self, mut output: W) -> Result<()> {
+        // Data received from the device, not parsed yet
+        let mut pending = VecDeque::new();
         loop {
-            let payload = self.recv_and_reply_okay()?.into_payload();
-            let mut rdr = Cursor::new(&payload);
-            while rdr.position() != payload.len() as u64 {
-                match len.take() {
-                    Some(0) | None => {
-                        rdr.seek_relative(4)?;
-                        len.replace(u64::from(rdr.read_u32::<byteorder::LittleEndian>()?));
+            self.recv_sync_data(&mut pending, SYNC_HEADER_SIZE)?;
+            let id = pending.read_u32::<LittleEndian>()?;
+            let length = pending.read_u32::<LittleEndian>()? as usize;
+
+            match MessageSubcommand::try_from(id) {
+                Ok(MessageSubcommand::Data) => {
+                    // Same limit as adb, the device never sends bigger chunks
+                    if length > SYNC_DATA_MAX_SIZE {
+                        return Err(RustADBError::ADBRequestFailed(format!(
+                            "sync DATA chunk of {length} bytes is over the {SYNC_DATA_MAX_SIZE} bytes limit"
+                        )));
                     }
-                    Some(length) => {
-                        let remaining_bytes = payload.len() as u64 - rdr.position();
-                        if length < remaining_bytes {
-                            std::io::copy(&mut rdr.by_ref().take(length), &mut output)?;
-                        } else {
-                            std::io::copy(&mut rdr.take(remaining_bytes), &mut output)?;
-                            len.replace(length - remaining_bytes);
-                            // this payload is now exhausted
-                            break;
-                        }
+
+                    let mut remaining = length as u64;
+                    while remaining > 0 {
+                        self.recv_sync_data(&mut pending, 1)?;
+                        remaining -=
+                            std::io::copy(&mut (&mut pending).take(remaining), &mut output)?;
                     }
                 }
+                Ok(MessageSubcommand::Done) => return Ok(()),
+                Ok(MessageSubcommand::Fail) => {
+                    self.recv_sync_data(&mut pending, length)?;
+                    let reason: Vec<u8> = pending.drain(..length).collect();
+                    return Err(RustADBError::ADBRequestFailed(
+                        String::from_utf8_lossy(&reason).into_owned(),
+                    ));
+                }
+                _ => {
+                    return Err(RustADBError::ADBRequestFailed(format!(
+                        "unexpected sync chunk id {id:#010x} while receiving a file"
+                    )));
+                }
             }
-            if Cursor::new(&payload[(payload.len() - 8)..(payload.len() - 4)])
-                .read_u32::<byteorder::LittleEndian>()?
-                == MessageSubcommand::Done as u32
-            {
-                break;
+        }
+    }
+
+    /// Receive data from the device until `pending` holds at least `size` bytes.
+    fn recv_sync_data(&mut self, pending: &mut VecDeque<u8>, size: usize) -> Result<()> {
+        while pending.len() < size {
+            let message = self.recv_and_reply_okay()?;
+            match message.header().command() {
+                MessageCommand::Okay => {}
+                MessageCommand::Write => pending.extend(message.payload()),
+                MessageCommand::Clse => {
+                    return Err(RustADBError::ADBRequestFailed(
+                        "device closed the session during a sync transfer".into(),
+                    ));
+                }
+                command => {
+                    return Err(RustADBError::ADBRequestFailed(format!(
+                        "Wrong command received {command}"
+                    )));
+                }
             }
         }
         Ok(())
