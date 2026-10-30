@@ -71,7 +71,12 @@ impl TCPEmulatorTransport {
         let mut line = String::new();
         loop {
             line.clear();
-            reader.read_line(&mut line)?;
+            if reader.read_line(&mut line)? == 0 {
+                return Err(RustADBError::IOError(Error::new(
+                    ErrorKind::UnexpectedEof,
+                    "emulator console closed the connection",
+                )));
+            }
             if line.starts_with("KO:") {
                 return Err(RustADBError::ADBRequestFailed(line));
             }
