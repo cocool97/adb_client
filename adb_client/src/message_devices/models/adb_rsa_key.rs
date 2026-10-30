@@ -11,15 +11,16 @@ use std::path::Path;
 
 const ADB_PRIVATE_KEY_SIZE: usize = 2048;
 const ANDROID_PUBKEY_MODULUS_SIZE_WORDS: u32 = 64;
+/// Size in bytes of the modulus and `rr` fields of the encoded public key
+const ANDROID_PUBKEY_MODULUS_SIZE: usize = ADB_PRIVATE_KEY_SIZE / 8;
 
-#[repr(C)]
 #[derive(Debug, Default)]
 /// Internal ADB representation of a public key
 struct ADBRsaInternalPublicKey {
     pub modulus_size_words: u32,
     pub n0inv: u32,
     pub modulus: BigUint,
-    pub rr: Vec<u8>,
+    pub rr: BigUint,
     pub exponent: u32,
 }
 
@@ -33,12 +34,12 @@ impl ADBRsaInternalPublicKey {
         })
     }
 
-    pub fn into_bytes(mut self) -> Vec<u8> {
+    pub fn into_bytes(self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         bytes.append(&mut self.modulus_size_words.to_le_bytes().to_vec());
         bytes.append(&mut self.n0inv.to_le_bytes().to_vec());
-        bytes.append(&mut self.modulus.to_bytes_le());
-        bytes.append(&mut self.rr);
+        bytes.append(&mut to_padded_bytes_le(&self.modulus));
+        bytes.append(&mut to_padded_bytes_le(&self.rr));
         bytes.append(&mut self.exponent.to_le_bytes().to_vec());
 
         bytes
@@ -77,8 +78,7 @@ impl ADBRsaKey {
         let r = set_bit(ADB_PRIVATE_KEY_SIZE)?;
 
         // rr = r ^ 2 mod N
-        let rr = r.modpow(&BigUint::from(2u32), &adb_rsa_pubkey.modulus);
-        adb_rsa_pubkey.rr = rr.to_bytes_le();
+        adb_rsa_pubkey.rr = r.modpow(&BigUint::from(2u32), &adb_rsa_pubkey.modulus);
 
         // rem = N[0]
         let rem = &adb_rsa_pubkey.modulus % &r32;
@@ -126,6 +126,14 @@ pub fn read_adb_private_key<P: AsRef<Path>>(private_key_path: P) -> Result<Optio
     }
 }
 
+/// Little-endian bytes of `value`, zero-padded to `ANDROID_PUBKEY_MODULUS_SIZE` bytes
+fn to_padded_bytes_le(value: &BigUint) -> Vec<u8> {
+    // `to_bytes_le()` drops the leading zero bytes
+    let mut bytes = value.to_bytes_le();
+    bytes.resize(ANDROID_PUBKEY_MODULUS_SIZE, 0);
+    bytes
+}
+
 fn set_bit(n: usize) -> Result<BigUint> {
     // Compute 2^n: '1' followed by n '0's in binary
     let mut bits = vec![b'1'; 1 + n];
@@ -135,7 +143,7 @@ fn set_bit(n: usize) -> Result<BigUint> {
 
 #[cfg(test)]
 mod tests {
-    use super::set_bit;
+    use super::{ANDROID_PUBKEY_MODULUS_SIZE, set_bit, to_padded_bytes_le};
     use crate::message_devices::models::ADBRsaKey;
     use rsa::BigUint;
 
@@ -190,6 +198,16 @@ ile69MHFENUePSpuRSiF3Z02
     Awu6BlgK37TUn0JdK0Z6Z4RaEIaNiEI0d5CoP6zQKV2QQnlscYpdsaUW5t9/F\
     LioVXPwrz0tx35JyIUZPPYwEAAQA= ";
         assert_eq!(&pub_key[..pub_key_adb.len()], pub_key_adb);
+    }
+
+    #[test]
+    fn test_padded_bytes_le() {
+        // A value with leading zero bytes keeps a fixed size
+        let value = BigUint::from(1u32) << (8 * (ANDROID_PUBKEY_MODULUS_SIZE - 2));
+        let bytes = to_padded_bytes_le(&value);
+        assert_eq!(bytes.len(), ANDROID_PUBKEY_MODULUS_SIZE);
+        assert_eq!(bytes[ANDROID_PUBKEY_MODULUS_SIZE - 2], 1);
+        assert_eq!(bytes[ANDROID_PUBKEY_MODULUS_SIZE - 1], 0);
     }
 
     #[test]
