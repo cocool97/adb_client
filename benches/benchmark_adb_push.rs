@@ -33,7 +33,7 @@ fn generate_test_file(size_in_bytes: usize) -> Result<()> {
 /// Use `adb_client` crate to push a file on device
 fn bench_adb_client_push() -> Result<()> {
     let mut client = ADBServer::default();
-    let mut device = client.get_device()?;
+    let device = client.get_device()?;
     let f = File::open(LOCAL_TEST_FILE_PATH)?;
     Ok(device.push(f, REMOTE_TEST_FILE_PATH)?)
 }

@@ -30,7 +30,7 @@ device_test_suite!(get_connected_server_device);
 #[test]
 #[ignore = "requires a connected device"]
 fn device_is_connected() {
-    let mut device = get_connected_server_device();
+    let device = get_connected_server_device();
 
     let features = device.host_features().expect("cannot get device features");
     assert!(
@@ -42,7 +42,7 @@ fn device_is_connected() {
 #[test]
 #[ignore = "requires a connected device"]
 fn shell_command_separates_stdout_and_stderr() {
-    let mut device = get_connected_server_device();
+    let device = get_connected_server_device();
 
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();

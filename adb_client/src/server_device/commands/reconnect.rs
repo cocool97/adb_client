@@ -6,12 +6,12 @@ use crate::{
 
 impl ADBServerDevice {
     /// Reconnect device
-    pub fn reconnect(&mut self) -> Result<()> {
+    pub fn reconnect(&self) -> Result<()> {
         // adbd restarts, and may then advertise different features
         self.invalidate_features();
-        self.set_serial_transport()?;
+        let transport = self.connect_to_device()?;
 
-        self.transport
+        transport
             .proxy_connection(&ADBCommand::Local(ADBLocalCommand::Reconnect), false)
             .map(|_| ())
     }

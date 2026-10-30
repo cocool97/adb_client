@@ -5,7 +5,7 @@ use adb_client::server_device::ADBServerDevice;
 use crate::models::{ADBCliResult, ForwardCommand, LocalDeviceCommand, ReverseCommand};
 
 pub fn handle_local_commands(
-    mut device: ADBServerDevice,
+    device: &ADBServerDevice,
     local_device_commands: LocalDeviceCommand,
 ) -> ADBCliResult<()> {
     match local_device_commands {

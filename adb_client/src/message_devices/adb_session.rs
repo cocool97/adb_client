@@ -1,6 +1,7 @@
 use std::{
     io::{Cursor, Read, Seek},
-    time::{Duration, SystemTime},
+    sync::mpsc::Sender,
+    time::SystemTime,
 };
 
 use byteorder::ReadBytesExt;
@@ -11,6 +12,7 @@ use crate::{
         adb_message_transport::ADBMessageTransport,
         adb_transport_message::ADBTransportMessage,
         message_commands::{MessageCommand, MessageSubcommand},
+        message_dispatcher::{DispatcherCommand, StreamReceiver, connection_lost_error},
         utils::BinaryEncodable,
     },
 };
@@ -21,28 +23,46 @@ const SYNC_DATA_MAX_SIZE: usize = 64 * 1024;
 /// Size of a sync chunk header (identifier and length).
 const SYNC_HEADER_SIZE: usize = 8;
 
-/// Represent a session between an `ADBDevice` and remote `adbd`.
+/// Represent a session between an `ADBDevice` and remote `adbd`, closed when dropped.
 #[derive(Debug)]
 pub struct ADBSession<T: ADBMessageTransport> {
     transport: T,
+    /// Messages received for this session.
+    receiver: StreamReceiver,
+    /// Commands sent to the reader thread.
+    dispatcher_commands: Sender<DispatcherCommand>,
     local_id: u32,
     remote_id: u32,
     max_payload_size: usize,
+    /// The session has been closed, by either side.
+    closed: bool,
 }
 
 impl<T: ADBMessageTransport> ADBSession<T> {
-    /// Create a new session with the given transport and IDs.
-    pub const fn new(transport: T, local_id: u32, remote_id: u32, max_payload_size: usize) -> Self {
+    /// Create a session not opened yet: [`ADBSession::opened`] must be called once the device accepted it.
+    pub(crate) const fn new(
+        transport: T,
+        local_id: u32,
+        receiver: StreamReceiver,
+        dispatcher_commands: Sender<DispatcherCommand>,
+        max_payload_size: usize,
+    ) -> Self {
         Self {
             transport,
+            receiver,
+            dispatcher_commands,
             local_id,
-            remote_id,
+            remote_id: 0,
             max_payload_size,
+            // Nothing to close until the device accepts the session
+            closed: true,
         }
     }
 
-    pub const fn get_transport_mut(&mut self) -> &mut T {
-        &mut self.transport
+    /// Mark the session as opened by the device, under `remote_id`.
+    pub(crate) const fn opened(&mut self, remote_id: u32) {
+        self.remote_id = remote_id;
+        self.closed = false;
     }
 
     pub const fn local_id(&self) -> u32 {
@@ -58,15 +78,39 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         self.max_payload_size
     }
 
-    /// Receive a message and acknowledge it by replying with an `OKAY` command
-    pub(crate) fn recv_and_reply_okay(&mut self) -> Result<ADBTransportMessage> {
-        let message = self.transport.read_message()?;
-        self.transport.write_message(ADBTransportMessage::try_new(
+    /// Send `message` to the device.
+    pub(crate) fn send(&mut self, message: ADBTransportMessage) -> Result<()> {
+        self.transport.write_message(message)
+    }
+
+    /// Send an `OKAY` message, telling the device we are ready to receive more data.
+    pub(crate) fn send_okay(&mut self) -> Result<()> {
+        self.send(ADBTransportMessage::try_new(
             MessageCommand::Okay,
             self.local_id,
             self.remote_id,
             &[],
-        )?)?;
+        )?)
+    }
+
+    /// Receive the next message of this session.
+    pub(crate) fn recv(&mut self) -> Result<ADBTransportMessage> {
+        let message = self
+            .receiver
+            .recv()
+            .map_err(|_| connection_lost_error("message reader stopped"))??;
+        if message.header().command() == MessageCommand::Clse {
+            self.closed = true;
+        }
+        Ok(message)
+    }
+
+    /// Receive a message and acknowledge it by replying with an `OKAY` command if it carries data.
+    pub(crate) fn recv_and_reply_okay(&mut self) -> Result<ADBTransportMessage> {
+        let message = self.recv()?;
+        if message.header().command() == MessageCommand::Write {
+            self.send_okay()?;
+        }
         Ok(message)
     }
 
@@ -75,12 +119,40 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         &mut self,
         message: ADBTransportMessage,
     ) -> Result<ADBTransportMessage> {
-        self.transport.write_message(message)?;
+        self.send(message)?;
 
-        self.transport.read_message().and_then(|message| {
-            message.assert_command(MessageCommand::Okay)?;
-            Ok(message)
-        })
+        let message = self.recv()?;
+        message.assert_command(MessageCommand::Okay)?;
+        Ok(message)
+    }
+
+    /// Close the session from our side, unless it is already closed.
+    pub(crate) fn close(&mut self) -> Result<()> {
+        if self.closed {
+            return Ok(());
+        }
+
+        self.closed = true;
+        self.send(ADBTransportMessage::try_new(
+            MessageCommand::Clse,
+            self.local_id,
+            self.remote_id,
+            &[],
+        )?)
+    }
+
+    /// End a sync transaction, and wait for the device to close the session.
+    pub(crate) fn end_transaction(&mut self) -> Result<()> {
+        let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
+        self.send_and_expect_okay(ADBTransportMessage::try_new(
+            MessageCommand::Write,
+            self.local_id,
+            self.remote_id,
+            &quit_buffer.encode(),
+        )?)?;
+
+        self.recv_until_close()?;
+        Ok(())
     }
 
     /// Receive the data sent by the device until it closes the session, and return it.
@@ -91,18 +163,10 @@ impl<T: ADBMessageTransport> ADBSession<T> {
     pub(crate) fn recv_until_close(&mut self) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         loop {
-            let message = self.transport.read_message()?;
+            let message = self.recv_and_reply_okay()?;
             match message.header().command() {
                 MessageCommand::Okay => {}
-                MessageCommand::Write => {
-                    output.extend_from_slice(message.payload());
-                    self.transport.write_message(ADBTransportMessage::try_new(
-                        MessageCommand::Okay,
-                        self.local_id,
-                        self.remote_id,
-                        &[],
-                    )?)?;
-                }
+                MessageCommand::Write => output.extend_from_slice(message.payload()),
                 MessageCommand::Clse => return Ok(output),
                 command => {
                     return Err(RustADBError::ADBRequestFailed(format!(
@@ -203,7 +267,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
         self.send_and_expect_okay(message)?;
 
         // Command should end with a Write => Okay
-        let received = self.transport.read_message()?;
+        let received = self.recv_and_reply_okay()?;
         match received.header().command() {
             MessageCommand::Write => Ok(()),
             c => Err(RustADBError::ADBRequestFailed(format!(
@@ -228,7 +292,7 @@ impl<T: ADBMessageTransport> ADBSession<T> {
             remote_path.as_bytes(),
         )?)?;
 
-        let response = self.transport.read_message()?;
+        let response = self.recv_and_reply_okay()?;
         // Skip first 4 bytes as this is the literal "STAT".
         // Interesting part starts right after
 
@@ -238,11 +302,10 @@ impl<T: ADBMessageTransport> ADBSession<T> {
 
 impl<T: ADBMessageTransport> Drop for ADBSession<T> {
     fn drop(&mut self) {
-        // some devices will repeat the trailing CLSE command to ensure
-        // the client has acknowledged it. Read them quickly if present.
-        while let Ok(_discard_close_message) = self
-            .transport
-            .read_message_with_timeout(Duration::from_millis(20))
-        {}
+        // Best effort here
+        let _ = self.close();
+        let _ = self
+            .dispatcher_commands
+            .send(DispatcherCommand::Unregister(self.local_id));
     }
 }

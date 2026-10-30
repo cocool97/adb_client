@@ -6,10 +6,10 @@ use crate::{
 
 impl ADBServerDevice {
     /// Forward socket connection
-    pub fn forward(&mut self, remote: String, local: String) -> Result<()> {
-        self.set_serial_transport()?;
+    pub fn forward(&self, remote: String, local: String) -> Result<()> {
+        let transport = self.connect_to_device()?;
 
-        self.transport
+        transport
             .proxy_connection(
                 &ADBCommand::Local(ADBLocalCommand::Forward(remote, local)),
                 false,
@@ -18,10 +18,10 @@ impl ADBServerDevice {
     }
 
     /// Remove a previously applied forward rule by its local endpoint.
-    pub fn forward_remove(&mut self, local: String) -> Result<()> {
-        self.set_serial_transport()?;
+    pub fn forward_remove(&self, local: String) -> Result<()> {
+        let transport = self.connect_to_device()?;
 
-        self.transport
+        transport
             .proxy_connection(
                 &ADBCommand::Local(ADBLocalCommand::ForwardRemove(local)),
                 false,
@@ -30,10 +30,10 @@ impl ADBServerDevice {
     }
 
     /// Remove all previously applied forward rules
-    pub fn forward_remove_all(&mut self) -> Result<()> {
-        self.set_serial_transport()?;
+    pub fn forward_remove_all(&self) -> Result<()> {
+        let transport = self.connect_to_device()?;
 
-        self.transport
+        transport
             .proxy_connection(&ADBCommand::Local(ADBLocalCommand::ForwardRemoveAll), false)
             .map(|_| ())
     }

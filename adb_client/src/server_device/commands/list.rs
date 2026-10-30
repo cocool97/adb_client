@@ -6,7 +6,7 @@ impl ADBServerDevice {
     ///
     /// Opens a dedicated connection: use [`ADBServerDevice::sync_session`] to run several file operations on a
     /// single one.
-    pub fn list<A: AsRef<str>>(&mut self, path: A) -> Result<Vec<ADBListItemType>> {
+    pub fn list<A: AsRef<str>>(&self, path: A) -> Result<Vec<ADBListItemType>> {
         self.sync_session()?.list(path.as_ref())
     }
 }

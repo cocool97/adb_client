@@ -70,10 +70,7 @@ impl TryFrom<ADBServerDevice> for ADBEmulatorDevice {
                 ))
             },
             |device_identifier| {
-                Self::new(
-                    device_identifier.clone(),
-                    Some(*value.transport.get_socketaddr().ip()),
-                )
+                Self::new(device_identifier.clone(), Some(*value.server_addr().ip()))
             },
         )
     }

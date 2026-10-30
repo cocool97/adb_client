@@ -13,7 +13,7 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+    pub(crate) fn framebuffer_inner(&self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
         let mut session = self.open_session(&ADBLocalCommand::FrameBuffer)?;
 
         let response = session.recv_and_reply_okay()?;
@@ -93,8 +93,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         };
 
         session
-            .get_transport_mut()
-            .read_message()
+            .recv()
             .and_then(|message| message.assert_command(MessageCommand::Clse))?;
 
         Ok(img)

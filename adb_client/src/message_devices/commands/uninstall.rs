@@ -8,7 +8,7 @@ use crate::{
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     pub(crate) fn uninstall(
-        &mut self,
+        &self,
         package_name: &dyn AsRef<str>,
         user: Option<&str>,
     ) -> Result<()> {

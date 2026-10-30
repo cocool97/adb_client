@@ -1,4 +1,7 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use rusb::{
     Context, Device, DeviceHandle, Direction, TransferType, UsbContext,
@@ -9,7 +12,7 @@ use crate::{
     Result, RustADBError,
     adb_transport::ADBTransport,
     message_devices::{
-        adb_message_transport::ADBMessageTransport,
+        adb_message_transport::{ADBMessageTransport, MESSAGE_END_TIMEOUT},
         adb_transport_message::{ADBTransportMessage, ADBTransportMessageHeader},
         message_commands::MessageCommand,
     },
@@ -22,13 +25,20 @@ struct Endpoint {
     max_packet_size: usize,
 }
 
+/// An open USB device, with its ADB interface claimed.
+#[derive(Debug)]
+struct Connection {
+    handle: DeviceHandle<Context>,
+    read_endpoint: Endpoint,
+    /// Locked while writing a message, whose transfers must not be interleaved with another one.
+    write_endpoint: Mutex<Endpoint>,
+}
+
 /// Transport running on USB
 #[derive(Debug, Clone)]
 pub struct USBTransport {
     device: Device<Context>,
-    handle: Option<Arc<DeviceHandle<Context>>>,
-    read_endpoint: Option<Endpoint>,
-    write_endpoint: Option<Endpoint>,
+    connection: Option<Arc<Connection>>,
 }
 
 impl USBTransport {
@@ -57,9 +67,7 @@ impl USBTransport {
     pub const fn new_from_device(rusb_device: rusb::Device<Context>) -> Self {
         Self {
             device: rusb_device,
-            handle: None,
-            read_endpoint: None,
-            write_endpoint: None,
+            connection: None,
         }
     }
 
@@ -71,32 +79,12 @@ impl USBTransport {
         Ok(self.device.device_descriptor().map(|d| d.product_id())?)
     }
 
-    pub(crate) fn get_raw_connection(&self) -> Result<Arc<DeviceHandle<Context>>> {
-        self.handle
-            .as_ref()
+    fn get_current_connection(&self) -> Result<&Connection> {
+        self.connection
+            .as_deref()
             .ok_or(RustADBError::IOError(std::io::Error::new(
                 std::io::ErrorKind::NotConnected,
                 "not connected",
-            )))
-            .cloned()
-    }
-
-    fn get_read_endpoint(&self) -> Result<Endpoint> {
-        self.read_endpoint
-            .as_ref()
-            .ok_or(RustADBError::IOError(std::io::Error::new(
-                std::io::ErrorKind::NotConnected,
-                "no read endpoint setup",
-            )))
-            .cloned()
-    }
-
-    fn get_write_endpoint(&self) -> Result<&Endpoint> {
-        self.write_endpoint
-            .as_ref()
-            .ok_or(RustADBError::IOError(std::io::Error::new(
-                std::io::ErrorKind::NotConnected,
-                "no write endpoint setup",
             )))
     }
 
@@ -154,9 +142,12 @@ impl USBTransport {
         Err(RustADBError::USBNoDescriptorFound)
     }
 
-    fn write_bulk_data(&self, data: &[u8], timeout: Duration) -> Result<()> {
-        let endpoint = self.get_write_endpoint()?;
-        let handle = self.get_raw_connection()?;
+    fn write_bulk_data(
+        handle: &DeviceHandle<Context>,
+        endpoint: &Endpoint,
+        data: &[u8],
+        timeout: Duration,
+    ) -> Result<()> {
         let max_packet_size = endpoint.max_packet_size;
 
         let mut offset = 0;
@@ -185,19 +176,21 @@ impl ADBTransport for USBTransport {
 
         Self::configure_endpoint(&device, &read_endpoint)?;
         log::debug!("got read endpoint: {read_endpoint:?}");
-        self.read_endpoint = Some(read_endpoint);
 
         Self::configure_endpoint(&device, &write_endpoint)?;
         log::debug!("got write endpoint: {write_endpoint:?}");
-        self.write_endpoint = Some(write_endpoint);
 
-        self.handle = Some(Arc::new(device));
+        self.connection = Some(Arc::new(Connection {
+            handle: device,
+            read_endpoint,
+            write_endpoint: Mutex::new(write_endpoint),
+        }));
 
         Ok(())
     }
 
     fn disconnect(&mut self) -> crate::Result<()> {
-        if self.handle.is_none() {
+        if self.connection.is_none() {
             // device has not been initialized, nothing to do
             return Ok(());
         }
@@ -207,13 +200,13 @@ impl ADBTransport for USBTransport {
             log::error!("error while sending CLSE message: {e}");
         }
 
-        if let Some(handle) = &self.handle {
-            let endpoint = self.read_endpoint.as_ref().or(self.write_endpoint.as_ref());
-            if let Some(endpoint) = &endpoint {
-                match handle.release_interface(endpoint.iface) {
-                    Ok(()) => log::debug!("succesfully released interface"),
-                    Err(e) => log::error!("error while release interface: {e}"),
-                }
+        if let Some(connection) = &self.connection {
+            match connection
+                .handle
+                .release_interface(connection.read_endpoint.iface)
+            {
+                Ok(()) => log::debug!("succesfully released interface"),
+                Err(e) => log::error!("error while release interface: {e}"),
             }
         }
 
@@ -227,14 +220,17 @@ impl ADBMessageTransport for USBTransport {
         message: ADBTransportMessage,
         timeout: Duration,
     ) -> Result<()> {
+        let connection = self.get_current_connection()?;
+        let endpoint = connection.write_endpoint.lock()?;
+
         let message_bytes = message.header().as_bytes();
-        self.write_bulk_data(&message_bytes, timeout)?;
+        Self::write_bulk_data(&connection.handle, &endpoint, &message_bytes, timeout)?;
 
         log::trace!("successfully write header: {} bytes", message_bytes.len());
 
         let payload = message.into_payload();
         if !payload.is_empty() {
-            self.write_bulk_data(&payload, timeout)?;
+            Self::write_bulk_data(&connection.handle, &endpoint, &payload, timeout)?;
             log::trace!("successfully write payload: {} bytes", payload.len());
         }
 
@@ -242,13 +238,20 @@ impl ADBMessageTransport for USBTransport {
     }
 
     fn read_message_with_timeout(&mut self, timeout: Duration) -> Result<ADBTransportMessage> {
-        let endpoint = self.get_read_endpoint()?;
-        let handle = self.get_raw_connection()?;
+        let connection = self.get_current_connection()?;
+        let handle = &connection.handle;
+        let endpoint = &connection.read_endpoint;
         let max_packet_size = endpoint.max_packet_size;
 
         let mut data = [0u8; 24];
         let mut offset = 0;
         while offset < data.len() {
+            // Only wait `timeout` for the message to start: a transfer that times out reads nothing
+            let timeout = if offset == 0 {
+                timeout
+            } else {
+                MESSAGE_END_TIMEOUT
+            };
             let end = (offset + max_packet_size).min(data.len());
             let chunk = &mut data[offset..end];
             offset += handle.read_bulk(endpoint.address, chunk, timeout)?;
@@ -261,7 +264,11 @@ impl ADBMessageTransport for USBTransport {
             let mut msg_data = vec![0_u8; header.data_length() as usize];
             let mut offset = 0;
             while offset < msg_data.len() {
-                offset += handle.read_bulk(endpoint.address, &mut msg_data[offset..], timeout)?;
+                offset += handle.read_bulk(
+                    endpoint.address,
+                    &mut msg_data[offset..],
+                    MESSAGE_END_TIMEOUT,
+                )?;
             }
 
             let message = ADBTransportMessage::from_header_and_payload(header, msg_data);

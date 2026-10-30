@@ -1,7 +1,7 @@
 use super::{ADBSyncSession, send_sync_request};
 use crate::{Result, models::SyncCommand};
 
-impl ADBSyncSession<'_> {
+impl ADBSyncSession {
     /// Ends this session, telling the device that no more requests will follow.
     pub fn quit(mut self) -> Result<()> {
         self.send_quit()
@@ -15,7 +15,7 @@ impl ADBSyncSession<'_> {
         self.session_closed = true;
 
         send_sync_request(
-            self.device.transport.get_raw_connection()?,
+            self.transport.get_raw_connection()?,
             &SyncCommand::Quit,
             &[],
         )

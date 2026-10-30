@@ -8,7 +8,7 @@ use crate::{
     models::{ADBListItem, ADBListItemType, SyncCommand},
 };
 
-impl ADBSyncSession<'_> {
+impl ADBSyncSession {
     /// Lists files in path on the device.
     /// note: path uses internal file paths, so Documents is at /storage/emulated/0/Documents
     pub fn list(&mut self, path: &str) -> Result<Vec<ADBListItemType>> {

@@ -30,7 +30,7 @@ use utils::setup_logger;
 
 use crate::models::{ADBCliError, ADBCliResult};
 
-fn run_command(mut device: Box<dyn ADBDeviceExt>, command: DeviceCommands) -> ADBCliResult<()> {
+fn run_command(device: &dyn ADBDeviceExt, command: DeviceCommands) -> ADBCliResult<()> {
     match command {
         DeviceCommands::Shell { commands } => {
             if commands.is_empty() {
@@ -149,7 +149,7 @@ fn inner_main() -> ADBCliResult<()> {
             match server_command.command {
                 LocalCommand::DeviceCommands(device_commands) => (device.boxed(), device_commands),
                 LocalCommand::LocalDeviceCommand(local_device_command) => {
-                    return handle_local_commands(device, local_device_command);
+                    return handle_local_commands(&device, local_device_command);
                 }
             }
         }
@@ -231,7 +231,7 @@ fn inner_main() -> ADBCliResult<()> {
         }
     };
 
-    run_command(device, commands)?;
+    run_command(device.as_ref(), commands)?;
 
     Ok(())
 }

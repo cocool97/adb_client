@@ -13,7 +13,11 @@ mod adb_session;
 mod adb_transport_message;
 mod commands;
 mod message_commands;
+mod message_dispatcher;
 mod models;
 mod utils;
+
+#[cfg(test)]
+mod tests;
 
 pub use utils::BinaryDecodable;

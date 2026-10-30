@@ -1892,6 +1892,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sessions"
+version = "3.2.3"
+dependencies = [
+ "adb_client",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

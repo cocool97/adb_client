@@ -9,27 +9,26 @@ use crate::{
 
 impl ADBServerDevice {
     /// Install an APK on device
-    pub fn install<P: AsRef<Path>>(&mut self, apk_path: P, user: Option<&str>) -> Result<()> {
+    pub fn install<P: AsRef<Path>>(&self, apk_path: P, user: Option<&str>) -> Result<()> {
         let mut apk_file = File::open(&apk_path)?;
 
         check_extension_is_apk(&apk_path)?;
 
         let file_size = apk_file.metadata()?.len();
 
-        self.set_serial_transport()?;
+        let transport = self.connect_to_device()?;
 
-        self.transport
-            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Install(
-                file_size,
-                user.map(ToString::to_string),
-            )))?;
+        transport.send_adb_request(&ADBCommand::Local(ADBLocalCommand::Install(
+            file_size,
+            user.map(ToString::to_string),
+        )))?;
 
-        let mut raw_connection = self.transport.get_raw_connection()?;
+        let mut raw_connection = transport.get_raw_connection()?;
 
         std::io::copy(&mut apk_file, &mut raw_connection)?;
 
         let mut data = [0; 1024];
-        let read_amount = self.transport.get_raw_connection()?.read(&mut data)?;
+        let read_amount = transport.get_raw_connection()?.read(&mut data)?;
 
         match &data[0..read_amount] {
             b"Success\n" => {

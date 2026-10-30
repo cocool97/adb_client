@@ -162,3 +162,18 @@ impl<T> From<std::sync::PoisonError<T>> for RustADBError {
         Self::PoisonError
     }
 }
+
+impl RustADBError {
+    /// The error is a timeout.
+    pub(crate) fn is_timeout(&self) -> bool {
+        match self {
+            Self::IOError(e) => matches!(
+                e.kind(),
+                std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+            ),
+            #[cfg(feature = "usb")]
+            Self::UsbError(rusb::Error::Timeout) => true,
+            _ => false,
+        }
+    }
+}

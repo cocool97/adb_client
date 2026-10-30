@@ -6,7 +6,7 @@ use crate::{
     models::{AdbStatResponse, SyncCommand},
 };
 
-impl ADBSyncSession<'_> {
+impl ADBSyncSession {
     /// Stat file given as path on the device.
     pub fn stat(&mut self, path: &str) -> Result<AdbStatResponse> {
         self.run(|mut stream| {

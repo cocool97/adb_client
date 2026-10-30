@@ -26,13 +26,12 @@ const MAX_BUFFER_SIZE: usize = 65535;
 impl ADBServerDevice {
     /// Opens a sync session with this device, to run several file operations (stat, list, pull, push) on a
     /// single connection. See [`ADBSyncSession`].
-    pub fn sync_session(&mut self) -> Result<ADBSyncSession<'_>> {
-        self.set_serial_transport()?;
-        self.transport
-            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::Sync))?;
+    pub fn sync_session(&self) -> Result<ADBSyncSession> {
+        let transport = self.connect_to_device()?;
+        transport.send_adb_request(&ADBCommand::Local(ADBLocalCommand::Sync))?;
 
         Ok(ADBSyncSession {
-            device: self,
+            transport,
             session_closed: false,
         })
     }

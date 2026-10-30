@@ -6,11 +6,11 @@ use crate::{
 
 impl ADBServerDevice {
     /// Set adb daemon to usb mode
-    pub fn usb(&mut self) -> Result<()> {
+    pub fn usb(&self) -> Result<()> {
         // adbd restarts, and may then advertise different features
         self.invalidate_features();
-        self.set_serial_transport()?;
-        self.transport
+        let transport = self.connect_to_device()?;
+        transport
             .proxy_connection(&ADBCommand::Local(ADBLocalCommand::Usb), false)
             .map(|_| ())
     }

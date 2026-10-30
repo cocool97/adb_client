@@ -12,7 +12,7 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn pull<A: AsRef<str>, W: Write>(&mut self, source: A, output: W) -> Result<()> {
+    pub(crate) fn pull<A: AsRef<str>, W: Write>(&self, source: A, output: W) -> Result<()> {
         let mut session = self.open_synchronization_session()?;
         let source = source.as_ref();
 
@@ -23,16 +23,6 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                 "mode is 0: source file does not exist".to_string(),
             ));
         }
-
-        self.get_transport_mut().write_message_with_timeout(
-            ADBTransportMessage::try_new(
-                MessageCommand::Okay,
-                session.local_id(),
-                session.remote_id(),
-                &[],
-            )?,
-            std::time::Duration::from_secs(4),
-        )?;
 
         let recv_buffer = MessageSubcommand::Recv.with_arg(u32::try_from(source.len())?);
         session.send_and_expect_okay(ADBTransportMessage::try_new(
@@ -49,7 +39,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         )?)?;
 
         session.recv_file(output)?;
-        self.end_transaction(&mut session)?;
+        session.end_transaction()?;
         Ok(())
     }
 }

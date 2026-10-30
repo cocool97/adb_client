@@ -5,7 +5,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use super::{ADBSyncSession, MAX_BUFFER_SIZE, send_sync_request};
 use crate::{Result, models::SyncCommand};
 
-impl ADBSyncSession<'_> {
+impl ADBSyncSession {
     /// Receives the file at `path` on the device, and writes its content into `output`.
     pub fn pull(&mut self, path: &str, output: &mut dyn Write) -> Result<()> {
         self.run(|stream| {

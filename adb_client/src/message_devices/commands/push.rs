@@ -12,7 +12,7 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn push<R: Read, A: AsRef<str>>(&mut self, stream: R, path: A) -> Result<()> {
+    pub(crate) fn push<R: Read, A: AsRef<str>>(&self, stream: R, path: A) -> Result<()> {
         let mut session = self.open_synchronization_session()?;
 
         let path_header = format!("{},0777", path.as_ref());
@@ -29,7 +29,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         )?)?;
 
         session.push_file(stream)?;
-        self.end_transaction(&mut session)?;
+        session.end_transaction()?;
 
         Ok(())
     }
