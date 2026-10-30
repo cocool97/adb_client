@@ -11,18 +11,16 @@ impl ADBServerDevice {
     /// `identifier` or `transport_id` change, or after commands restarting adbd (reboot, root, tcpip, usb,
     /// reconnect). When no device is selected (`transport-any`), the cache assumes the same device stays
     /// connected.
-    pub fn host_features(&mut self) -> Result<Vec<HostFeatures>> {
-        if let Some(cached) = &self.cached_features
+    pub fn host_features(&self) -> Result<Vec<HostFeatures>> {
+        if let Some(cached) = self.cached_features.lock()?.as_ref()
             && cached.identifier == self.identifier
             && cached.transport_id == self.transport_id
         {
             return Ok(cached.features.clone());
         }
 
-        self.set_serial_transport()?;
-
         let features: Vec<HostFeatures> = self
-            .transport
+            .connect_to_device()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::HostFeatures), true)?
             .split(|x| x.eq(&b','))
             .filter_map(|v| match HostFeatures::try_from(v) {
@@ -34,7 +32,7 @@ impl ADBServerDevice {
             })
             .collect();
 
-        self.cached_features = Some(CachedFeatures {
+        *self.cached_features.lock()? = Some(CachedFeatures {
             identifier: self.identifier.clone(),
             transport_id: self.transport_id,
             features: features.clone(),

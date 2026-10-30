@@ -8,6 +8,9 @@ use crate::{
 const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(u64::MAX);
 const DEFAULT_WRITE_TIMEOUT: Duration = Duration::from_secs(2);
 
+/// Maximum time to wait for the rest of a message, once its first bytes have been received.
+pub const MESSAGE_END_TIMEOUT: Duration = Duration::from_secs(10);
+
 /// Trait representing a transport able to read and write messages.
 pub trait ADBMessageTransport: ADBTransport + Clone + Send + 'static {
     /// An upgrade of the connection has been asked by the device.
@@ -17,7 +20,12 @@ pub trait ADBMessageTransport: ADBTransport + Clone + Send + 'static {
         Ok(())
     }
 
-    /// Read a message using given timeout on the underlying transport
+    /// Read a message, waiting at most `read_timeout` for it to start.
+    ///
+    /// Once its first bytes are received, the message is read entirely (waiting at most [`MESSAGE_END_TIMEOUT`]
+    /// between two chunks). A timeout before the message starts leaves the transport usable.
+    ///
+    /// Only one message can be read at a time, but messages can be written while a message is being read.
     fn read_message_with_timeout(&mut self, read_timeout: Duration) -> Result<ADBTransportMessage>;
 
     /// Read data to underlying connection, using default timeout

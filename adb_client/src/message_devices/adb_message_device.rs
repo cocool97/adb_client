@@ -1,4 +1,3 @@
-use rand::RngExt;
 use std::{path::Path, time::Duration};
 
 use crate::{
@@ -9,9 +8,9 @@ use crate::{
         adb_transport_message::{
             ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN, MAX_PAYLOAD_SIZE,
         },
-        message_commands::{MessageCommand, MessageSubcommand},
+        message_commands::MessageCommand,
+        message_dispatcher::MessageDispatcher,
         models::{ADBRsaKey, read_adb_private_key},
-        utils::BinaryEncodable,
     },
     models::ADBLocalCommand,
 };
@@ -23,6 +22,8 @@ pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
     /// Maximum message payload size, negotiated with the device during the connection.
     max_payload_size: usize,
+    /// Reads every message received, and routes it to the session it belongs to.
+    dispatcher: MessageDispatcher,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
@@ -47,14 +48,25 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
         };
 
-        Ok(Self {
-            transport,
-            max_payload_size,
+        Self::from_connected_transport(transport.clone(), max_payload_size).inspect_err(|_| {
+            // Best effort here
+            let _ = transport.disconnect();
         })
     }
 
-    pub(crate) const fn get_transport_mut(&mut self) -> &mut T {
-        &mut self.transport
+    /// Instantiate a new [`ADBMessageDevice`] from a transport on which the connection handshake is done, and
+    /// start reading its messages.
+    pub(crate) fn from_connected_transport(transport: T, max_payload_size: usize) -> Result<Self> {
+        let dispatcher = MessageDispatcher::start(transport.clone())?;
+        Ok(Self {
+            transport,
+            max_payload_size,
+            dispatcher,
+        })
+    }
+
+    pub(crate) const fn transport(&self) -> &T {
+        &self.transport
     }
 
     /// Send initial connect, and return the negotiated maximum payload size
@@ -185,14 +197,21 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         Ok(max_payload)
     }
 
-    pub(crate) fn open_synchronization_session(&mut self) -> Result<ADBSession<T>> {
+    pub(crate) fn open_synchronization_session(&self) -> Result<ADBSession<T>> {
         self.open_session(&ADBLocalCommand::Sync)
     }
 
     /// Open a new ADB session with the given local command.
-    pub(crate) fn open_session(&mut self, cmd: &ADBLocalCommand) -> Result<ADBSession<T>> {
-        let mut rng = rand::rng();
-        let local_id: u32 = rng.random();
+    pub(crate) fn open_session(&self, cmd: &ADBLocalCommand) -> Result<ADBSession<T>> {
+        // Registered before sending `OPEN`, so the answer is routed to it
+        let (local_id, receiver) = self.dispatcher.register()?;
+        let mut session = ADBSession::new(
+            self.transport.clone(),
+            local_id,
+            receiver,
+            self.dispatcher.commands(),
+            self.max_payload_size,
+        );
 
         // adbd used to expect a null-terminated string.
         // keep doing so to maintain compatibility with older versions.
@@ -202,55 +221,35 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             destination.push(0);
         }
 
-        let message = ADBTransportMessage::try_new(
+        session.send(ADBTransportMessage::try_new(
             MessageCommand::Open,
-            local_id, // Our 'local-id'
+            local_id,
             0,
             &destination,
-        )?;
-        self.transport.write_message(message)?;
-
-        let response = self.transport.read_message()?;
-
-        if response.header().command() != MessageCommand::Okay {
-            return Err(RustADBError::ADBRequestFailed(format!(
-                "Open session failed: got {} in response instead of OKAY",
-                response.header().command()
-            )));
-        }
-
-        if response.header().arg1() != local_id {
-            return Err(RustADBError::ADBRequestFailed(format!(
-                "Open session failed: responses used {} for our local_id instead of {local_id}",
-                response.header().arg1()
-            )));
-        }
-
-        Ok(ADBSession::new(
-            self.transport.clone(),
-            local_id,
-            response.header().arg0(),
-            self.max_payload_size,
-        ))
-    }
-
-    pub(crate) fn end_transaction(&mut self, session: &mut ADBSession<T>) -> Result<()> {
-        let quit_buffer = MessageSubcommand::Quit.with_arg(0u32);
-        session.send_and_expect_okay(ADBTransportMessage::try_new(
-            MessageCommand::Write,
-            session.local_id(),
-            session.remote_id(),
-            &quit_buffer.encode(),
         )?)?;
 
-        let _discard_close = self.transport.read_message()?;
-        Ok(())
+        let response = session.recv()?;
+        match response.header().command() {
+            MessageCommand::Okay => {
+                session.opened(response.header().arg0());
+                Ok(session)
+            }
+            // The device could not open the service
+            MessageCommand::Clse => Err(RustADBError::ADBRequestFailed(format!(
+                "Open session failed: device closed the stream to {cmd}"
+            ))),
+            command => Err(RustADBError::ADBRequestFailed(format!(
+                "Open session failed: got {command} in response instead of OKAY"
+            ))),
+        }
     }
 }
 
 impl<T: ADBMessageTransport> Drop for ADBMessageDevice<T> {
     fn drop(&mut self) {
+        // The reader must release the transport before it gets disconnected
+        self.dispatcher.stop();
         // Best effort here
-        let _ = self.get_transport_mut().disconnect();
+        let _ = self.transport.disconnect();
     }
 }

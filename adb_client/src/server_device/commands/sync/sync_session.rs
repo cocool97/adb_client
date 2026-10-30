@@ -1,12 +1,12 @@
 use std::net::TcpStream;
 
-use crate::server_device::ADBServerDevice;
+use crate::server::TCPServerTransport;
 use crate::{Result, RustADBError};
 
 /// A sync session with a device, running any number of file operations on a single server connection.
 ///
-/// Opened with [`ADBServerDevice::sync_session`]. While it exists, the device connection is dedicated to it.
-/// The session ends with [`ADBSyncSession::quit`], or when dropped.
+/// Opened with [`ADBServerDevice::sync_session`](crate::server_device::ADBServerDevice::sync_session), on its own connection: other commands can run on the device at
+/// the same time. The session ends with [`ADBSyncSession::quit`], or when dropped.
 ///
 /// If a request fails (e.g. pulling a missing file), adbd ends the session: every later request returns an
 /// error, and a new session must be opened.
@@ -16,7 +16,7 @@ use crate::{Result, RustADBError};
 /// use std::fs::File;
 ///
 /// let mut server = ADBServer::default();
-/// let mut device = server.get_device().expect("cannot get device");
+/// let device = server.get_device().expect("cannot get device");
 ///
 /// // Pull all files of a directory, using a single connection
 /// let mut sync = device.sync_session().expect("cannot open sync session");
@@ -30,13 +30,14 @@ use crate::{Result, RustADBError};
 /// sync.quit().expect("cannot end sync session");
 /// ```
 #[derive(Debug)]
-pub struct ADBSyncSession<'a> {
-    pub(super) device: &'a mut ADBServerDevice,
+pub struct ADBSyncSession {
+    /// Connection dedicated to this session.
+    pub(super) transport: TCPServerTransport,
     /// No more requests can be sent: session has been ended, or a previous request failed.
     pub(super) session_closed: bool,
 }
 
-impl ADBSyncSession<'_> {
+impl ADBSyncSession {
     /// Runs a request on this session's connection.
     pub(super) fn run<T>(&mut self, request: impl FnOnce(&TcpStream) -> Result<T>) -> Result<T> {
         if self.session_closed {
@@ -46,7 +47,7 @@ impl ADBSyncSession<'_> {
             ));
         }
 
-        let result = request(self.device.transport.get_raw_connection()?);
+        let result = request(self.transport.get_raw_connection()?);
 
         // adbd ends the sync service after a failure, and an interrupted transfer leaves unread data on the
         // connection: no request can follow.
@@ -58,7 +59,7 @@ impl ADBSyncSession<'_> {
     }
 }
 
-impl Drop for ADBSyncSession<'_> {
+impl Drop for ADBSyncSession {
     fn drop(&mut self) {
         // Best effort here
         let _ = self.send_quit();

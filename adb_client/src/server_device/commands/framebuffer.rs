@@ -11,23 +11,19 @@ use crate::{
 
 impl ADBServerDevice {
     /// Inner method requesting framebuffer from Android device
-    pub(crate) fn framebuffer_inner(&mut self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
-        self.set_serial_transport()?;
+    pub(crate) fn framebuffer_inner(&self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+        let transport = self.connect_to_device()?;
 
-        self.transport
-            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::FrameBuffer))?;
+        transport.send_adb_request(&ADBCommand::Local(ADBLocalCommand::FrameBuffer))?;
 
-        let version = self
-            .transport
-            .get_raw_connection()?
-            .read_u32::<LittleEndian>()?;
+        let version = transport.get_raw_connection()?.read_u32::<LittleEndian>()?;
 
         match version {
             // RGBA_8888
             1 => {
                 let mut buf = [0u8; std::mem::size_of::<FrameBufferInfoV1>()];
 
-                self.transport.get_raw_connection()?.read_exact(&mut buf)?;
+                transport.get_raw_connection()?.read_exact(&mut buf)?;
 
                 let framebuffer_info: FrameBufferInfoV1 = buf.try_into()?;
 
@@ -38,7 +34,7 @@ impl ADBServerDevice {
                         .try_into()
                         .map_err(|_| RustADBError::ConversionError)?
                 ];
-                self.transport.get_raw_connection()?.read_exact(&mut data)?;
+                transport.get_raw_connection()?.read_exact(&mut data)?;
 
                 Ok(ImageBuffer::<Rgba<u8>, Vec<u8>>::from_vec(
                     framebuffer_info.width,
@@ -51,7 +47,7 @@ impl ADBServerDevice {
             2 => {
                 let mut buf = [0u8; std::mem::size_of::<FrameBufferInfoV2>()];
 
-                self.transport.get_raw_connection()?.read_exact(&mut buf)?;
+                transport.get_raw_connection()?.read_exact(&mut buf)?;
 
                 let framebuffer_info: FrameBufferInfoV2 = buf.try_into()?;
 
@@ -62,7 +58,7 @@ impl ADBServerDevice {
                         .try_into()
                         .map_err(|_| RustADBError::ConversionError)?
                 ];
-                self.transport.get_raw_connection()?.read_exact(&mut data)?;
+                transport.get_raw_connection()?.read_exact(&mut data)?;
 
                 Ok(ImageBuffer::<Rgba<u8>, Vec<u8>>::from_vec(
                     framebuffer_info.width,

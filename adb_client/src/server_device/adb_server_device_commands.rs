@@ -8,6 +8,7 @@ use byteorder::ReadBytesExt;
 use crate::{
     ADBDeviceExt, ADBListItemType, Result, RustADBError,
     models::{ADBCommand, ADBLocalCommand, AdbStatResponse, HostFeatures, RemountInfo},
+    server::TCPServerTransport,
 };
 
 use super::ADBServerDevice;
@@ -38,8 +39,9 @@ impl TryFrom<u8> for ShellChannel {
 }
 
 impl ADBDeviceExt for ADBServerDevice {
+    // Inherent methods are called with `Self::`, as these ones would otherwise call themselves
     fn shell_command(
-        &mut self,
+        &self,
         command: &dyn AsRef<str>,
         stdout: Option<&mut dyn Write>,
         stderr: Option<&mut dyn Write>,
@@ -49,22 +51,22 @@ impl ADBDeviceExt for ADBServerDevice {
             features.contains(&HostFeatures::ShellV2) || features.contains(&HostFeatures::Cmd)
         });
 
-        self.set_serial_transport()?;
+        let transport = self.connect_to_device()?;
 
         if use_shell_v2 {
-            self.shell_command_v2(command, stdout, stderr)
+            Self::shell_command_v2(&transport, command, stdout, stderr)
         } else {
-            self.shell_command_v1(command, stdout)
+            Self::shell_command_v1(&transport, command, stdout)
         }
     }
 
     #[inline]
-    fn stat(&mut self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
-        self.stat(remote_path.as_ref())
+    fn stat(&self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
+        Self::stat(self, remote_path.as_ref())
     }
 
     fn exec(
-        &mut self,
+        &self,
         command: &str,
         reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
@@ -76,70 +78,69 @@ impl ADBDeviceExt for ADBServerDevice {
         )
     }
 
-    fn shell(&mut self, reader: Box<dyn Read + Send>, writer: Box<dyn Write + Send>) -> Result<()> {
+    fn shell(&self, reader: Box<dyn Read + Send>, writer: Box<dyn Write + Send>) -> Result<()> {
         self.bidirectional_session(&ADBCommand::Local(ADBLocalCommand::Shell), reader, writer)
     }
 
-    fn pull(&mut self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
-        self.pull(source, &mut output)
+    fn pull(&self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
+        Self::pull(self, source, &mut output)
     }
 
-    fn reboot(&mut self, reboot_type: crate::RebootType) -> Result<()> {
-        self.reboot(reboot_type)
+    fn reboot(&self, reboot_type: crate::RebootType) -> Result<()> {
+        Self::reboot(self, reboot_type)
     }
 
-    fn root(&mut self) -> Result<()> {
-        self.root()
+    fn root(&self) -> Result<()> {
+        Self::root(self)
     }
 
-    fn push(&mut self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
-        self.push(stream, path)
+    fn push(&self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
+        Self::push(self, stream, path)
     }
 
-    fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
-        self.install(apk_path, user)
+    fn install(&self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
+        Self::install(self, apk_path, user)
     }
 
-    fn uninstall(&mut self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
-        self.uninstall(package.as_ref(), user)
+    fn uninstall(&self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
+        Self::uninstall(self, package.as_ref(), user)
     }
 
     #[cfg(feature = "framebuffer")]
-    fn framebuffer_inner(&mut self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
-        self.framebuffer_inner()
+    fn framebuffer_inner(&self) -> Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
+        Self::framebuffer_inner(self)
     }
 
-    fn list(&mut self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
-        self.list(path)
+    fn list(&self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
+        Self::list(self, path)
     }
 
-    fn remount(&mut self) -> Result<Vec<RemountInfo>> {
-        self.remount()
+    fn remount(&self) -> Result<Vec<RemountInfo>> {
+        Self::remount(self)
     }
 
-    fn enable_verity(&mut self) -> Result<()> {
-        self.enable_verity()
+    fn enable_verity(&self) -> Result<()> {
+        Self::enable_verity(self)
     }
 
-    fn disable_verity(&mut self) -> Result<()> {
-        self.disable_verity()
+    fn disable_verity(&self) -> Result<()> {
+        Self::disable_verity(self)
     }
 }
 
 impl ADBServerDevice {
     /// Shell v1: simple shell without protocol (for older ADB versions)
     fn shell_command_v1(
-        &self,
+        transport: &TCPServerTransport,
         command: &dyn AsRef<str>,
         mut stdout: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
-        self.transport
-            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
-                command.as_ref().to_string(),
-                vec![],
-            )))?;
+        transport.send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
+            command.as_ref().to_string(),
+            vec![],
+        )))?;
 
-        let mut input = self.transport.get_raw_connection()?;
+        let mut input = transport.get_raw_connection()?;
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
 
         loop {
@@ -162,7 +163,7 @@ impl ADBServerDevice {
 
     /// Shell v2: with protocol packets (for newer ADB versions)
     fn shell_command_v2(
-        &self,
+        transport: &TCPServerTransport,
         command: &dyn AsRef<str>,
         mut stdout: Option<&mut dyn Write>,
         mut stderr: Option<&mut dyn Write>,
@@ -174,17 +175,16 @@ impl ADBServerDevice {
         }
 
         // Send the request
-        self.transport
-            .send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
-                command.as_ref().to_string(),
-                args,
-            )))?;
+        transport.send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
+            command.as_ref().to_string(),
+            args,
+        )))?;
 
         // Now decode the shell v2 protocol packets, reference:
         // https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/shell_protocol.h
 
         let mut exit = None;
-        let mut input = std::io::BufReader::new(self.transport.get_raw_connection()?);
+        let mut input = std::io::BufReader::new(transport.get_raw_connection()?);
 
         let mut buffer = vec![0; BUFFER_SIZE].into_boxed_slice();
         loop {
@@ -271,17 +271,17 @@ impl ADBServerDevice {
     /// is written to `writer` from the current thread. The session ends once the server closes the stream:
     /// either because the remote command exited, or because we half-closed it after `reader` reached EOF.
     fn bidirectional_session(
-        &mut self,
+        &self,
         server_cmd: &ADBCommand,
         mut reader: Box<dyn Read + Send>,
         mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
         // For bidirectional session, we still need shell features
         // But we can try without checking features first
-        self.set_serial_transport()?;
-        self.transport.send_adb_request(server_cmd)?;
+        let transport = self.connect_to_device()?;
+        transport.send_adb_request(server_cmd)?;
 
-        let mut read_stream = self.transport.get_raw_connection()?.try_clone()?;
+        let mut read_stream = transport.get_raw_connection()?.try_clone()?;
         let mut write_stream = read_stream.try_clone()?;
 
         // Forward `reader` (that could be stdin e.g) to server socket.
@@ -325,9 +325,6 @@ impl ADBServerDevice {
         remote_result?;
 
         // Input thread may still be blocked on `reader`, only report an already known error
-        match local_result_rx.try_recv() {
-            Ok(e) => Err(e),
-            _ => Ok(()),
-        }
+        local_result_rx.try_recv().map_or(Ok(()), Err)
     }
 }

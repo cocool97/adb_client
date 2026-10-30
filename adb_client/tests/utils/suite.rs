@@ -2,7 +2,10 @@
 //!
 //! [`device_test_suite!`] declares them as `#[test]` functions in a test crate.
 
-use std::path::Path;
+use std::{
+    path::Path,
+    time::{Duration, Instant},
+};
 
 use adb_client::ADBDeviceExt;
 
@@ -18,6 +21,8 @@ macro_rules! device_test_suite {
             @tests $get_device,
             shell_command_writes_stdout,
             shell_command_runs_as_shell_user,
+            commands_run_in_parallel,
+            push_while_running_commands,
             file_commands_roundtrip,
             missing_file_is_reported,
             push_pull_random_data,
@@ -40,7 +45,7 @@ macro_rules! device_test_suite {
 }
 pub(crate) use device_test_suite;
 
-pub(crate) fn shell_command_writes_stdout<D: ADBDeviceExt>(device: &mut TestDevice<D>) {
+pub(crate) fn shell_command_writes_stdout<D: ADBDeviceExt>(device: &TestDevice<D>) {
     let mut stdout = Vec::new();
     device
         .shell_command(&"echo out", Some(&mut stdout), None)
@@ -49,7 +54,7 @@ pub(crate) fn shell_command_writes_stdout<D: ADBDeviceExt>(device: &mut TestDevi
     assert_eq!(String::from_utf8_lossy(&stdout), "out\n");
 }
 
-pub(crate) fn shell_command_runs_as_shell_user<D: ADBDeviceExt>(device: &mut TestDevice<D>) {
+pub(crate) fn shell_command_runs_as_shell_user<D: ADBDeviceExt>(device: &TestDevice<D>) {
     let mut stdout = Vec::new();
     device
         .shell_command(&"id -un", Some(&mut stdout), None)
@@ -60,6 +65,63 @@ pub(crate) fn shell_command_runs_as_shell_user<D: ADBDeviceExt>(device: &mut Tes
         ["shell", "root"].contains(&user.trim()),
         "unexpected user {user:?}"
     );
+}
+
+/// A shell command completes while another one is still running on the same device.
+pub(crate) fn commands_run_in_parallel<D: ADBDeviceExt + Sync>(device: &TestDevice<D>) {
+    let start = Instant::now();
+
+    std::thread::scope(|scope| {
+        let sleep = scope.spawn(|| {
+            device
+                .shell_command(&"sleep 3", None, None)
+                .expect("cannot run shell command");
+            start.elapsed()
+        });
+
+        // Leave time to the first command to start
+        std::thread::sleep(Duration::from_millis(500));
+        let mut stdout = Vec::new();
+        device
+            .shell_command(&"echo parallel", Some(&mut stdout), None)
+            .expect("cannot run shell command");
+        let echo_done = start.elapsed();
+
+        let sleep_done = sleep.join().expect("sleep thread panicked");
+        assert_eq!(String::from_utf8_lossy(&stdout), "parallel\n");
+        assert!(
+            echo_done < sleep_done,
+            "echo ended after {echo_done:?}, not before sleep which ended after {sleep_done:?}"
+        );
+    });
+}
+
+/// A large push and shell commands run at the same time, without mixing their data.
+pub(crate) fn push_while_running_commands<D: ADBDeviceExt + Sync>(device: &mut TestDevice<D>) {
+    let remote = device.remote_file("parallel_push.bin");
+    let content = random_bytes(&mut seeded_rng(), 32 * MIB);
+    let device: &D = device;
+
+    std::thread::scope(|scope| {
+        let push = scope.spawn(|| {
+            device
+                .push(&mut content.as_slice(), &remote)
+                .expect("cannot push file");
+        });
+
+        while !push.is_finished() {
+            let mut stdout = Vec::new();
+            device
+                .shell_command(&"echo parallel", Some(&mut stdout), None)
+                .expect("cannot run shell command");
+            assert_eq!(String::from_utf8_lossy(&stdout), "parallel\n");
+        }
+        push.join().expect("push thread panicked");
+    });
+
+    let mut pulled = Vec::new();
+    device.pull(&remote, &mut pulled).expect("cannot pull file");
+    assert_same_content(&content, &pulled, "file pushed while running commands");
 }
 
 pub(crate) fn file_commands_roundtrip<D: ADBDeviceExt>(device: &mut TestDevice<D>) {
@@ -93,7 +155,7 @@ pub(crate) fn file_commands_roundtrip<D: ADBDeviceExt>(device: &mut TestDevice<D
     );
 }
 
-pub(crate) fn missing_file_is_reported<D: ADBDeviceExt>(device: &mut TestDevice<D>) {
+pub(crate) fn missing_file_is_reported<D: ADBDeviceExt>(device: &TestDevice<D>) {
     let missing = format!("{REMOTE_DIR}/adb_client_test_does_not_exist");
 
     // Sync STAT does not fail on missing files, but returns zeroed fields
@@ -116,7 +178,7 @@ pub(crate) fn missing_file_is_reported<D: ADBDeviceExt>(device: &mut TestDevice<
 }
 
 #[cfg(feature = "framebuffer")]
-pub(crate) fn framebuffer_is_a_png_image<D: ADBDeviceExt>(device: &mut TestDevice<D>) {
+pub(crate) fn framebuffer_is_a_png_image<D: ADBDeviceExt>(device: &TestDevice<D>) {
     const PNG_SIGNATURE: &[u8] = b"\x89PNG\r\n\x1a\n";
 
     let image = device.framebuffer_bytes().expect("cannot get framebuffer");
@@ -195,7 +257,7 @@ fn test_apk_path() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/assets/fossify_calculator.apk")
 }
 
-fn is_package_installed<D: ADBDeviceExt>(device: &mut TestDevice<D>, package: &str) -> bool {
+fn is_package_installed<D: ADBDeviceExt>(device: &TestDevice<D>, package: &str) -> bool {
     let mut stdout = Vec::new();
     device
         .shell_command(
@@ -211,7 +273,7 @@ fn is_package_installed<D: ADBDeviceExt>(device: &mut TestDevice<D>, package: &s
         .any(|line| line.trim() == format!("package:{package}"))
 }
 
-pub(crate) fn install_uninstall_apk<D: ADBDeviceExt>(device: &mut TestDevice<D>) {
+pub(crate) fn install_uninstall_apk<D: ADBDeviceExt>(device: &TestDevice<D>) {
     let apk_path = test_apk_path();
     assert!(
         apk_path.exists(),

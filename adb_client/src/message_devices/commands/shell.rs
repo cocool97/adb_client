@@ -12,15 +12,15 @@ use crate::{
     Result, RustADBError,
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
-        adb_transport_message::ADBTransportMessage, commands::utils::ShellMessageWriter,
-        message_commands::MessageCommand,
+        adb_session::ADBSession, adb_transport_message::ADBTransportMessage,
+        commands::utils::ShellMessageWriter, message_commands::MessageCommand,
     },
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Runs 'command' in a shell on the device, and write its output and error streams into output.
     pub(crate) fn shell_command(
-        &mut self,
+        &self,
         command: &dyn AsRef<str>,
         mut stdout: Option<&mut dyn Write>,
         _stderr: Option<&mut dyn Write>,
@@ -32,12 +32,19 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
         loop {
             let message = session.recv_and_reply_okay()?;
-            if message.header().command() == MessageCommand::Clse {
-                break;
-            }
-            // should this just write for ::Write messages?
-            if let Some(ref mut stdout) = stdout {
-                stdout.write_all(&message.into_payload())?;
+            match message.header().command() {
+                MessageCommand::Write => {
+                    if let Some(ref mut stdout) = stdout {
+                        stdout.write_all(&message.into_payload())?;
+                    }
+                }
+                MessageCommand::Okay => {}
+                MessageCommand::Clse => break,
+                c => {
+                    return Err(RustADBError::ADBRequestFailed(format!(
+                        "unexpected {c} message received during session"
+                    )));
+                }
             }
         }
 
@@ -47,7 +54,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Starts an interactive shell session on the device.
     /// Input data is read from [reader] and write to [writer].
     pub(crate) fn shell(
-        &mut self,
+        &self,
         reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
@@ -57,7 +64,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Runs `command` on the device.
     /// Input data is read from [reader] and write to [writer].
     pub(crate) fn exec(
-        &mut self,
+        &self,
         command: &str,
         reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
@@ -71,12 +78,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// is written to `writer` from the current thread. The session ends once the stream is closed by the device
     /// or when `reader` reaches EOF or fails.
     fn bidirectional_session(
-        &mut self,
+        &self,
         local_command: &ADBLocalCommand,
         mut reader: Box<dyn Read + Send>,
         mut writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        let session = self.open_session(local_command)?;
+        let mut session = self.open_session(local_command)?;
 
         let local_id = session.local_id();
         let remote_id = session.remote_id();
@@ -86,7 +93,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         // This thread may stay blocked on `reader` forever, so it is never joined.
         let (local_result_tx, local_result_rx) = mpsc::channel();
         let mut shell_writer = ShellMessageWriter::new(
-            self.get_transport_mut().clone(),
+            self.transport().clone(),
             local_id,
             remote_id,
             session.max_payload_size(),
@@ -111,44 +118,28 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
         });
 
-        let mut transport = self.get_transport_mut().clone();
-        let remote_result = Self::forward_data_from_remote_adbd(
-            &mut transport,
-            local_id,
-            remote_id,
-            &stream_closed,
-            &mut writer,
-        );
+        let remote_result =
+            Self::forward_data_from_remote_adbd(&mut session, &stream_closed, &mut writer);
 
         if remote_result.is_err() && !stream_closed.swap(true, Ordering::SeqCst) {
             // Best effort, tell adbd we are not listening anymore
-            let _ = transport.write_message(ADBTransportMessage::try_new(
-                MessageCommand::Clse,
-                local_id,
-                remote_id,
-                &[],
-            )?);
+            let _ = session.close();
         }
 
         remote_result?;
 
         // Input thread may still be blocked on `reader`, only report an already known error
-        match local_result_rx.try_recv() {
-            Ok(e) => Err(e),
-            _ => Ok(()),
-        }
+        local_result_rx.try_recv().map_or(Ok(()), Err)
     }
 
     /// Write data received from adbd into the given `writer` until the stream gets closed.
     fn forward_data_from_remote_adbd(
-        transport: &mut T,
-        local_id: u32,
-        remote_id: u32,
+        session: &mut ADBSession<T>,
         closed: &AtomicBool,
         writer: &mut dyn Write,
     ) -> Result<()> {
         loop {
-            let message = transport.read_message()?;
+            let message = session.recv()?;
 
             match message.header().command() {
                 MessageCommand::Write => {
@@ -156,22 +147,17 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
                     writer.flush()?;
 
                     // Acknowledge for more data
-                    transport.write_message(ADBTransportMessage::try_new(
-                        MessageCommand::Okay,
-                        local_id,
-                        remote_id,
-                        &[],
-                    )?)?;
+                    session.send_okay()?;
                 }
                 // Acknowledgement of data we sent
                 MessageCommand::Okay => {}
                 MessageCommand::Clse => {
                     // Acknowledge the close if it was initiated by adbd
                     if !closed.swap(true, Ordering::SeqCst) {
-                        transport.write_message(ADBTransportMessage::try_new(
+                        session.send(ADBTransportMessage::try_new(
                             MessageCommand::Clse,
-                            local_id,
-                            remote_id,
+                            session.local_id(),
+                            session.remote_id(),
                             &[],
                         )?)?;
                     }

@@ -2,17 +2,20 @@ use crate::{
     Result,
     message_devices::{
         adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
-        message_commands::MessageCommand,
     },
     models::ADBLocalCommand,
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn root(&mut self) -> Result<()> {
-        self.open_session(&ADBLocalCommand::Root)?;
+    pub(crate) fn root(&self) -> Result<()> {
+        let mut session = self.open_session(&ADBLocalCommand::Root)?;
 
-        self.get_transport_mut()
-            .read_message()
-            .and_then(|message| message.assert_command(MessageCommand::Okay))
+        // adbd restarts once its answer is sent: the connection may be lost before the session gets closed
+        match session.recv_until_close() {
+            Ok(output) => log::info!("{}", String::from_utf8_lossy(&output).trim()),
+            Err(e) => log::debug!("connection lost while adbd restarts: {e}"),
+        }
+
+        Ok(())
     }
 }

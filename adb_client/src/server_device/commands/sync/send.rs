@@ -8,7 +8,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use super::{ADBSyncSession, MAX_BUFFER_SIZE, read_command_id, response_error, send_sync_request};
 use crate::{Result, RustADBError, models::SyncCommand};
 
-impl ADBSyncSession<'_> {
+impl ADBSyncSession {
     /// Sends the content of `input` to `path` on the device.
     pub fn push(&mut self, input: &mut dyn Read, path: &str) -> Result<()> {
         log::debug!("Sending data to {path}");

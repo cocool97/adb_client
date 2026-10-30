@@ -15,7 +15,7 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn install(&mut self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
+    pub(crate) fn install(&self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()> {
         let mut apk_file = File::open(apk_path)?;
 
         check_extension_is_apk(apk_path)?;

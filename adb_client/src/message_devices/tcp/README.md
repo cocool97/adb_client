@@ -6,6 +6,6 @@
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 use adb_client::{tcp::ADBTcpDevice, ADBDeviceExt};
 
-let mut device = ADBTcpDevice::new((IpAddr::from([192, 168, 0, 10]), 43210)).expect("cannot find device");
+let device = ADBTcpDevice::new((IpAddr::from([192, 168, 0, 10]), 43210)).expect("cannot find device");
 device.shell(Box::new(std::io::stdin()), Box::new(std::io::stdout()));
 ```
