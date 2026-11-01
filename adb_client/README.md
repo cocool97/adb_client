@@ -39,7 +39,7 @@ Some example are also provided in the various `README.md` files of modules.
 
 ## Benchmarks
 
-Benchmarks run on `v2.0.6`, on a **Samsung S10 SM-G973F** device and an **Intel i7-1265U** CPU laptop
+Benchmarks run on `v3.2.3`, on a **Huawei P20 EML-L09** device and an **Intel i7-13620H** CPU laptop
 
 ### `ADBServerDevice` push vs `adb push`
 
@@ -47,6 +47,6 @@ Benchmarks run on `v2.0.6`, on a **Samsung S10 SM-G973F** device and an **Intel 
 
 | File size | Sample size | `ADBServerDevice` |   `adb`   |               Difference               |
 | :-------: | :---------: | :---------------: | :-------: | :------------------------------------: |
-|   10 MB   |     100     |     350,79 ms     | 356,30 ms | <div style="color:green">-1,57 %</div> |
-|  500 MB   |     50      |      15,60 s      |  15,64 s  | <div style="color:green">-0,25 %</div> |
-|   1 GB    |     20      |      31,09 s      |  31,12 s  | <div style="color:green">-0,10 %</div> |
+|   10 MB   |     100     |     382,69 ms     | 396,90 ms | <div style="color:green">-3,58 %</div> |
+|  500 MB   |     10      |      18,85 s      |  18,71 s  |  <div style="color:red">+0,76 %</div>  |
+|   1 GB    |     10      |      37,12 s      |  37,69 s  | <div style="color:green">-1,52 %</div> |

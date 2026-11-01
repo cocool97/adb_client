@@ -31,6 +31,7 @@ Main features of this library:
   - Connecting directly to end devices (without using adb-server)
     - Over **USB**
     - Over **TCP/IP**
+    - With multiplexing support (multiple commands simultaneously)
 - Implements hidden `adb` features, like `framebuffer`
 - Highly configurable
 - Provides wrappers to use directly from Python code
