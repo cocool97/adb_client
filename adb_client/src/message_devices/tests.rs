@@ -208,7 +208,7 @@ fn shell_command_acknowledges_data_only() {
     let mut stdout = Vec::new();
 
     device
-        .shell_command(&"echo hello", Some(&mut stdout), None)
+        .shell_command("echo hello", Some(&mut stdout), None)
         .unwrap();
 
     assert_eq!(stdout, b"hello");

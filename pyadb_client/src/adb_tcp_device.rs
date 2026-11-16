@@ -34,7 +34,7 @@ impl PyADBTcpDevice {
         command: &str,
     ) -> Result<Bound<'py, PyBytes>> {
         let mut output = Vec::new();
-        self.0.shell_command(&command, Some(&mut output), None)?;
+        self.0.shell_command(command, Some(&mut output), None)?;
         Ok(PyBytes::new(py, &output))
     }
 
@@ -62,7 +62,7 @@ impl PyADBTcpDevice {
     /// Uninstall a package installed on the device
     #[pyo3(signature = (package, user=None))]
     pub fn uninstall(&mut self, package: &str, user: Option<&str>) -> Result<()> {
-        Ok(self.0.uninstall(&package, user)?)
+        Ok(self.0.uninstall(package, user)?)
     }
 
     /// Restart adb daemon with root permissions

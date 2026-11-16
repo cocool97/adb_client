@@ -42,7 +42,7 @@ impl ADBDeviceExt for ADBServerDevice {
     // Inherent methods are called with `Self::`, as these ones would otherwise call themselves
     fn shell_command(
         &self,
-        command: &dyn AsRef<str>,
+        command: &str,
         stdout: Option<&mut dyn Write>,
         stderr: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
@@ -61,8 +61,8 @@ impl ADBDeviceExt for ADBServerDevice {
     }
 
     #[inline]
-    fn stat(&self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
-        Self::stat(self, remote_path.as_ref())
+    fn stat(&self, remote_path: &str) -> Result<AdbStatResponse> {
+        Self::stat(self, remote_path)
     }
 
     fn exec(
@@ -82,7 +82,7 @@ impl ADBDeviceExt for ADBServerDevice {
         self.bidirectional_session(&ADBCommand::Local(ADBLocalCommand::Shell), reader, writer)
     }
 
-    fn pull(&self, source: &dyn AsRef<str>, mut output: &mut dyn Write) -> Result<()> {
+    fn pull(&self, source: &str, mut output: &mut dyn Write) -> Result<()> {
         Self::pull(self, source, &mut output)
     }
 
@@ -94,7 +94,7 @@ impl ADBDeviceExt for ADBServerDevice {
         Self::root(self)
     }
 
-    fn push(&self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()> {
+    fn push(&self, stream: &mut dyn Read, path: &str) -> Result<()> {
         Self::push(self, stream, path)
     }
 
@@ -102,8 +102,8 @@ impl ADBDeviceExt for ADBServerDevice {
         Self::install(self, apk_path, user)
     }
 
-    fn uninstall(&self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()> {
-        Self::uninstall(self, package.as_ref(), user)
+    fn uninstall(&self, package: &str, user: Option<&str>) -> Result<()> {
+        Self::uninstall(self, package, user)
     }
 
     #[cfg(feature = "framebuffer")]
@@ -111,7 +111,7 @@ impl ADBDeviceExt for ADBServerDevice {
         Self::framebuffer_inner(self)
     }
 
-    fn list(&self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>> {
+    fn list(&self, path: &str) -> Result<Vec<ADBListItemType>> {
         Self::list(self, path)
     }
 
@@ -127,32 +127,24 @@ impl ADBDeviceExt for ADBServerDevice {
         Self::disable_verity(self)
     }
 
-    fn forward(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<String> {
-        Self::forward(
-            self,
-            remote.as_ref().to_string(),
-            local.as_ref().to_string(),
-        )
+    fn forward(&self, remote: &str, local: &str) -> Result<String> {
+        Self::forward(self, remote.to_string(), local.to_string())
     }
 
-    fn forward_remove(&self, local: &dyn AsRef<str>) -> Result<()> {
-        Self::forward_remove(self, local.as_ref().to_string())
+    fn forward_remove(&self, local: &str) -> Result<()> {
+        Self::forward_remove(self, local.to_string())
     }
 
     fn forward_remove_all(&self) -> Result<()> {
         Self::forward_remove_all(self)
     }
 
-    fn reverse(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<()> {
-        Self::reverse(
-            self,
-            remote.as_ref().to_string(),
-            local.as_ref().to_string(),
-        )
+    fn reverse(&self, remote: &str, local: &str) -> Result<()> {
+        Self::reverse(self, remote.to_string(), local.to_string())
     }
 
-    fn reverse_remove(&self, remote: &dyn AsRef<str>) -> Result<()> {
-        Self::reverse_remove(self, remote.as_ref().to_string())
+    fn reverse_remove(&self, remote: &str) -> Result<()> {
+        Self::reverse_remove(self, remote.to_string())
     }
 
     fn reverse_remove_all(&self) -> Result<()> {
@@ -164,11 +156,11 @@ impl ADBServerDevice {
     /// Shell v1: simple shell without protocol (for older ADB versions)
     fn shell_command_v1(
         transport: &TCPServerTransport,
-        command: &dyn AsRef<str>,
+        command: &str,
         mut stdout: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
         transport.send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
-            command.as_ref().to_string(),
+            command.to_string(),
             vec![],
         )))?;
 
@@ -196,7 +188,7 @@ impl ADBServerDevice {
     /// Shell v2: with protocol packets (for newer ADB versions)
     fn shell_command_v2(
         transport: &TCPServerTransport,
-        command: &dyn AsRef<str>,
+        command: &str,
         mut stdout: Option<&mut dyn Write>,
         mut stderr: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
@@ -208,7 +200,7 @@ impl ADBServerDevice {
 
         // Send the request
         transport.send_adb_request(&ADBCommand::Local(ADBLocalCommand::ShellCommand(
-            command.as_ref().to_string(),
+            command.to_string(),
             args,
         )))?;
 

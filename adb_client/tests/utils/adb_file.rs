@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 /// Directory writable by the `shell` user on every Android version.
 pub(crate) const REMOTE_DIR: &str = "/data/local/tmp";
 
@@ -17,6 +19,14 @@ impl RemoteFile {
 
     pub(crate) fn file_name(&self) -> &str {
         self.0.rsplit('/').next().unwrap_or(&self.0)
+    }
+}
+
+impl Deref for RemoteFile {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.0
     }
 }
 

@@ -21,12 +21,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Runs 'command' in a shell on the device, and write its output and error streams into output.
     pub(crate) fn shell_command(
         &self,
-        command: &dyn AsRef<str>,
+        command: &str,
         mut stdout: Option<&mut dyn Write>,
         _stderr: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
         let mut session = self.open_session(&ADBLocalCommand::ShellCommand(
-            command.as_ref().to_string(),
+            command.to_string(),
             Vec::new(),
         ))?;
 
