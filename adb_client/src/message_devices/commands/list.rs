@@ -6,8 +6,6 @@ use crate::Result;
 use crate::message_devices::adb_message_device::ADBMessageDevice;
 use crate::message_devices::adb_message_transport::ADBMessageTransport;
 use crate::message_devices::adb_session::ADBSession;
-use crate::message_devices::adb_transport_message::ADBTransportMessage;
-use crate::message_devices::message_commands::MessageCommand;
 use crate::message_devices::message_commands::MessageSubcommand;
 use crate::message_devices::utils::BinaryEncodable;
 use crate::models::{ADBListItem, ADBListItemType};
@@ -87,12 +85,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             let mut path_bytes: Vec<u8> = Vec::from(path.as_ref().as_bytes());
             serialized_message.append(&mut path_bytes);
 
-            session.send_and_expect_okay(ADBTransportMessage::try_new(
-                MessageCommand::Write,
-                session.local_id(),
-                session.remote_id(),
-                &serialized_message,
-            )?)?;
+            session.send_write_and_expect_okay(&serialized_message)?;
         }
 
         let mut list_items = Vec::new();

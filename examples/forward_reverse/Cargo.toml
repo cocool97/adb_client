@@ -1,0 +1,21 @@
+[package]
+name = "forward_reverse"
+authors.workspace = true
+edition.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+version.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "forward_reverse"
+path = "main.rs"
+
+[dependencies]
+adb_client = { path = "../../adb_client", default-features = false, features = [
+    "usb"
+] }

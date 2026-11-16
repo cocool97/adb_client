@@ -1,13 +1,19 @@
-use std::{path::Path, time::Duration};
+use std::{
+    collections::HashMap,
+    path::Path,
+    sync::{Mutex, MutexGuard},
+    time::Duration,
+};
 
 use crate::{
     Result, RustADBError,
     message_devices::{
         adb_message_transport::ADBMessageTransport,
-        adb_session::ADBSession,
+        adb_session::{ADBSession, ADBSessionOpener},
         adb_transport_message::{
             ADBTransportMessage, AUTH_RSAPUBLICKEY, AUTH_SIGNATURE, AUTH_TOKEN, MAX_PAYLOAD_SIZE,
         },
+        commands::ForwardListener,
         message_commands::MessageCommand,
         message_dispatcher::MessageDispatcher,
         models::{ADBRsaKey, read_adb_private_key},
@@ -24,6 +30,8 @@ pub struct ADBMessageDevice<T: ADBMessageTransport> {
     max_payload_size: usize,
     /// Reads every message received, and routes it to the session it belongs to.
     dispatcher: MessageDispatcher,
+    /// Host listeners of forwards, by host port. They live as long as the device.
+    forwards: Mutex<HashMap<u16, ForwardListener>>,
 }
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
@@ -57,11 +65,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     /// Instantiate a new [`ADBMessageDevice`] from a transport on which the connection handshake is done, and
     /// start reading its messages.
     pub(crate) fn from_connected_transport(transport: T, max_payload_size: usize) -> Result<Self> {
-        let dispatcher = MessageDispatcher::start(transport.clone())?;
+        let dispatcher = MessageDispatcher::start(transport.clone(), max_payload_size)?;
         Ok(Self {
             transport,
             max_payload_size,
             dispatcher,
+            forwards: Mutex::default(),
         })
     }
 
@@ -203,50 +212,34 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     /// Open a new ADB session with the given local command.
     pub(crate) fn open_session(&self, cmd: &ADBLocalCommand) -> Result<ADBSession<T>> {
-        // Registered before sending `OPEN`, so the answer is routed to it
-        let (local_id, receiver) = self.dispatcher.register()?;
-        let mut session = ADBSession::new(
+        self.session_opener().open(cmd)
+    }
+
+    /// Return an opener of sessions on this device, usable from other threads.
+    pub(crate) fn session_opener(&self) -> ADBSessionOpener<T> {
+        ADBSessionOpener::new(
             self.transport.clone(),
-            local_id,
-            receiver,
-            self.dispatcher.commands(),
+            self.dispatcher.handle().clone(),
             self.max_payload_size,
-        );
+        )
+    }
 
-        // adbd used to expect a null-terminated string.
-        // keep doing so to maintain compatibility with older versions.
-        // https://cs.android.com/android/platform/superproject/+/android-latest-release:packages/modules/adb/sockets.cpp;l=560?q=sockets.cpp
-        let mut destination = cmd.to_string().into_bytes();
-        if !destination.ends_with(&[0]) {
-            destination.push(0);
-        }
+    pub(crate) const fn dispatcher(&self) -> &MessageDispatcher {
+        &self.dispatcher
+    }
 
-        session.send(ADBTransportMessage::try_new(
-            MessageCommand::Open,
-            local_id,
-            0,
-            &destination,
-        )?)?;
-
-        let response = session.recv()?;
-        match response.header().command() {
-            MessageCommand::Okay => {
-                session.opened(response.header().arg0());
-                Ok(session)
-            }
-            // The device could not open the service
-            MessageCommand::Clse => Err(RustADBError::ADBRequestFailed(format!(
-                "Open session failed: device closed the stream to {cmd}"
-            ))),
-            command => Err(RustADBError::ADBRequestFailed(format!(
-                "Open session failed: got {command} in response instead of OKAY"
-            ))),
-        }
+    /// Host listeners of forwards, by host port.
+    pub(crate) fn forwards(&self) -> Result<MutexGuard<'_, HashMap<u16, ForwardListener>>> {
+        self.forwards.lock().map_err(|_| RustADBError::PoisonError)
     }
 }
 
 impl<T: ADBMessageTransport> Drop for ADBMessageDevice<T> {
     fn drop(&mut self) {
+        // Stop accepting forwarded connections, before the sessions they would open fail
+        if let Ok(forwards) = self.forwards.get_mut() {
+            forwards.clear();
+        }
         // The reader must release the transport before it gets disconnected
         self.dispatcher.stop();
         // Best effort here

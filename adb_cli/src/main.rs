@@ -18,7 +18,10 @@ use adb_client::usb::{ADBDeviceInfo, ADBUSBDevice, find_all_connected_adb_device
 use adb_termios::ADBTermios;
 
 use clap::Parser;
-use handlers::{handle_emulator_commands, handle_host_commands, handle_local_commands};
+use handlers::{
+    handle_emulator_commands, handle_forward_command, handle_host_commands, handle_local_commands,
+    handle_reverse_command,
+};
 use models::{DeviceCommands, LocalCommand, MainCommand, Opts};
 use std::collections::HashMap;
 use std::fs::File;
@@ -30,7 +33,13 @@ use utils::setup_logger;
 
 use crate::models::{ADBCliError, ADBCliResult};
 
-fn run_command(device: &dyn ADBDeviceExt, command: DeviceCommands) -> ADBCliResult<()> {
+/// Run `command` on `device`. `relays_forwards` tells that forwards of this device live in this process (USB, TCP):
+/// added ones are kept until interrupted.
+fn run_command(
+    device: &dyn ADBDeviceExt,
+    command: DeviceCommands,
+    relays_forwards: bool,
+) -> ADBCliResult<()> {
     match command {
         DeviceCommands::Shell { commands } => {
             if commands.is_empty() {
@@ -106,7 +115,41 @@ fn run_command(device: &dyn ADBDeviceExt, command: DeviceCommands) -> ADBCliResu
                 log::info!("{dir}");
             }
         }
+        DeviceCommands::Forward(forward_command) => {
+            handle_forward_command(device, forward_command, relays_forwards)?;
+        }
+        DeviceCommands::Reverse(reverse_command) => {
+            handle_reverse_command(device, reverse_command, relays_forwards)?;
+        }
     }
+
+    Ok(())
+}
+
+/// Print every Android device connected over USB.
+fn list_usb_devices() -> ADBCliResult<()> {
+    let devices = find_all_connected_adb_devices()?;
+
+    let mut writer = TabWriter::new(stdout()).alignment(tabwriter::Alignment::Center);
+    writeln!(writer, "Index\tVendor ID\tProduct ID\tDevice Description")?;
+    writeln!(writer, "-----\t---------\t----------\t----------------")?;
+
+    for (
+        index,
+        ADBDeviceInfo {
+            vendor_id,
+            product_id,
+            device_description,
+        },
+    ) in devices.iter().enumerate()
+    {
+        writeln!(
+            writer,
+            "#{index}\t{vendor_id:04x}\t{product_id:04x}\t{device_description}",
+        )?;
+    }
+
+    writer.flush()?;
 
     Ok(())
 }
@@ -129,7 +172,7 @@ fn inner_main() -> ADBCliResult<()> {
     // Directly handling methods / commands that aren't linked to [`ADBDeviceExt`] trait.
     // Other methods just have to create a concrete [`ADBDeviceExt`] instance, and return it.
     // This instance will then be used to execute desired command.
-    let (device, commands) = match opts.command {
+    let (device, commands, relays_forwards) = match opts.command {
         MainCommand::Host(server_command) => return Ok(handle_host_commands(server_command)?),
         MainCommand::Emu(emulator_command) => return handle_emulator_commands(emulator_command),
         MainCommand::Local(server_command) => {
@@ -147,7 +190,9 @@ fn inner_main() -> ADBCliResult<()> {
             };
 
             match server_command.command {
-                LocalCommand::DeviceCommands(device_commands) => (device.boxed(), device_commands),
+                LocalCommand::DeviceCommands(device_commands) => {
+                    (device.boxed(), device_commands, false)
+                }
                 LocalCommand::LocalDeviceCommand(local_device_command) => {
                     return handle_local_commands(&device, local_device_command);
                 }
@@ -155,30 +200,7 @@ fn inner_main() -> ADBCliResult<()> {
         }
         MainCommand::Usb(usb_command) => {
             if usb_command.list_devices {
-                let devices = find_all_connected_adb_devices()?;
-
-                let mut writer = TabWriter::new(stdout()).alignment(tabwriter::Alignment::Center);
-                writeln!(writer, "Index\tVendor ID\tProduct ID\tDevice Description")?;
-                writeln!(writer, "-----\t---------\t----------\t----------------")?;
-
-                for (
-                    index,
-                    ADBDeviceInfo {
-                        vendor_id,
-                        product_id,
-                        device_description,
-                    },
-                ) in devices.iter().enumerate()
-                {
-                    writeln!(
-                        writer,
-                        "#{index}\t{vendor_id:04x}\t{product_id:04x}\t{device_description}",
-                    )?;
-                }
-
-                writer.flush()?;
-
-                return Ok(());
+                return list_usb_devices();
             }
 
             let device = match (usb_command.vendor_id, usb_command.product_id) {
@@ -198,18 +220,17 @@ fn inner_main() -> ADBCliResult<()> {
                 }
             };
 
-            if let Some(command) = usb_command.commands {
-                (device.boxed(), command)
-            } else {
+            let Some(command) = usb_command.commands else {
                 return Err(ADBCliError::Standard("no command specified".into()));
-            }
+            };
+            (device.boxed(), command, true)
         }
         MainCommand::Tcp(tcp_command) => {
             let device = match tcp_command.path_to_private_key {
                 Some(pk) => ADBTcpDevice::new_with_custom_private_key(tcp_command.address, pk)?,
                 None => ADBTcpDevice::new(tcp_command.address)?,
             };
-            (device.boxed(), tcp_command.commands)
+            (device.boxed(), tcp_command.commands, true)
         }
         MainCommand::Mdns => {
             let mut service = MDNSDiscoveryService::new()?;
@@ -231,7 +252,7 @@ fn inner_main() -> ADBCliResult<()> {
         }
     };
 
-    run_command(device.as_ref(), commands)?;
+    run_command(device.as_ref(), commands, relays_forwards)?;
 
     Ok(())
 }

@@ -1,11 +1,10 @@
 [workspace]
-members = ["adb_cli", "adb_client", "examples/mdns", "examples/sessions", "pyadb_client"]
+members = ["adb_cli", "adb_client", "examples/forward_reverse", "examples/mdns", "examples/sessions", "pyadb_client"]
 resolver = "2"
 
 [workspace.package]
 authors = ["Corentin LIAUD"]
 edition = "2024"
-homepage = "https://github.com/cocool97/adb_client"
 keywords = ["adb", "android", "tcp", "usb"]
 license = "MIT"
 repository = "https://github.com/cocool97/adb_client"

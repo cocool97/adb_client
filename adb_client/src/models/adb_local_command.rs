@@ -47,6 +47,8 @@ pub enum ADBLocalCommand {
     /// Capture the device framebuffer
     #[cfg(feature = "framebuffer")]
     FrameBuffer,
+    /// Open a connection to a device endpoint (e.g. `tcp:8080` or `localabstract:name`)
+    Connect(String),
 }
 
 impl Display for ADBLocalCommand {
@@ -108,6 +110,7 @@ impl Display for ADBLocalCommand {
 
             #[cfg(feature = "framebuffer")]
             Self::FrameBuffer => write!(f, "framebuffer:"),
+            Self::Connect(endpoint) => write!(f, "{endpoint}"),
         }
     }
 }

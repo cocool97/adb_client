@@ -16,6 +16,7 @@ workspace = true
 [dependencies]
 adb_client = { version = "^3.2.3", features = ["mdns", "usb"] }
 clap = { version = "4.6.7", features = ["derive"] }
+ctrlc = { version = "3.5.0" }
 env_logger = { version = "0.11.11" }
 log = { version = "0.4.34" }
 tabwriter = { version = "1.4.1" }

@@ -48,6 +48,7 @@ Some examples showing of to use this library are available in the `examples` dir
 
 - `examples/mdns`: mDNS device discovery
 - `examples/sessions`: runs `sleep 30`, a file push and `id` at the same time on one USB device, each in its own session
+- `examples/forward_reverse`: exposes a host server on a device port (reverse), then this device port on a host port (forward), and checks data goes through both ways over USB
 - `examples/python_api`: demonstrates the use of Python API
 
 ## adb_cli
