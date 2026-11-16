@@ -126,6 +126,38 @@ impl ADBDeviceExt for ADBServerDevice {
     fn disable_verity(&self) -> Result<()> {
         Self::disable_verity(self)
     }
+
+    fn forward(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<String> {
+        Self::forward(
+            self,
+            remote.as_ref().to_string(),
+            local.as_ref().to_string(),
+        )
+    }
+
+    fn forward_remove(&self, local: &dyn AsRef<str>) -> Result<()> {
+        Self::forward_remove(self, local.as_ref().to_string())
+    }
+
+    fn forward_remove_all(&self) -> Result<()> {
+        Self::forward_remove_all(self)
+    }
+
+    fn reverse(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<()> {
+        Self::reverse(
+            self,
+            remote.as_ref().to_string(),
+            local.as_ref().to_string(),
+        )
+    }
+
+    fn reverse_remove(&self, remote: &dyn AsRef<str>) -> Result<()> {
+        Self::reverse_remove(self, remote.as_ref().to_string())
+    }
+
+    fn reverse_remove_all(&self) -> Result<()> {
+        Self::reverse_remove_all(self)
+    }
 }
 
 impl ADBServerDevice {

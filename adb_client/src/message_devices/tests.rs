@@ -257,8 +257,8 @@ fn concurrent_sessions_receive_their_own_messages() {
     });
     let device = device(&transport);
 
-    let mut first = device.open_session(&ADBLocalCommand::Sync).unwrap();
-    let mut second = device.open_session(&ADBLocalCommand::Sync).unwrap();
+    let first = device.open_session(&ADBLocalCommand::Sync).unwrap();
+    let second = device.open_session(&ADBLocalCommand::Sync).unwrap();
     let (first_id, second_id) = (first.local_id(), second.local_id());
 
     // Both sessions wait at the same time, messages arrive in the opposite order
@@ -311,7 +311,7 @@ fn sessions_fail_once_connection_is_lost() {
     });
     let device = device(&transport);
 
-    let mut session = device.open_session(&ADBLocalCommand::Sync).unwrap();
+    let session = device.open_session(&ADBLocalCommand::Sync).unwrap();
     transport.lose_connection();
 
     let error = session.recv().unwrap_err();

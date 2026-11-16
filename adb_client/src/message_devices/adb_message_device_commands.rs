@@ -113,6 +113,44 @@ macro_rules! impl_message_device_commands {
             ) -> $crate::Result<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>> {
                 self.inner.framebuffer_inner()
             }
+
+            #[inline]
+            fn forward(
+                &self,
+                remote: &dyn AsRef<str>,
+                local: &dyn AsRef<str>,
+            ) -> $crate::Result<String> {
+                self.inner.forward(remote.as_ref(), local.as_ref())
+            }
+
+            #[inline]
+            fn forward_remove(&self, local: &dyn AsRef<str>) -> $crate::Result<()> {
+                self.inner.forward_remove(local.as_ref())
+            }
+
+            #[inline]
+            fn forward_remove_all(&self) -> $crate::Result<()> {
+                self.inner.forward_remove_all()
+            }
+
+            #[inline]
+            fn reverse(
+                &self,
+                remote: &dyn AsRef<str>,
+                local: &dyn AsRef<str>,
+            ) -> $crate::Result<()> {
+                self.inner.reverse(remote.as_ref(), local.as_ref())
+            }
+
+            #[inline]
+            fn reverse_remove(&self, remote: &dyn AsRef<str>) -> $crate::Result<()> {
+                self.inner.reverse_remove(remote.as_ref())
+            }
+
+            #[inline]
+            fn reverse_remove_all(&self) -> $crate::Result<()> {
+                self.inner.reverse_remove_all()
+            }
         }
     };
 }

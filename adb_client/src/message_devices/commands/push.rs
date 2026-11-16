@@ -3,11 +3,8 @@ use std::io::Read;
 use crate::{
     Result,
     message_devices::{
-        adb_message_device::ADBMessageDevice,
-        adb_message_transport::ADBMessageTransport,
-        adb_transport_message::ADBTransportMessage,
-        message_commands::{MessageCommand, MessageSubcommand},
-        utils::BinaryEncodable,
+        adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
+        message_commands::MessageSubcommand, utils::BinaryEncodable,
     },
 };
 
@@ -21,12 +18,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         let mut send_buffer = send_buffer.encode();
         send_buffer.append(&mut path_header.as_bytes().to_vec());
 
-        session.send_and_expect_okay(ADBTransportMessage::try_new(
-            MessageCommand::Write,
-            session.local_id(),
-            session.remote_id(),
-            &send_buffer,
-        )?)?;
+        session.send_write_and_expect_okay(&send_buffer)?;
 
         session.push_file(stream)?;
         session.end_transaction()?;

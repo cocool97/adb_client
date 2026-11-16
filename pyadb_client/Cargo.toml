@@ -2,7 +2,6 @@
 authors.workspace = true
 description = "Python wrapper for adb_client library"
 edition.workspace = true
-homepage.workspace = true
 keywords.workspace = true
 license.workspace = true
 name = "pyadb_client"

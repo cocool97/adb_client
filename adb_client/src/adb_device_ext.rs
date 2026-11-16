@@ -104,6 +104,34 @@ pub trait ADBDeviceExt {
     /// Disable dm-verity on the device
     fn disable_verity(&self) -> Result<()>;
 
+    /// Forward connections to host `local` endpoint to device `remote` endpoint, replacing the previous forward of
+    /// `local`. Return the host endpoint listened on: `tcp:0` is resolved to the port allocated.
+    ///
+    /// Through an adb server, the forward lasts until removed or the server stops. On a device reached directly
+    /// (USB, TCP), connections are relayed by the device instance: the forward lasts until removed or the device
+    /// is dropped, and only `tcp:<port>` host endpoints are supported.
+    fn forward(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<String>;
+
+    /// Remove the forward of host `local` endpoint.
+    fn forward_remove(&self, local: &dyn AsRef<str>) -> Result<()>;
+
+    /// Remove every forward.
+    fn forward_remove_all(&self) -> Result<()>;
+
+    /// Forward connections to device `remote` endpoint to host `local` endpoint, replacing the previous reverse
+    /// forward of `remote`.
+    ///
+    /// Through an adb server, the reverse forward lasts until removed or the device disconnects. On a device
+    /// reached directly (USB, TCP), connections are relayed by the device instance: the reverse forward lasts until
+    /// removed or the device is disconnected, and only `tcp:<port>` host endpoints are supported.
+    fn reverse(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<()>;
+
+    /// Remove the reverse forward of device `remote` endpoint.
+    fn reverse_remove(&self, remote: &dyn AsRef<str>) -> Result<()>;
+
+    /// Remove every reverse forward.
+    fn reverse_remove_all(&self) -> Result<()>;
+
     #[cfg(feature = "framebuffer")]
     /// Inner method requesting framebuffer from an Android device
     fn framebuffer_inner(&self) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;

@@ -61,4 +61,50 @@ pub enum DeviceCommands {
     },
     /// Restart adb daemon with root permissions
     Root,
+    /// Forward a host endpoint to a device endpoint.
+    #[clap(subcommand)]
+    Forward(ForwardCommand),
+    /// Reverse forward a device endpoint to a host endpoint.
+    #[clap(subcommand)]
+    Reverse(ReverseCommand),
+}
+
+/// Over USB or TCP (without ADB server), connections are relayed by this process: `add` keeps forwarding until
+/// interrupted (Ctrl-C), then removes the forward.
+#[derive(Parser, Debug)]
+pub enum ForwardCommand {
+    /// Remove all forwards.
+    RemoveAll,
+    /// Remove the forward of a host endpoint.
+    Remove {
+        /// Host endpoint, e.g. tcp:8080
+        local: String,
+    },
+    /// Forward a host endpoint to a device endpoint. Over USB or TCP, blocks until interrupted (Ctrl-C).
+    Add {
+        /// Host endpoint, e.g. tcp:8080 (tcp:0 to allocate a port)
+        local: String,
+        /// Device endpoint, e.g. tcp:8080 or localabstract:name
+        remote: String,
+    },
+}
+
+/// Over USB or TCP (without ADB server), connections are relayed by this process: `add` keeps forwarding until
+/// interrupted (Ctrl-C), then removes the reverse forward.
+#[derive(Parser, Debug)]
+pub enum ReverseCommand {
+    /// Remove all reverse forwards.
+    RemoveAll,
+    /// Remove the reverse forward of a device endpoint.
+    Remove {
+        /// Device endpoint, e.g. tcp:8080
+        remote: String,
+    },
+    /// Reverse forward a device endpoint to a host endpoint. Over USB or TCP, blocks until interrupted (Ctrl-C).
+    Add {
+        /// Device endpoint, e.g. tcp:8080
+        remote: String,
+        /// Host endpoint, e.g. tcp:8080
+        local: String,
+    },
 }
