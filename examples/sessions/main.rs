@@ -20,7 +20,7 @@ fn main() -> Result<()> {
     thread::scope(|scope| {
         let sleep = scope.spawn(|| -> Result<()> {
             log("sleep 30: started");
-            device.shell_command(&"sleep 30", None, None)?;
+            device.shell_command("sleep 30", None, None)?;
             log("sleep 30: done");
             Ok(())
         });
@@ -28,14 +28,14 @@ fn main() -> Result<()> {
         let push = scope.spawn(|| -> Result<()> {
             log(&format!("push of {} MiB: started", PUSH_SIZE / 1024 / 1024));
             let mut data = Cursor::new(vec![0x42; PUSH_SIZE]);
-            device.push(&mut data, &REMOTE_PATH)?;
+            device.push(&mut data, REMOTE_PATH)?;
             log("push: done");
             Ok(())
         });
 
         log("id: started");
         let mut output = Vec::new();
-        device.shell_command(&"id", Some(&mut output), None)?;
+        device.shell_command("id", Some(&mut output), None)?;
         log(&format!("id: {}", String::from_utf8_lossy(&output).trim()));
 
         push.join().expect("push thread panicked")?;

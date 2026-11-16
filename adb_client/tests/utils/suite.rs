@@ -48,7 +48,7 @@ pub(crate) use device_test_suite;
 pub(crate) fn shell_command_writes_stdout<D: ADBDeviceExt>(device: &TestDevice<D>) {
     let mut stdout = Vec::new();
     device
-        .shell_command(&"echo out", Some(&mut stdout), None)
+        .shell_command("echo out", Some(&mut stdout), None)
         .expect("cannot run shell command");
 
     assert_eq!(String::from_utf8_lossy(&stdout), "out\n");
@@ -57,7 +57,7 @@ pub(crate) fn shell_command_writes_stdout<D: ADBDeviceExt>(device: &TestDevice<D
 pub(crate) fn shell_command_runs_as_shell_user<D: ADBDeviceExt>(device: &TestDevice<D>) {
     let mut stdout = Vec::new();
     device
-        .shell_command(&"id -un", Some(&mut stdout), None)
+        .shell_command("id -un", Some(&mut stdout), None)
         .expect("cannot run shell command");
 
     let user = String::from_utf8_lossy(&stdout);
@@ -74,7 +74,7 @@ pub(crate) fn commands_run_in_parallel<D: ADBDeviceExt + Sync>(device: &TestDevi
     std::thread::scope(|scope| {
         let sleep = scope.spawn(|| {
             device
-                .shell_command(&"sleep 3", None, None)
+                .shell_command("sleep 3", None, None)
                 .expect("cannot run shell command");
             start.elapsed()
         });
@@ -83,7 +83,7 @@ pub(crate) fn commands_run_in_parallel<D: ADBDeviceExt + Sync>(device: &TestDevi
         std::thread::sleep(Duration::from_millis(500));
         let mut stdout = Vec::new();
         device
-            .shell_command(&"echo parallel", Some(&mut stdout), None)
+            .shell_command("echo parallel", Some(&mut stdout), None)
             .expect("cannot run shell command");
         let echo_done = start.elapsed();
 
@@ -112,7 +112,7 @@ pub(crate) fn push_while_running_commands<D: ADBDeviceExt + Sync>(device: &mut T
         while !push.is_finished() {
             let mut stdout = Vec::new();
             device
-                .shell_command(&"echo parallel", Some(&mut stdout), None)
+                .shell_command("echo parallel", Some(&mut stdout), None)
                 .expect("cannot run shell command");
             assert_eq!(String::from_utf8_lossy(&stdout), "parallel\n");
         }
@@ -135,7 +135,7 @@ pub(crate) fn file_commands_roundtrip<D: ADBDeviceExt>(device: &mut TestDevice<D
     let stat = device.stat(&remote).expect("cannot stat file");
     assert_eq!(stat.file_size as usize, content.len());
 
-    let items = device.list(&REMOTE_DIR).expect("cannot list directory");
+    let items = device.list(REMOTE_DIR).expect("cannot list directory");
     assert!(
         find_file(&items, remote.file_name()).is_some(),
         "pushed file not listed in {REMOTE_DIR}"
@@ -294,7 +294,7 @@ pub(crate) fn install_uninstall_apk<D: ADBDeviceExt>(device: &TestDevice<D>) {
     );
 
     device
-        .uninstall(&TEST_APK_PACKAGE, None)
+        .uninstall(TEST_APK_PACKAGE, None)
         .expect("cannot uninstall package");
     assert!(
         !is_package_installed(device, TEST_APK_PACKAGE),

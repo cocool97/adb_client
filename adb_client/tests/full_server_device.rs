@@ -48,7 +48,7 @@ fn shell_command_separates_stdout_and_stderr() {
     let mut stderr = Vec::new();
     device
         .shell_command(
-            &"echo out; echo err >&2",
+            "echo out; echo err >&2",
             Some(&mut stdout),
             Some(&mut stderr),
         )

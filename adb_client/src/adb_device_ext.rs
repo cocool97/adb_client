@@ -18,7 +18,7 @@ pub trait ADBDeviceExt {
     /// Runs command in a shell on the device, and write its output and error streams into output.
     fn shell_command(
         &self,
-        command: &dyn AsRef<str>,
+        command: &str,
         stdout: Option<&mut dyn Write>,
         stderr: Option<&mut dyn Write>,
     ) -> Result<Option<u8>>;
@@ -37,34 +37,27 @@ pub trait ADBDeviceExt {
     ) -> Result<()>;
 
     /// Display the stat information for a remote file using STAT protocol command.
-    fn stat(&self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse>;
+    fn stat(&self, remote_path: &str) -> Result<AdbStatResponse>;
 
     /// Display the stat information for a remote file using `stat` shell command.
     /// This is an extended version of `stat` that returns more detailed information.
     /// Returns `Ok(None)` if the file does not exist on the device.
-    fn stat_extended(
-        &self,
-        remote_path: &dyn AsRef<str>,
-    ) -> Result<Option<ADBStatExtendedResponse>> {
+    fn stat_extended(&self, remote_path: &str) -> Result<Option<ADBStatExtendedResponse>> {
         let mut stdout = Vec::new();
-        self.shell_command(
-            &format!("stat {}", remote_path.as_ref()),
-            Some(&mut stdout),
-            None,
-        )?;
+        self.shell_command(&format!("stat {remote_path}"), Some(&mut stdout), None)?;
 
         // all parsing magic happens here...
         ADBStatExtendedResponse::try_from(&stdout)
     }
 
     /// Pull the remote file pointed to by `source` and write its contents into `output`
-    fn pull(&self, source: &dyn AsRef<str>, output: &mut dyn Write) -> Result<()>;
+    fn pull(&self, source: &str, output: &mut dyn Write) -> Result<()>;
 
     /// Push `stream` to `path` on the device.
-    fn push(&self, stream: &mut dyn Read, path: &dyn AsRef<str>) -> Result<()>;
+    fn push(&self, stream: &mut dyn Read, path: &str) -> Result<()>;
 
     /// List the items in a directory on the device
-    fn list(&self, path: &dyn AsRef<str>) -> Result<Vec<ADBListItemType>>;
+    fn list(&self, path: &str) -> Result<Vec<ADBListItemType>>;
 
     /// Reboot the device using given reboot type
     fn reboot(&self, reboot_type: RebootType) -> Result<()>;
@@ -76,15 +69,10 @@ pub trait ADBDeviceExt {
     fn root(&self) -> Result<()>;
 
     /// Run `activity` from `package` on device. Return the command output.
-    fn run_activity(&self, package: &dyn AsRef<str>, activity: &dyn AsRef<str>) -> Result<Vec<u8>> {
+    fn run_activity(&self, package: &str, activity: &str) -> Result<Vec<u8>> {
         let mut output = Vec::new();
         let _status = self.shell_command(
-            &format!(
-                "am start {}/{}.{}",
-                package.as_ref(),
-                package.as_ref(),
-                activity.as_ref()
-            ),
+            &format!("am start {package}/{package}.{activity}"),
             Some(&mut output),
             None,
         )?;
@@ -96,7 +84,7 @@ pub trait ADBDeviceExt {
     fn install(&self, apk_path: &dyn AsRef<Path>, user: Option<&str>) -> Result<()>;
 
     /// Uninstall the package `package` from device.
-    fn uninstall(&self, package: &dyn AsRef<str>, user: Option<&str>) -> Result<()>;
+    fn uninstall(&self, package: &str, user: Option<&str>) -> Result<()>;
 
     /// Enable dm-verity on the device
     fn enable_verity(&self) -> Result<()>;
@@ -110,10 +98,10 @@ pub trait ADBDeviceExt {
     /// Through an adb server, the forward lasts until removed or the server stops. On a device reached directly
     /// (USB, TCP), connections are relayed by the device instance: the forward lasts until removed or the device
     /// is dropped, and only `tcp:<port>` host endpoints are supported.
-    fn forward(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<String>;
+    fn forward(&self, remote: &str, local: &str) -> Result<String>;
 
     /// Remove the forward of host `local` endpoint.
-    fn forward_remove(&self, local: &dyn AsRef<str>) -> Result<()>;
+    fn forward_remove(&self, local: &str) -> Result<()>;
 
     /// Remove every forward.
     fn forward_remove_all(&self) -> Result<()>;
@@ -124,10 +112,10 @@ pub trait ADBDeviceExt {
     /// Through an adb server, the reverse forward lasts until removed or the device disconnects. On a device
     /// reached directly (USB, TCP), connections are relayed by the device instance: the reverse forward lasts until
     /// removed or the device is disconnected, and only `tcp:<port>` host endpoints are supported.
-    fn reverse(&self, remote: &dyn AsRef<str>, local: &dyn AsRef<str>) -> Result<()>;
+    fn reverse(&self, remote: &str, local: &str) -> Result<()>;
 
     /// Remove the reverse forward of device `remote` endpoint.
-    fn reverse_remove(&self, remote: &dyn AsRef<str>) -> Result<()>;
+    fn reverse_remove(&self, remote: &str) -> Result<()>;
 
     /// Remove every reverse forward.
     fn reverse_remove_all(&self) -> Result<()>;

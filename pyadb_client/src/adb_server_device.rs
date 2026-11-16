@@ -26,7 +26,7 @@ impl PyADBServerDevice {
         command: &str,
     ) -> Result<Bound<'py, PyBytes>> {
         let mut output = Vec::new();
-        self.0.shell_command(&command, Some(&mut output), None)?;
+        self.0.shell_command(command, Some(&mut output), None)?;
         Ok(PyBytes::new(py, &output))
     }
 

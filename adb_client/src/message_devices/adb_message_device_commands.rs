@@ -6,7 +6,7 @@ macro_rules! impl_message_device_commands {
             #[inline]
             fn shell_command(
                 &self,
-                command: &dyn AsRef<str>,
+                command: &str,
                 stdout: Option<&mut dyn std::io::Write>,
                 stderr: Option<&mut dyn std::io::Write>,
             ) -> $crate::Result<Option<u8>> {
@@ -33,33 +33,22 @@ macro_rules! impl_message_device_commands {
             }
 
             #[inline]
-            fn stat(
-                &self,
-                remote_path: &dyn AsRef<str>,
-            ) -> $crate::Result<$crate::AdbStatResponse> {
+            fn stat(&self, remote_path: &str) -> $crate::Result<$crate::AdbStatResponse> {
                 self.inner.stat(remote_path)
             }
 
             #[inline]
-            fn pull(
-                &self,
-                source: &dyn AsRef<str>,
-                output: &mut dyn std::io::Write,
-            ) -> $crate::Result<()> {
+            fn pull(&self, source: &str, output: &mut dyn std::io::Write) -> $crate::Result<()> {
                 self.inner.pull(source, output)
             }
 
             #[inline]
-            fn push(
-                &self,
-                stream: &mut dyn std::io::Read,
-                path: &dyn AsRef<str>,
-            ) -> $crate::Result<()> {
+            fn push(&self, stream: &mut dyn std::io::Read, path: &str) -> $crate::Result<()> {
                 self.inner.push(stream, path)
             }
 
             #[inline]
-            fn list(&self, path: &dyn AsRef<str>) -> $crate::Result<Vec<$crate::ADBListItemType>> {
+            fn list(&self, path: &str) -> $crate::Result<Vec<$crate::ADBListItemType>> {
                 self.inner.list(path)
             }
 
@@ -88,11 +77,7 @@ macro_rules! impl_message_device_commands {
             }
 
             #[inline]
-            fn uninstall(
-                &self,
-                package: &dyn AsRef<str>,
-                user: Option<&str>,
-            ) -> $crate::Result<()> {
+            fn uninstall(&self, package: &str, user: Option<&str>) -> $crate::Result<()> {
                 self.inner.uninstall(package, user)
             }
 
@@ -115,16 +100,12 @@ macro_rules! impl_message_device_commands {
             }
 
             #[inline]
-            fn forward(
-                &self,
-                remote: &dyn AsRef<str>,
-                local: &dyn AsRef<str>,
-            ) -> $crate::Result<String> {
+            fn forward(&self, remote: &str, local: &str) -> $crate::Result<String> {
                 self.inner.forward(remote.as_ref(), local.as_ref())
             }
 
             #[inline]
-            fn forward_remove(&self, local: &dyn AsRef<str>) -> $crate::Result<()> {
+            fn forward_remove(&self, local: &str) -> $crate::Result<()> {
                 self.inner.forward_remove(local.as_ref())
             }
 
@@ -134,16 +115,12 @@ macro_rules! impl_message_device_commands {
             }
 
             #[inline]
-            fn reverse(
-                &self,
-                remote: &dyn AsRef<str>,
-                local: &dyn AsRef<str>,
-            ) -> $crate::Result<()> {
+            fn reverse(&self, remote: &str, local: &str) -> $crate::Result<()> {
                 self.inner.reverse(remote.as_ref(), local.as_ref())
             }
 
             #[inline]
-            fn reverse_remove(&self, remote: &dyn AsRef<str>) -> $crate::Result<()> {
+            fn reverse_remove(&self, remote: &str) -> $crate::Result<()> {
                 self.inner.reverse_remove(remote.as_ref())
             }
 

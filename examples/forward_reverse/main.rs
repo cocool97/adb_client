@@ -41,7 +41,7 @@ fn main() -> Result<()> {
     println!("reverse: device tcp:{DEVICE_PORT} -> host tcp:{server_port}");
 
     let mut listening = Vec::new();
-    device.shell_command(&"netstat -ltn", Some(&mut listening), None)?;
+    device.shell_command("netstat -ltn", Some(&mut listening), None)?;
     let listening = String::from_utf8_lossy(&listening);
     if !listening.contains(&format!(":{DEVICE_PORT} ")) {
         return Err(RustADBError::ADBRequestFailed(format!(

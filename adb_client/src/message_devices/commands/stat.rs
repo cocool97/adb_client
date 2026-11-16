@@ -6,7 +6,7 @@ use crate::{
 };
 
 impl<T: ADBMessageTransport> ADBMessageDevice<T> {
-    pub(crate) fn stat(&self, remote_path: &dyn AsRef<str>) -> Result<AdbStatResponse> {
+    pub(crate) fn stat(&self, remote_path: &str) -> Result<AdbStatResponse> {
         let mut session = self.open_synchronization_session()?;
         let adb_stat_response = session.stat_with_explicit_ids(remote_path.as_ref())?;
         session.end_transaction()?;
