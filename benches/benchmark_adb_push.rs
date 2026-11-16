@@ -58,7 +58,7 @@ fn bench_adb_push_command() -> Result<()> {
 #[cfg(feature = "usb")]
 fn bench_adb_client_usb_push(device: &ADBUSBDevice) -> Result<()> {
     let mut f = File::open(LOCAL_TEST_FILE_PATH)?;
-    Ok(device.push(&mut f, &REMOTE_TEST_FILE_PATH)?)
+    Ok(device.push(&mut f, REMOTE_TEST_FILE_PATH)?)
 }
 
 /// Stop adb server, as it holds the USB interface of the device
