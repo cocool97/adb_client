@@ -7,7 +7,7 @@ use std::{
     },
 };
 
-use crate::models::ADBLocalCommand;
+use crate::models::{ADBLocalCommand, HostFeatures};
 use crate::{
     Result, RustADBError,
     message_devices::{
@@ -58,7 +58,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        self.bidirectional_session(&ADBLocalCommand::Shell, reader, writer)
+        let legacy = !HostFeatures::supports_shell_v2(self.features());
+        self.bidirectional_session(&ADBLocalCommand::Shell { legacy }, reader, writer)
     }
 
     /// Runs `command` on the device.

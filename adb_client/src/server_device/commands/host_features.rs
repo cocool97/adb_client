@@ -19,18 +19,11 @@ impl ADBServerDevice {
             return Ok(cached.features.clone());
         }
 
-        let features: Vec<HostFeatures> = self
-            .connect_to_device()?
-            .proxy_connection(&ADBCommand::Host(ADBHostCommand::HostFeatures), true)?
-            .split(|x| x.eq(&b','))
-            .filter_map(|v| match HostFeatures::try_from(v) {
-                Ok(feature) => Some(feature),
-                Err(err) => {
-                    log::warn!("cannot create new feature: {err}");
-                    None
-                }
-            })
-            .collect();
+        let features = HostFeatures::parse_list(
+            &self
+                .connect_to_device()?
+                .proxy_connection(&ADBCommand::Host(ADBHostCommand::HostFeatures), true)?,
+        );
 
         *self.cached_features.lock()? = Some(CachedFeatures {
             identifier: self.identifier.clone(),

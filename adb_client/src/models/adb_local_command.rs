@@ -6,8 +6,14 @@ use crate::RebootType;
 pub enum ADBLocalCommand {
     /// Run a shell command with arguments
     ShellCommand(String, Vec<String>),
-    /// Open an interactive shell session
-    Shell,
+    /// Open an interactive shell session.
+    ///
+    /// `legacy` must be set for devices not advertising the `shell_v2` feature: they do not understand
+    /// shell service arguments (`shell,pty:`) and close the stream.
+    Shell {
+        /// Use the legacy `shell:` service string
+        legacy: bool,
+    },
     /// Execute a command without PTY allocation
     Exec(String),
     /// Start a sync session for file operations
@@ -65,8 +71,10 @@ impl Display for ADBLocalCommand {
                     write!(f, "shell,{args_s},raw:{command}")
                 }
             }
+            // Legacy devices allocate a PTY by themselves when no command is given
+            Self::Shell { legacy: true } => write!(f, "shell:"),
             // `pty` allocates a terminal on device: required for an interactive session
-            Self::Shell => match std::env::var("TERM") {
+            Self::Shell { legacy: false } => match std::env::var("TERM") {
                 Ok(term) => write!(f, "shell,TERM={term},pty:"),
                 Err(_) => write!(f, "shell,pty:"),
             },
@@ -123,6 +131,20 @@ mod tests {
     fn test_forward_remove_command() {
         let command = ADBLocalCommand::ForwardRemove("tcp:7100".to_string());
         assert_eq!(command.to_string(), "host:killforward:tcp:7100");
+    }
+
+    #[test]
+    fn test_legacy_shell_command() {
+        // Devices without `shell_v2` close the stream on any service argument
+        let command = ADBLocalCommand::Shell { legacy: true };
+        assert_eq!(command.to_string(), "shell:");
+    }
+
+    #[test]
+    fn test_shell_command_allocates_pty() {
+        let command = ADBLocalCommand::Shell { legacy: false }.to_string();
+        assert!(command.starts_with("shell,"));
+        assert!(command.ends_with(",pty:"));
     }
 
     #[test]

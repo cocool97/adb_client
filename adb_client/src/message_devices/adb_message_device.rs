@@ -18,8 +18,17 @@ use crate::{
         message_dispatcher::MessageDispatcher,
         models::{ADBRsaKey, read_adb_private_key},
     },
-    models::ADBLocalCommand,
+    models::{ADBLocalCommand, HostFeatures},
 };
+
+/// Device information obtained during the connection handshake.
+#[derive(Debug)]
+pub(crate) struct ConnectionInfo {
+    /// Maximum message payload size, negotiated with the device.
+    pub(crate) max_payload_size: usize,
+    /// Features advertised by the device.
+    pub(crate) features: Vec<HostFeatures>,
+}
 
 /// Generic structure representing an ADB device reachable over an [`ADBMessageTransport`].
 /// Structure is totally agnostic over which transport is truly used.
@@ -28,6 +37,8 @@ pub struct ADBMessageDevice<T: ADBMessageTransport> {
     transport: T,
     /// Maximum message payload size, negotiated with the device during the connection.
     max_payload_size: usize,
+    /// Features advertised by the device during the connection.
+    features: Vec<HostFeatures>,
     /// Reads every message received, and routes it to the session it belongs to.
     dispatcher: MessageDispatcher,
     /// Host listeners of forwards, by host port. They live as long as the device.
@@ -47,8 +58,8 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             ADBRsaKey::new_random()?
         };
 
-        let max_payload_size = match Self::connect(&mut transport, &private_key) {
-            Ok(max_payload_size) => max_payload_size,
+        let connection = match Self::connect(&mut transport, &private_key) {
+            Ok(connection) => connection,
             Err(e) => {
                 // Best effort here
                 let _ = transport.disconnect();
@@ -56,7 +67,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
             }
         };
 
-        Self::from_connected_transport(transport.clone(), max_payload_size).inspect_err(|_| {
+        Self::from_connected_transport(transport.clone(), connection).inspect_err(|_| {
             // Best effort here
             let _ = transport.disconnect();
         })
@@ -64,11 +75,15 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
 
     /// Instantiate a new [`ADBMessageDevice`] from a transport on which the connection handshake is done, and
     /// start reading its messages.
-    pub(crate) fn from_connected_transport(transport: T, max_payload_size: usize) -> Result<Self> {
-        let dispatcher = MessageDispatcher::start(transport.clone(), max_payload_size)?;
+    pub(crate) fn from_connected_transport(
+        transport: T,
+        connection: ConnectionInfo,
+    ) -> Result<Self> {
+        let dispatcher = MessageDispatcher::start(transport.clone(), connection.max_payload_size)?;
         Ok(Self {
             transport,
-            max_payload_size,
+            max_payload_size: connection.max_payload_size,
+            features: connection.features,
             dispatcher,
             forwards: Mutex::default(),
         })
@@ -78,8 +93,13 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         &self.transport
     }
 
-    /// Send initial connect, and return the negotiated maximum payload size
-    fn connect(transport: &mut T, private_key: &ADBRsaKey) -> Result<usize> {
+    /// Features advertised by the device during the connection.
+    pub(crate) fn features(&self) -> &[HostFeatures] {
+        &self.features
+    }
+
+    /// Send initial connect, and return device information obtained during the handshake
+    fn connect(transport: &mut T, private_key: &ADBRsaKey) -> Result<ConnectionInfo> {
         transport.connect()?;
 
         let message = ADBTransportMessage::try_new(
@@ -149,12 +169,12 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         }
     }
 
-    /// Authenticate with `private_key`, and return the negotiated maximum payload size
+    /// Authenticate with `private_key`, and return device information obtained during the handshake
     fn auth_handshake(
         transport: &mut T,
         message: ADBTransportMessage,
         private_key: &ADBRsaKey,
-    ) -> Result<usize> {
+    ) -> Result<ConnectionInfo> {
         // At this point, we should have received an AUTH message with arg0 == 1
         let auth_message = match message.header().arg0() {
             AUTH_TOKEN => message,
@@ -192,18 +212,21 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         Self::handle_connection(&response)
     }
 
-    /// Handle the `CNXN` message ending the connection handshake, and return the negotiated maximum payload size.
-    fn handle_connection(message: &ADBTransportMessage) -> Result<usize> {
+    /// Handle the `CNXN` message ending the connection handshake, and return device information it contains.
+    fn handle_connection(message: &ADBTransportMessage) -> Result<ConnectionInfo> {
         message.assert_command(MessageCommand::Cnxn)?;
 
         // The device answers with the minimum between our maximum payload size and its own
-        let max_payload = message.header().arg1().min(MAX_PAYLOAD_SIZE) as usize;
+        let max_payload_size = message.header().arg1().min(MAX_PAYLOAD_SIZE) as usize;
         log::debug!(
-            "device info {}, maximum payload size {max_payload}",
+            "device info {}, maximum payload size {max_payload_size}",
             String::from_utf8_lossy(message.payload()),
         );
 
-        Ok(max_payload)
+        Ok(ConnectionInfo {
+            max_payload_size,
+            features: banner_features(message.payload()),
+        })
     }
 
     pub(crate) fn open_synchronization_session(&self) -> Result<ADBSession<T>> {
@@ -234,6 +257,25 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
     }
 }
 
+/// Return features advertised in a device banner.
+///
+/// Banner looks like `device::ro.product.name=x;ro.product.model=y;features=shell_v2,cmd`, older devices
+/// do not advertise any feature and may end it with a NUL byte.
+fn banner_features(banner: &[u8]) -> Vec<HostFeatures> {
+    let banner = banner.split(|&b| b == 0).next().unwrap_or_default();
+
+    banner
+        .splitn(3, |&b| b == b':')
+        .nth(2)
+        .and_then(|properties| {
+            properties
+                .split(|&b| b == b';')
+                .find_map(|property| property.strip_prefix(b"features="))
+        })
+        .map(HostFeatures::parse_list)
+        .unwrap_or_default()
+}
+
 impl<T: ADBMessageTransport> Drop for ADBMessageDevice<T> {
     fn drop(&mut self) {
         // Stop accepting forwarded connections, before the sessions they would open fail
@@ -244,5 +286,39 @@ impl<T: ADBMessageTransport> Drop for ADBMessageDevice<T> {
         self.dispatcher.stop();
         // Best effort here
         let _ = self.transport.disconnect();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::banner_features;
+    use crate::models::HostFeatures;
+
+    #[test]
+    fn test_banner_features() {
+        assert_eq!(
+            banner_features(
+                b"device::ro.product.name=x;ro.product.model=y;ro.product.device=z;features=abb,shell_v2,cmd"
+            ),
+            [HostFeatures::ShellV2, HostFeatures::Cmd]
+        );
+    }
+
+    #[test]
+    fn test_banner_features_nul_terminated() {
+        assert_eq!(
+            banner_features(b"device::ro.product.name=x;features=shell_v2;\0"),
+            [HostFeatures::ShellV2]
+        );
+    }
+
+    #[test]
+    fn test_banner_without_features() {
+        assert_eq!(
+            banner_features(b"device::ro.product.name=x;ro.product.model=y;\0"),
+            Vec::<HostFeatures>::new()
+        );
+        assert_eq!(banner_features(b"device::"), Vec::<HostFeatures>::new());
+        assert_eq!(banner_features(b""), Vec::<HostFeatures>::new());
     }
 }

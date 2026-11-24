@@ -11,10 +11,12 @@ use crate::{
     Result, RustADBError,
     adb_transport::ADBTransport,
     message_devices::{
-        adb_message_device::ADBMessageDevice, adb_message_transport::ADBMessageTransport,
-        adb_transport_message::ADBTransportMessage, message_commands::MessageCommand,
+        adb_message_device::{ADBMessageDevice, ConnectionInfo},
+        adb_message_transport::ADBMessageTransport,
+        adb_transport_message::ADBTransportMessage,
+        message_commands::MessageCommand,
     },
-    models::ADBLocalCommand,
+    models::{ADBLocalCommand, HostFeatures},
 };
 
 const REMOTE_ID: u32 = 2002;
@@ -127,7 +129,53 @@ fn opened_local_id(message: &ADBTransportMessage) -> Option<u32> {
 }
 
 fn device(transport: &FakeTransport) -> ADBMessageDevice<FakeTransport> {
-    ADBMessageDevice::from_connected_transport(transport.clone(), 4096).unwrap()
+    device_with_features(transport, vec![HostFeatures::ShellV2, HostFeatures::Cmd])
+}
+
+fn device_with_features(
+    transport: &FakeTransport,
+    features: Vec<HostFeatures>,
+) -> ADBMessageDevice<FakeTransport> {
+    let connection = ConnectionInfo {
+        max_payload_size: 4096,
+        features,
+    };
+    ADBMessageDevice::from_connected_transport(transport.clone(), connection).unwrap()
+}
+
+/// Open an interactive shell on a device advertising `features`, and return the service it requested.
+fn interactive_shell_service(features: Vec<HostFeatures>) -> String {
+    let service = Arc::new(Mutex::new(Vec::new()));
+    let opened = service.clone();
+    let transport = FakeTransport::new(move |written, answers| {
+        if let Some(local_id) = opened_local_id(written) {
+            *opened.lock().unwrap() = written.payload().to_vec();
+            answers.push_back(message(MessageCommand::Okay, REMOTE_ID, local_id, &[]));
+            answers.push_back(message(MessageCommand::Clse, REMOTE_ID, local_id, &[]));
+        }
+    });
+    let device = device_with_features(&transport, features);
+
+    device
+        .shell(Box::new(std::io::empty()), Box::new(std::io::sink()))
+        .unwrap();
+
+    let service = service.lock().unwrap();
+    String::from_utf8_lossy(&service)
+        .trim_end_matches('\0')
+        .to_string()
+}
+
+#[test]
+fn interactive_shell_uses_legacy_service_without_shell_v2() {
+    assert_eq!(interactive_shell_service(Vec::new()), "shell:");
+}
+
+#[test]
+fn interactive_shell_allocates_pty_with_shell_v2() {
+    let service = interactive_shell_service(vec![HostFeatures::ShellV2]);
+    assert!(service.starts_with("shell,"), "{service}");
+    assert!(service.ends_with(",pty:"), "{service}");
 }
 
 #[test]
