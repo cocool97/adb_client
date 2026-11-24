@@ -159,9 +159,8 @@ impl ADBServerDevice {
     ///
     /// Older devices (without `shell_v2` feature) only understand `shell:<command>`.
     fn supports_shell_v2(&self) -> bool {
-        self.host_features().is_ok_and(|features| {
-            features.contains(&HostFeatures::ShellV2) || features.contains(&HostFeatures::Cmd)
-        })
+        self.host_features()
+            .is_ok_and(|features| HostFeatures::supports_shell_v2(&features))
     }
 
     /// Shell v1: simple shell without protocol (for older ADB versions)
