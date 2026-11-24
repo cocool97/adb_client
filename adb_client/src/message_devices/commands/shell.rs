@@ -58,7 +58,7 @@ impl<T: ADBMessageTransport> ADBMessageDevice<T> {
         reader: Box<dyn Read + Send>,
         writer: Box<dyn Write + Send>,
     ) -> Result<()> {
-        self.bidirectional_session(&ADBLocalCommand::Shell, reader, writer)
+        self.bidirectional_session(&ADBLocalCommand::Shell { legacy: false }, reader, writer)
     }
 
     /// Runs `command` on the device.

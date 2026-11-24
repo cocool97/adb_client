@@ -46,10 +46,7 @@ impl ADBDeviceExt for ADBServerDevice {
         stdout: Option<&mut dyn Write>,
         stderr: Option<&mut dyn Write>,
     ) -> Result<Option<u8>> {
-        let supported_features = self.host_features();
-        let use_shell_v2 = supported_features.is_ok_and(|features| {
-            features.contains(&HostFeatures::ShellV2) || features.contains(&HostFeatures::Cmd)
-        });
+        let use_shell_v2 = self.supports_shell_v2();
 
         let transport = self.connect_to_device()?;
 
@@ -79,7 +76,12 @@ impl ADBDeviceExt for ADBServerDevice {
     }
 
     fn shell(&self, reader: Box<dyn Read + Send>, writer: Box<dyn Write + Send>) -> Result<()> {
-        self.bidirectional_session(&ADBCommand::Local(ADBLocalCommand::Shell), reader, writer)
+        let legacy = !self.supports_shell_v2();
+        self.bidirectional_session(
+            &ADBCommand::Local(ADBLocalCommand::Shell { legacy }),
+            reader,
+            writer,
+        )
     }
 
     fn pull(&self, source: &str, mut output: &mut dyn Write) -> Result<()> {
@@ -153,6 +155,15 @@ impl ADBDeviceExt for ADBServerDevice {
 }
 
 impl ADBServerDevice {
+    /// Whether device understands shell v2 service strings (`shell,<args>:<command>`).
+    ///
+    /// Older devices (without `shell_v2` feature) only understand `shell:<command>`.
+    fn supports_shell_v2(&self) -> bool {
+        self.host_features().is_ok_and(|features| {
+            features.contains(&HostFeatures::ShellV2) || features.contains(&HostFeatures::Cmd)
+        })
+    }
+
     /// Shell v1: simple shell without protocol (for older ADB versions)
     fn shell_command_v1(
         transport: &TCPServerTransport,

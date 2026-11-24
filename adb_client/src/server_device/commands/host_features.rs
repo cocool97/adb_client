@@ -23,6 +23,8 @@ impl ADBServerDevice {
             .connect_to_device()?
             .proxy_connection(&ADBCommand::Host(ADBHostCommand::HostFeatures), true)?
             .split(|x| x.eq(&b','))
+            // Devices without any feature (older ones) return an empty list
+            .filter(|v| !v.is_empty())
             .filter_map(|v| match HostFeatures::try_from(v) {
                 Ok(feature) => Some(feature),
                 Err(err) => {
