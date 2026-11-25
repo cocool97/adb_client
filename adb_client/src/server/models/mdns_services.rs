@@ -6,7 +6,8 @@ use std::{fmt::Display, str::FromStr};
 use crate::RustADBError;
 
 static MDNS_SERVICES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new("^(\\S+)\t(\\S+)\t([\\d\\.]+:\\d+)\n?$").expect("Cannot build mdns services regex")
+    Regex::new("^([^\t]+)\t([^\t]+)\t([\\d\\.]+:\\d+)\n?$")
+        .expect("Cannot build mdns services regex")
 });
 
 /// Represents MDNS Services
